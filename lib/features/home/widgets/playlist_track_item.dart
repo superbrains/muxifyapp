@@ -27,7 +27,7 @@ class PlaylistTrackItem extends StatelessWidget {
       child: SizedBox(
         child: Row(
           children: [
-            // Thumbnail - 32x32
+            // Thumbnail
             SizedBox(
               width: 32.buttonHeight,
               height: 32.buttonHeight,
@@ -52,7 +52,7 @@ class PlaylistTrackItem extends StatelessWidget {
               ),
             ),
             12.row,
-            // Title and Artist - 12px, weight 500
+            // Title and Artist
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -70,7 +70,7 @@ class PlaylistTrackItem extends StatelessWidget {
                   Text(
                     track.artist,
                     style: AppTextStyles.bodySmall.copyWith(
-                      color: AppColors.text.withOpacity(0.7),
+                      color: AppColors.text.withValues(alpha: 0.7),
                       fontWeight: FontWeight.w500,
                       fontSize: 12.font,
                     ),
@@ -80,7 +80,7 @@ class PlaylistTrackItem extends StatelessWidget {
                 ],
               ),
             ),
-            // Menu Icon - 24px
+            // Menu Icon 
             GestureDetector(
               onTap: () {
                 HapticFeedback.lightImpact();

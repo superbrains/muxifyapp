@@ -10,6 +10,8 @@ import 'package:muxify/features/home/models/playlist_item.dart';
 import 'package:muxify/features/home/models/new_release_item.dart';
 import 'package:muxify/features/home/models/spotlight_tab.dart';
 import 'package:muxify/features/home/models/spotlight_item.dart';
+import 'package:muxify/features/home/models/followed_item.dart';
+import 'package:muxify/features/home/models/now_playing_item.dart';
 import 'package:muxify/features/home/widgets/home_header.dart';
 import 'package:muxify/features/home/widgets/recently_played_section.dart';
 import 'package:muxify/features/home/widgets/trending_artists_section.dart';
@@ -17,6 +19,8 @@ import 'package:muxify/features/home/widgets/category_tabs_section.dart';
 import 'package:muxify/features/home/widgets/featured_playlist_section.dart';
 import 'package:muxify/features/home/widgets/popular_releases_section.dart';
 import 'package:muxify/features/home/widgets/spotlight_section.dart';
+import 'package:muxify/features/home/widgets/followed_section.dart';
+import 'package:muxify/features/home/widgets/now_playing_bar.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -149,68 +153,116 @@ class _HomeScreenState extends State<HomeScreen> {
     ),
   ];
 
+  // Followed items data - replace with backend data
+  final List<FollowedItem> _followedItems = [
+    FollowedItem(id: '1', title: 'In His Will', artist: 'Mercy Chinwo'),
+    FollowedItem(id: '2', title: 'Lovin\'', artist: 'Simi'),
+    FollowedItem(id: '3', title: 'Desire', artist: 'Uriel'),
+    FollowedItem(id: '4', title: 'Twice As Tall', artist: 'Burna Boy'),
+    FollowedItem(id: '5', title: 'I Told Them', artist: 'Burna Boy'),
+    FollowedItem(id: '6', title: 'Fall', artist: 'Davido'),
+    FollowedItem(id: '7', title: 'Impersonation', artist: 'Davido ft. Jeage'),
+    FollowedItem(id: '8', title: 'Dada', artist: 'Young John'),
+  ];
+
+  // Currently playing track - replace with backend data
+  NowPlayingItem? _currentTrack = NowPlayingItem(
+    id: '1',
+    title: 'Boy Alone',
+    artist: 'Omah Lay',
+    isPlaying: true,
+    isUnlocked: false,
+  );
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: Column(
+      body: Stack(
         children: [
-          HomeHeader(
-            selectedTab: _selectedTab,
-            toggleOptions: _toggleOptions,
-            onTabChanged: (tab) {
+          Column(
+            children: [
+              HomeHeader(
+                selectedTab: _selectedTab,
+                toggleOptions: _toggleOptions,
+                onTabChanged: (tab) {
+                  setState(() {
+                    _selectedTab = tab;
+                  });
+                },
+              ),
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: EdgeInsets.only(left: 24.padding),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      30.column,
+                      RecentlyPlayedSection(items: _recentlyPlayed),
+                      30.column,
+                      TrendingArtistsSection(artists: _trendingArtists),
+                      30.column,
+                      // Category Tabs Section
+                      CategoryTabsSection(
+                        categories: _categoryTabs,
+                        selectedCategoryId: _selectedCategoryId,
+                        onCategoryChanged: (categoryId) {
+                          setState(() {
+                            _selectedCategoryId = categoryId;
+                          });
+                        },
+                      ),
+                      24.column,
+                      // Featured Playlist Section
+                      FeaturedPlaylistSection(playlists: _featuredPlaylists),
+                      30.column,
+                      // Popular New Releases Section
+                      PopularReleasesSection(
+                        title: 'Popular New Releases',
+                        releases: _popularReleases,
+                      ),
+                      32.column,
+                      // Spotlight Section
+                      SpotlightSection(
+                        tabs: _spotlightTabs,
+                        selectedTabId: _selectedSpotlightTabId,
+                        onTabChanged: (tabId) {
+                          setState(() {
+                            _selectedSpotlightTabId = tabId;
+                          });
+                        },
+                        items: _spotlightItems,
+                      ),
+                      32.column,
+                      // From Those You Follow Section
+                      FollowedSection(
+                        title: 'From those you follow',
+                        items: _followedItems,
+                      ),
+                      32.column,
+                      // Other sections will go here
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          // Now Playing Bar - Fixed at bottom
+          NowPlayingBar(
+            currentTrack: _currentTrack,
+            onTap: () {
+              // TODO: Navigate to full player screen
+            },
+            onPlayPauseTap: () {
               setState(() {
-                _selectedTab = tab;
+                _currentTrack = _currentTrack?.copyWith(
+                  isPlaying: !(_currentTrack?.isPlaying ?? false),
+                );
               });
             },
-          ),
-          Expanded(
-            child: SingleChildScrollView(
-              padding: EdgeInsets.only(left: 24.padding),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  30.column,
-                  RecentlyPlayedSection(items: _recentlyPlayed),
-                  30.column,
-                  TrendingArtistsSection(artists: _trendingArtists),
-                  30.column,
-                  // Category Tabs Section
-                  CategoryTabsSection(
-                    categories: _categoryTabs,
-                    selectedCategoryId: _selectedCategoryId,
-                    onCategoryChanged: (categoryId) {
-                      setState(() {
-                        _selectedCategoryId = categoryId;
-                      });
-                    },
-                  ),
-                  24.column,
-                  // Featured Playlist Section
-                  FeaturedPlaylistSection(playlists: _featuredPlaylists),
-                  30.column,
-                  // Popular New Releases Section
-                  PopularReleasesSection(
-                    title: 'Popular New Releases',
-                    releases: _popularReleases,
-                  ),
-                  32.column,
-                  // Spotlight Section
-                  SpotlightSection(
-                    tabs: _spotlightTabs,
-                    selectedTabId: _selectedSpotlightTabId,
-                    onTabChanged: (tabId) {
-                      setState(() {
-                        _selectedSpotlightTabId = tabId;
-                      });
-                    },
-                    items: _spotlightItems,
-                  ),
-                  32.column,
-                  // Other sections will go here
-                ],
-              ),
-            ),
+            onUnlockTap: () {
+              // TODO: Handle unlock action
+            },
           ),
         ],
       ),

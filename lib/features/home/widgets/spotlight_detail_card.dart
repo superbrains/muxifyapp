@@ -5,6 +5,7 @@ import 'package:muxify/core/constants/app_colors.dart';
 import 'package:muxify/core/constants/app_sizes.dart';
 import 'package:muxify/core/constants/app_text_styles.dart';
 import 'package:muxify/features/home/models/spotlight_item.dart';
+import 'package:muxify/features/home/widgets/unlock_button.dart';
 
 class SpotlightDetailCard extends StatelessWidget {
   final SpotlightItem item;
@@ -90,40 +91,10 @@ class SpotlightDetailCard extends StatelessWidget {
                 ),
                 16.column,
                 // Unlock Button
-                GestureDetector(
-                  onTap: () {
-                    HapticFeedback.lightImpact();
-                    onUnlockTap?.call();
-                  },
-                  child: Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 16.padding,
-                      vertical: 8.padding,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.text.withValues(alpha: 0.75),
-                      borderRadius: BorderRadius.circular(20.radius),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Image.asset(
-                          'assets/pngs/Bitcoin_musixfy.png',
-                          width: 22.maxWidth,
-                          height: 22.maxHeight,
-                        ),
-                        8.row,
-                        Text(
-                          'Unlock',
-                          style: AppTextStyles.bodyMedium.copyWith(
-                            fontSize: 12.font,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.background,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                UnlockButton(
+                  text: 'Unlock',
+                  iconPath: 'assets/pngs/Bitcoin_musixfy.png',
+                  onTap: onUnlockTap,
                 ),
               ],
             ),

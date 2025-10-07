@@ -38,7 +38,7 @@ class NewReleaseCard extends StatelessWidget {
               SizedBox(
                 width: double.infinity,
                 height: double.infinity,
-               
+
                 child: Image.asset(
                   "assets/pngs/release_placeholder.png",
                   fit: BoxFit.cover,
