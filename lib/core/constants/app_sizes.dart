@@ -27,4 +27,6 @@ extension AppSizes on num {
   double get bottomNavHeight => toDouble().h;
 
   double get maxWidth => toDouble().w;
+
+  double get maxHeight => toDouble().h;
 }

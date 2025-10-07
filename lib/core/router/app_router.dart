@@ -12,6 +12,7 @@ import 'package:muxify/features/auth/login_screen.dart';
 import 'package:muxify/features/auth/reset_password_screen.dart';
 import 'package:muxify/features/auth/create_new_password_screen.dart';
 import 'package:muxify/features/auth/verify_email_for_password_reset_screen.dart';
+import 'package:muxify/features/home/screens/home_screen.dart';
 
 class AppRouter {
   AppRouter._();
@@ -132,6 +133,12 @@ class AppRouter {
             child: VerifyEmailForPasswordResetScreen(email: email),
           );
         },
+      ),
+      GoRoute(
+        path: home,
+        name: 'home',
+        pageBuilder: (context, state) =>
+            MaterialPage(key: state.pageKey, child: const HomeScreen()),
       ),
     ],
     errorBuilder: (context, state) =>

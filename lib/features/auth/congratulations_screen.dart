@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 import 'package:muxify/core/constants/app_colors.dart';
 import 'package:muxify/core/constants/app_sizes.dart';
 import 'package:muxify/core/constants/app_text_styles.dart';
+import 'package:muxify/core/router/app_router.dart';
 import 'package:muxify/shared/widgets/custom_button.dart';
 
 class CongratulationsScreen extends StatelessWidget {
@@ -23,9 +25,9 @@ class CongratulationsScreen extends StatelessWidget {
               32.column,
               _buildWelcomeMessage(),
               40.column,
-              _buildCongratulationCard(),
+              _buildCongratulationCard(context),
               const Spacer(),
-              _buildSkipVerification(),
+              _buildSkipVerification(context),
               32.column,
             ],
           ),
@@ -44,7 +46,7 @@ class CongratulationsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildCongratulationCard() {
+  Widget _buildCongratulationCard(BuildContext context) {
     return Container(
       width: double.infinity,
       padding: EdgeInsets.all(32.padding),
@@ -81,26 +83,28 @@ class CongratulationsScreen extends StatelessWidget {
             textAlign: TextAlign.center,
           ),
           24.column,
-          _buildEarnMuxcoinButton(),
+          _buildEarnMuxcoinButton(context),
         ],
       ),
     );
   }
 
-  Widget _buildEarnMuxcoinButton() {
+  Widget _buildEarnMuxcoinButton(BuildContext context) {
     return CustomButton.signUp(
       text: 'Earn Muxcoin',
       width: double.infinity,
       onPressed: () {
         HapticFeedback.lightImpact();
+        // TODO: Navigate to verification flow
       },
     );
   }
 
-  Widget _buildSkipVerification() {
+  Widget _buildSkipVerification(BuildContext context) {
     return GestureDetector(
       onTap: () {
         HapticFeedback.lightImpact();
+        context.go(AppRouter.home);
       },
       child: Text(
         'Skip verification',
