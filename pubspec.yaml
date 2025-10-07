@@ -31,9 +31,9 @@ flutter:
 
   assets:
     - assets/pngs/
-    - assets/jpegs/
-    - assets/svgs/
-    - assets/lotties/
+    #- assets/jpegs/
+    #- assets/svgs/
+    #- assets/lotties/
 
   fonts:
     - family: Manrope

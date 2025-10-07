@@ -8,6 +8,7 @@ import 'package:muxify/features/auth/create_username_screen.dart';
 import 'package:muxify/features/auth/setup_avatar_screen.dart';
 import 'package:muxify/features/auth/follow_favourites_screen.dart';
 import 'package:muxify/features/auth/congratulations_screen.dart';
+import 'package:muxify/features/home/screens/home_screen.dart';
 
 class AppRouter {
   AppRouter._();
@@ -85,6 +86,12 @@ class AppRouter {
           key: state.pageKey,
           child: const CongratulationsScreen(),
         ),
+      ),
+      GoRoute(
+        path: home,
+        name: 'home',
+        pageBuilder: (context, state) =>
+            MaterialPage(key: state.pageKey, child: const HomeScreen()),
       ),
     ],
     errorBuilder: (context, state) =>
