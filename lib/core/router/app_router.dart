@@ -8,6 +8,10 @@ import 'package:muxify/features/auth/create_username_screen.dart';
 import 'package:muxify/features/auth/setup_avatar_screen.dart';
 import 'package:muxify/features/auth/follow_favourites_screen.dart';
 import 'package:muxify/features/auth/congratulations_screen.dart';
+import 'package:muxify/features/auth/login_screen.dart';
+import 'package:muxify/features/auth/reset_password_screen.dart';
+import 'package:muxify/features/auth/create_new_password_screen.dart';
+import 'package:muxify/features/auth/verify_email_for_password_reset_screen.dart';
 
 class AppRouter {
   AppRouter._();
@@ -20,6 +24,11 @@ class AppRouter {
   static const String setupAvatar = '/setup-avatar';
   static const String followFavourites = '/follow-favourites';
   static const String congratulations = '/congratulations';
+  static const String login = '/login';
+  static const String resetPassword = '/reset-password';
+  static const String createNewPassword = '/create-new-password';
+  static const String verifyEmailForPasswordReset =
+      '/verify-email-password-reset';
   static const String home = '/home';
 
   static final GoRouter router = GoRouter(
@@ -85,6 +94,44 @@ class AppRouter {
           key: state.pageKey,
           child: const CongratulationsScreen(),
         ),
+      ),
+      GoRoute(
+        path: login,
+        name: 'login',
+        pageBuilder: (context, state) =>
+            MaterialPage(key: state.pageKey, child: const LoginScreen()),
+      ),
+      GoRoute(
+        path: resetPassword,
+        name: 'reset-password',
+        pageBuilder: (context, state) => MaterialPage(
+          key: state.pageKey,
+          child: const ResetPasswordScreen(),
+        ),
+      ),
+      GoRoute(
+        path: createNewPassword,
+        name: 'create-new-password',
+        pageBuilder: (context, state) {
+          final email =
+              state.uri.queryParameters['email'] ?? 'johndoe@gmail.com';
+          return MaterialPage(
+            key: state.pageKey,
+            child: CreateNewPasswordScreen(email: email),
+          );
+        },
+      ),
+      GoRoute(
+        path: verifyEmailForPasswordReset,
+        name: 'verify-email-password-reset',
+        pageBuilder: (context, state) {
+          final email =
+              state.uri.queryParameters['email'] ?? 'johndoe@gmail.com';
+          return MaterialPage(
+            key: state.pageKey,
+            child: VerifyEmailForPasswordResetScreen(email: email),
+          );
+        },
       ),
     ],
     errorBuilder: (context, state) =>

@@ -121,6 +121,7 @@ class WelcomeScreen extends StatelessWidget {
           width: double.infinity,
           onPressed: () {
             HapticFeedback.lightImpact();
+            context.push(AppRouter.login);
           },
         ),
         16.column,
