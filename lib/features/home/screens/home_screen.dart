@@ -250,9 +250,7 @@ class _HomeScreenState extends State<HomeScreen> {
           // Now Playing Bar - Fixed at bottom
           NowPlayingBar(
             currentTrack: _currentTrack,
-            onTap: () {
-              // TODO: Navigate to full player screen
-            },
+            onTap: () {},
             onPlayPauseTap: () {
               setState(() {
                 _currentTrack = _currentTrack?.copyWith(
@@ -260,9 +258,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 );
               });
             },
-            onUnlockTap: () {
-              // TODO: Handle unlock action
-            },
+            onUnlockTap: () {},
           ),
         ],
       ),

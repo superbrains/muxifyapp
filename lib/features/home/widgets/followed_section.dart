@@ -40,7 +40,6 @@ class FollowedSection extends StatelessWidget {
             return FollowedItemCard(
               item: item,
               onTap: () {
-                // TODO: Navigate to item detail
               },
             );
           },

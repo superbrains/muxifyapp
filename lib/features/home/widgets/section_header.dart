@@ -39,7 +39,7 @@ class SectionHeader extends StatelessWidget {
               child: Text(
                 'See All',
                 style: AppTextStyles.bodyMedium.copyWith(
-                  color: Colors.white.withOpacity(0.7),
+                  color: Colors.white.withValues(alpha: 0.7),
                   fontSize: 14.font,
                 ),
               ),

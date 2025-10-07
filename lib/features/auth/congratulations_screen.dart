@@ -95,7 +95,6 @@ class CongratulationsScreen extends StatelessWidget {
       width: double.infinity,
       onPressed: () {
         HapticFeedback.lightImpact();
-        // TODO: Navigate to verification flow
       },
     );
   }

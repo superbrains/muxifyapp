@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:muxify/core/constants/app_sizes.dart';
-import 'package:muxify/core/constants/app_text_styles.dart';
 import 'package:muxify/features/home/models/new_release_item.dart';
 import 'package:muxify/features/home/widgets/new_release_card.dart';
 import 'package:muxify/features/home/widgets/section_header.dart';
@@ -35,10 +34,9 @@ class PopularReleasesSection extends StatelessWidget {
               return NewReleaseCard(
                 release: release,
                 onTap: () {
-                  // TODO: Navigate to release detail
                 },
                 onPlayTap: () {
-                  // TODO: Play release
+
                 },
               );
             },

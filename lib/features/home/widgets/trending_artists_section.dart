@@ -35,7 +35,6 @@ class TrendingArtistsSection extends StatelessWidget {
               return TrendingArtistCard(
                 artist: artist,
                 onTap: () {
-                  // TODO: Navigate to artist profile
                 },
               );
             },

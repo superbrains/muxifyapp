@@ -38,8 +38,8 @@ class AlbumCard extends StatelessWidget {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    Colors.orange.withOpacity(0.3),
-                    Colors.red.withOpacity(0.3),
+                    Colors.orange.withValues(alpha: 0.3),
+                    Colors.red.withValues(alpha: 0.3),
                   ],
                 ),
               ),
@@ -95,7 +95,7 @@ class AlbumCard extends StatelessWidget {
                   Text(
                     album.artist,
                     style: AppTextStyles.bodySmall.copyWith(
-                      color: AppColors.text.withOpacity(0.6),
+                      color: AppColors.text.withValues(alpha: 0.6),
                       fontSize: 12.font,
                     ),
                     maxLines: 1,

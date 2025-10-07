@@ -22,7 +22,6 @@ class RecentlyPlayedCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.center,
         mainAxisAlignment: MainAxisAlignment.start,
         children: [
-          // Album Cover with Play Button
           Container(
             width: 80.buttonHeight,
             height: 80.buttonHeight,
@@ -33,8 +32,8 @@ class RecentlyPlayedCard extends StatelessWidget {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  const Color(0xFF6E1E1E).withOpacity(0.4),
-                  const Color(0xFF6E1E1E).withOpacity(0.6),
+                  const Color(0xFF6E1E1E).withValues(alpha: 0.4),
+                  const Color(0xFF6E1E1E).withValues(alpha: 0.6),
                 ],
               ),
             ),
@@ -56,8 +55,7 @@ class RecentlyPlayedCard extends StatelessWidget {
               ),
             ),
           ),
-          8.column,
-          // Title
+          8.column, 
           SizedBox(
             width: 80.maxWidth,
             child: Text(

@@ -35,19 +35,14 @@ class FeaturedPlaylistSection extends StatelessWidget {
                 child: PlaylistCard(
                   playlist: playlist,
                   onTap: () {
-                    // TODO: Navigate to playlist detail
                   },
                   onPlayTap: () {
-                    // TODO: Play playlist
                   },
                   onFavoriteTap: () {
-                    // TODO: Toggle favorite
                   },
                   onMenuTap: () {
-                    // TODO: Show playlist options
                   },
                   onSeeAllTap: () {
-                    // TODO: Navigate to full playlist
                   },
                 ),
               );

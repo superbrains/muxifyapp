@@ -41,8 +41,8 @@ class TrackListItem extends StatelessWidget {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    Colors.purple.withOpacity(0.3),
-                    Colors.pink.withOpacity(0.3),
+                    Colors.purple.withValues(alpha: 0.3),
+                    Colors.pink.withValues(alpha: 0.3),
                   ],
                 ),
               ),
@@ -73,7 +73,7 @@ class TrackListItem extends StatelessWidget {
                   Text(
                     track.artist,
                     style: AppTextStyles.bodySmall.copyWith(
-                      color: AppColors.text.withOpacity(0.6),
+                      color: AppColors.text.withValues(alpha: 0.6),
                       fontSize: 12.font,
                     ),
                     maxLines: 1,
@@ -90,7 +90,7 @@ class TrackListItem extends StatelessWidget {
               },
               child: Icon(
                 Icons.more_vert,
-                color: AppColors.text.withOpacity(0.6),
+                color: AppColors.text.withValues(alpha: 0.6),
                 size: 20.icon,
               ),
             ),

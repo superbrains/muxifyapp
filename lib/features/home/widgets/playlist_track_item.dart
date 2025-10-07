@@ -52,7 +52,6 @@ class PlaylistTrackItem extends StatelessWidget {
               ),
             ),
             12.row,
-            // Title and Artist
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -88,7 +87,7 @@ class PlaylistTrackItem extends StatelessWidget {
               },
               child: Icon(
                 Icons.more_vert,
-                color: AppColors.text.withOpacity(0.7),
+                color: AppColors.text.withValues(alpha: 0.7),
                 size: 24.icon,
               ),
             ),

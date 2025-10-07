@@ -127,7 +127,7 @@ class PlaylistCard extends StatelessWidget {
                               style: AppTextStyles.bodySmall.copyWith(
                                 fontSize: 12.font,
                                 fontWeight: FontWeight.w500,
-                                color: AppColors.text.withOpacity(0.7),
+                                color: AppColors.text.withValues(alpha: 0.7),
                               ),
                             ),
                           ],
@@ -148,7 +148,7 @@ class PlaylistCard extends StatelessWidget {
                                     : Icons.favorite_border,
                                 color: playlist.isFavorite
                                     ? Colors.red
-                                    : AppColors.text.withOpacity(0.7),
+                                    : AppColors.text.withValues(alpha: 0.7),
                                 size: 24.icon,
                               ),
                             ),
@@ -161,7 +161,7 @@ class PlaylistCard extends StatelessWidget {
                               },
                               child: Icon(
                                 Icons.more_vert,
-                                color: AppColors.text.withOpacity(0.7),
+                                color: AppColors.text.withValues(alpha: 0.7),
                                 size: 24.icon,
                               ),
                             ),
@@ -212,10 +212,8 @@ class PlaylistCard extends StatelessWidget {
                     return PlaylistTrackItem(
                       track: track,
                       onTap: () {
-                        // TODO: Navigate to track detail or play track
                       },
                       onMenuTap: () {
-                        // TODO: Show track options menu
                       },
                     );
                   },

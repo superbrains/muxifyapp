@@ -23,7 +23,6 @@ class TrendingArtistCard extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Artist Avatar with Badge
             Stack(
               children: [
                 Container(
@@ -35,8 +34,8 @@ class TrendingArtistCard extends StatelessWidget {
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                       colors: [
-                        Colors.red.withOpacity(0.4),
-                        Colors.purple.withOpacity(0.4),
+                        Colors.red.withValues(alpha: 0.4),
+                        Colors.purple.withValues(alpha: 0.4),
                       ],
                     ),
                   ),
@@ -47,7 +46,7 @@ class TrendingArtistCard extends StatelessWidget {
                       child: Icon(
                         Icons.person,
                         size: 32.icon,
-                        color: AppColors.text.withOpacity(0.5),
+                        color: AppColors.text.withValues(alpha: 0.5),
                       ),
                     ),
                   ),
@@ -66,7 +65,6 @@ class TrendingArtistCard extends StatelessWidget {
               ],
             ),
             8.column,
-            // Artist Name
             Text(
               artist.name,
               style: AppTextStyles.bodyMedium.copyWith(

@@ -25,7 +25,6 @@ class TrackListSection extends StatelessWidget {
           title: title,
           onSeeAll: () {
             HapticFeedback.lightImpact();
-            // TODO: Navigate to tracks full list
           },
         ),
         16.column,
@@ -39,20 +38,16 @@ class TrackListSection extends StatelessWidget {
             return TrackListItem(
               track: track,
               onTap: () {
-                // TODO: Play track
               },
               onMenuTap: () {
-                // TODO: Show track menu
               },
             );
           },
         ),
         16.column,
-        // See All button
         GestureDetector(
           onTap: () {
             HapticFeedback.lightImpact();
-            // TODO: Navigate to all tracks
           },
           child: Container(
             width: double.infinity,

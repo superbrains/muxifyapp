@@ -18,7 +18,6 @@ class RecentlyPlayedSection extends StatelessWidget {
           title: 'Recently Played',
           onSeeAll: () {
             HapticFeedback.lightImpact();
-            // TODO: Navigate to recently played full list
           },
         ),
         16.column,
@@ -33,7 +32,6 @@ class RecentlyPlayedSection extends StatelessWidget {
               return RecentlyPlayedCard(
                 item: item,
                 onTap: () {
-                  // TODO: Navigate to album/playlist detail
                 },
               );
             },

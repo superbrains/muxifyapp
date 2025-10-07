@@ -23,7 +23,6 @@ class FeaturedAlbumsSection extends StatelessWidget {
           title: title,
           onSeeAll: () {
             HapticFeedback.lightImpact();
-            // TODO: Navigate to featured albums full list
           },
         ),
         16.column,
@@ -42,7 +41,6 @@ class FeaturedAlbumsSection extends StatelessWidget {
             return AlbumCard(
               album: album,
               onTap: () {
-                // TODO: Navigate to album detail
               },
             );
           },

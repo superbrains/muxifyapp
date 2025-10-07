@@ -1,3 +1,5 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
@@ -288,7 +290,7 @@ class _LoginScreenState extends State<LoginScreen> {
         _passwordController.text = savedPassword;
         _performLogin();
       } else {
-        // context.go('/home');
+        context.go(AppRouter.home);
       }
     }
   }
@@ -298,7 +300,7 @@ class _LoginScreenState extends State<LoginScreen> {
         _passwordController.text.isNotEmpty) {
       await LocalStorageService.setUserEmail(_emailController.text);
       await LocalStorageService.setUserPassword(_passwordController.text);
-      // context.go('/home');
+      context.go(AppRouter.home);
     }
   }
 

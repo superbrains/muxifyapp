@@ -111,7 +111,6 @@ class HomeHeader extends StatelessWidget {
         GestureDetector(
           onTap: () {
             HapticFeedback.lightImpact();
-            // TODO: Navigate to stats
           },
           child: Image.asset(
             'assets/pngs/bar-2.png',
@@ -124,7 +123,6 @@ class HomeHeader extends StatelessWidget {
         GestureDetector(
           onTap: () {
             HapticFeedback.lightImpact();
-            // TODO: Navigate to notifications
           },
           child: Image.asset(
             'assets/pngs/bell.png',
@@ -137,7 +135,6 @@ class HomeHeader extends StatelessWidget {
         GestureDetector(
           onTap: () {
             HapticFeedback.lightImpact();
-            // TODO: Navigate to profile or show menu
           },
           child: ClipOval(
             child: Image.asset(

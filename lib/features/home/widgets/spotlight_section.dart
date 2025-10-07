@@ -46,10 +46,8 @@ class SpotlightSection extends StatelessWidget {
           (item) => SpotlightDetailCard(
             item: item,
             onTap: () {
-              // TODO: Navigate to item detail
             },
             onUnlockTap: () {
-              // TODO: Handle unlock action
             },
           ),
         ),

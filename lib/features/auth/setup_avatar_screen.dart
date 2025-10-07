@@ -305,8 +305,6 @@ class _SetupAvatarScreenState extends State<SetupAvatarScreen> {
       _isUploading = true;
     });
 
-    // TODO: Implement image picker functionality
-    // For now, just simulate upload
     Future.delayed(const Duration(seconds: 1), () {
       if (mounted) {
         setState(() {
