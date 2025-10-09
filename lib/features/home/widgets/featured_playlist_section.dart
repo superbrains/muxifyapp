@@ -34,16 +34,11 @@ class FeaturedPlaylistSection extends StatelessWidget {
                 width: 288.maxWidth, // Fixed width for each card
                 child: PlaylistCard(
                   playlist: playlist,
-                  onTap: () {
-                  },
-                  onPlayTap: () {
-                  },
-                  onFavoriteTap: () {
-                  },
-                  onMenuTap: () {
-                  },
-                  onSeeAllTap: () {
-                  },
+                  onTap: () {},
+                  onPlayTap: () {},
+                  onFavoriteTap: () {},
+                  onMenuTap: () {},
+                  onSeeAllTap: onSeeAll,
                 ),
               );
             },

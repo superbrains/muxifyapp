@@ -5,7 +5,7 @@ import 'package:muxify/core/constants/app_colors.dart';
 import 'package:muxify/core/constants/app_sizes.dart';
 import 'package:muxify/core/constants/app_text_styles.dart';
 import 'package:muxify/features/home/models/spotlight_item.dart';
-import 'package:muxify/features/home/widgets/unlock_button.dart';
+import 'package:muxify/shared/widgets/unlock_button.dart';
 
 class SpotlightDetailCard extends StatelessWidget {
   final SpotlightItem item;

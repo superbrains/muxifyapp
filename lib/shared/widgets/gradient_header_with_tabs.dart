@@ -7,7 +7,7 @@ import 'package:muxify/features/home/widgets/category_tabs_section.dart';
 import 'package:muxify/features/home/models/category_tab.dart';
 
 class GradientHeaderWithTabs extends StatelessWidget {
-  final String title;
+  final String? title;
   final VoidCallback? onBackTap;
   final String selectedMediaType;
   final Function(String)? onMediaTypeChanged;
@@ -18,7 +18,7 @@ class GradientHeaderWithTabs extends StatelessWidget {
 
   const GradientHeaderWithTabs({
     super.key,
-    required this.title,
+    this.title,
     this.onBackTap,
     this.selectedMediaType = 'Music',
     this.onMediaTypeChanged,
@@ -67,7 +67,7 @@ class GradientHeaderWithTabs extends StatelessWidget {
                 16.row,
                 // Title
                 Text(
-                  title,
+                  title ?? '',
                   style: AppTextStyles.heading1.copyWith(
                     fontSize: 20.font,
                     fontWeight: FontWeight.w600,

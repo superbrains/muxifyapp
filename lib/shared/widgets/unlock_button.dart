@@ -13,7 +13,10 @@ class UnlockButton extends StatelessWidget {
   final EdgeInsetsGeometry? padding;
   final Color? backgroundColor;
   final Color? textColor;
+  final Color? iconColor;
   final double? borderRadius;
+  final double? iconSize;
+  final double? spacing;
 
   const UnlockButton({
     super.key,
@@ -25,7 +28,10 @@ class UnlockButton extends StatelessWidget {
     this.padding,
     this.backgroundColor,
     this.textColor,
+    this.iconColor,
     this.borderRadius,
+    this.iconSize,
+    this.spacing,
   });
 
   @override
@@ -36,11 +42,12 @@ class UnlockButton extends StatelessWidget {
         onTap?.call();
       },
       child: Container(
+        alignment: Alignment.center,
         width: width,
         height: height,
         padding:
             padding ??
-            EdgeInsets.symmetric(horizontal: 16.padding, vertical: 8.padding),
+            EdgeInsets.symmetric(horizontal: 5.padding, vertical: 4.padding),
         decoration: BoxDecoration(
           color: backgroundColor ?? AppColors.text.withValues(alpha: 0.75),
           borderRadius: BorderRadius.circular(borderRadius ?? 20.radius),
@@ -50,17 +57,15 @@ class UnlockButton extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             if (iconPath != null) ...[
-              Image.asset(iconPath!, width: 22.maxWidth, height: 22.maxHeight),
-              8.row,
-            ],
-            Text(
-              text,
-              style: AppTextStyles.bodyMedium.copyWith(
-                fontSize: 12.font,
-                fontWeight: FontWeight.w600,
-                color: textColor ?? AppColors.background,
+              Image.asset(
+                iconPath!,
+                width: iconSize ?? 14.maxWidth,
+                height: iconSize ?? 14.maxHeight,
+                color: iconColor,
               ),
-            ),
+              SizedBox(width: spacing ?? 4.padding),
+            ],
+            Text(text, style: AppTextStyles.unlockButtonText),
           ],
         ),
       ),

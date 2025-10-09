@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:muxify/core/constants/app_colors.dart';
 import 'package:muxify/core/constants/app_sizes.dart';
 import 'package:muxify/features/home/models/tab_option.dart';
@@ -21,6 +22,7 @@ import 'package:muxify/features/home/widgets/popular_releases_section.dart';
 import 'package:muxify/features/home/widgets/spotlight_section.dart';
 import 'package:muxify/features/home/widgets/followed_section.dart';
 import 'package:muxify/features/home/widgets/now_playing_bar.dart';
+import 'package:muxify/core/router/app_router.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -214,8 +216,13 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       24.column,
                       // Featured Playlist Section
-                      FeaturedPlaylistSection(playlists: _featuredPlaylists),
-                      30.column,
+                      FeaturedPlaylistSection(
+                        playlists: _featuredPlaylists,
+                        onSeeAll: () {
+                          context.push(AppRouter.trending);
+                        },
+                      ),
+                      20.column,
                       // Popular New Releases Section
                       PopularReleasesSection(
                         title: 'Popular New Releases',

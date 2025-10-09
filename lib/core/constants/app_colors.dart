@@ -22,4 +22,7 @@ class AppColors {
   static const Color unlockButtonDefault = Color(0xFF555555);
   static const Color shadowColor = Color(0xFF000000);
   static const Color badgeRating = Color(0xFFFFAD12);
+  static const Color modalBackground = Color(0xFF191919);
+  static const Color modalCancelButtonBackground = Color(0xFF252525);
+  static const Color cautionIcon = Color(0xFFA7A7A7);
 }

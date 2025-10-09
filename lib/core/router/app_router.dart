@@ -14,6 +14,7 @@ import 'package:muxify/features/auth/create_new_password_screen.dart';
 import 'package:muxify/features/auth/verify_email_for_password_reset_screen.dart';
 import 'package:muxify/features/home/screens/home_screen.dart';
 import 'package:muxify/features/statistics/screens/statistics_screen.dart';
+import 'package:muxify/features/featured_playlist/screens/featured_playlist_screen.dart';
 
 class AppRouter {
   AppRouter._();
@@ -33,6 +34,7 @@ class AppRouter {
       '/verify-email-password-reset';
   static const String home = '/home';
   static const String statistics = '/statistics';
+  static const String trending = '/trending';
 
   static final GoRouter router = GoRouter(
     initialLocation: splash,
@@ -147,6 +149,14 @@ class AppRouter {
         name: 'statistics',
         pageBuilder: (context, state) =>
             MaterialPage(key: state.pageKey, child: const StatisticsScreen()),
+      ),
+      GoRoute(
+        path: trending,
+        name: 'trending',
+        pageBuilder: (context, state) => MaterialPage(
+          key: state.pageKey,
+          child: const FeaturedPlaylistScreen(),
+        ),
       ),
     ],
     errorBuilder: (context, state) =>

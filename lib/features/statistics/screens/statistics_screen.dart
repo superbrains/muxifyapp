@@ -227,7 +227,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               setState(() {
                 _selectedMediaType = mediaType;
               });
-              // TODO: Filter statistics by media type
+              
             },
             onBackTap: () {
               Navigator.of(context).pop();

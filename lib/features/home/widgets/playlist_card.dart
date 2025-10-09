@@ -46,7 +46,7 @@ class PlaylistCard extends StatelessWidget {
                 left: 16.padding,
                 right: 16.padding,
                 top: 16.padding,
-                bottom: 8.padding,
+                // bottom: 8.padding,
               ),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.only(
@@ -70,7 +70,7 @@ class PlaylistCard extends StatelessWidget {
                 children: [
                   // Album Art - 106x106
                   Container(
-                    width: 106.buttonHeight,
+                    width: 106.maxWidth,
                     height: 106.buttonHeight,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(12.radius),
@@ -202,7 +202,12 @@ class PlaylistCard extends StatelessWidget {
                 ListView.separated(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
-                  padding: EdgeInsets.all(16.padding),
+                  padding: EdgeInsets.only(
+                    left: 16.padding,
+                    right: 16.padding,
+                    top: 16.padding,
+                    bottom: 8.padding,
+                  ),
                   scrollDirection: Axis.vertical,
 
                   itemCount: playlist.tracks.take(4).length,
@@ -228,7 +233,7 @@ class PlaylistCard extends StatelessWidget {
                     child: Container(
                       margin: EdgeInsets.only(
                         right: 16.padding,
-                        bottom: 16.padding,
+                        // bottom: 16.padding,
                       ),
                       alignment: Alignment.center,
                       width: 64.maxWidth,

@@ -7,6 +7,7 @@ class AppTextStyles {
   static const String _manrope = 'Manrope';
   static const String _poppins = 'Poppins';
   static const String _luckiestGuy = 'Luckiest Guy';
+  static const String _inter = 'Inter';
   static const TextStyle heading1 = TextStyle(
     fontFamily: _manrope,
     fontWeight: FontWeight.w900,
@@ -48,6 +49,12 @@ class AppTextStyles {
     fontSize: 18.0,
     color: AppColors.text,
   );
+  static const TextStyle unlockButtonText = TextStyle(
+    fontFamily: _inter,
+    fontWeight: FontWeight.w500,
+    fontSize: 12.0,
+    color: AppColors.background,
+  );
 
   static const TextStyle specialText = TextStyle(
     fontFamily: _poppins,
@@ -80,6 +87,8 @@ class AppTextStyles {
       bodyMedium.copyWith(color: color);
   static TextStyle bodySmallWithColor(Color color) =>
       bodySmall.copyWith(color: color);
+  static TextStyle unlockButtonTextWithColor(Color color) =>
+      unlockButtonText.copyWith(color: color);
   static TextStyle buttonTextWithColor(Color color) =>
       buttonText.copyWith(color: color);
   static TextStyle specialTextWithColor(Color color) =>
@@ -115,6 +124,8 @@ class AppTextStyles {
       bodyMedium.copyWith(fontSize: size);
   static TextStyle bodySmallWithSize(double size) =>
       bodySmall.copyWith(fontSize: size);
+  static TextStyle unlockButtonTextWithSize(double size) =>
+      unlockButtonText.copyWith(fontSize: size);
   static TextStyle buttonTextWithSize(double size) =>
       buttonText.copyWith(fontSize: size);
   static TextStyle specialTextWithSize(double size) =>

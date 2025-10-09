@@ -131,12 +131,13 @@ class _SetupAvatarScreenState extends State<SetupAvatarScreen> {
         });
       },
       child: Container(
-        width: 130.buttonHeight,
-        height: 50.buttonHeight,
-        padding: EdgeInsets.symmetric(
-          horizontal: 31.padding,
-          vertical: 12.padding,
-        ),
+        width: 108.buttonHeight,
+        height: 44.buttonHeight,
+        // padding: EdgeInsets.symmetric(
+        //   horizontal: 20.padding,
+        //   vertical: 12.padding,
+        // ),
+        alignment: Alignment.center,
         decoration: BoxDecoration(
           color: isSelected ? AppColors.text : const Color(0xFF2A2A2A),
           borderRadius: BorderRadius.circular(50.radius),

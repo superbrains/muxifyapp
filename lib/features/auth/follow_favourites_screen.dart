@@ -66,25 +66,36 @@ class _FollowFavouritesScreenState extends State<FollowFavouritesScreen> {
         ),
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 24.padding),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                40.column,
-                _buildTitle(),
-                8.column,
-                _buildSubtitle(),
-                40.column,
-                _buildSearchBar(),
-                32.column,
-                _buildArtistsGrid(),
-                32.column,
-                _buildCompleteButton(),
-                32.column,
-              ],
-            ),
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 24.padding),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              40.column,
+              _buildTitle(),
+              8.column,
+              _buildSubtitle(),
+              30.column,
+              _buildSearchBar(),
+
+              // Expanded scrollable area for grid and button
+              Expanded(
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    return Column(
+                      children: [
+                        20.column,
+                        // The grid should take as much space as possible, button at bottom
+                        Expanded(child: _buildArtistsGrid()),
+                        // 32.column,
+                        _buildCompleteButton(),
+                        32.column,
+                      ],
+                    );
+                  },
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -117,7 +128,7 @@ class _FollowFavouritesScreenState extends State<FollowFavouritesScreen> {
       borderRadius: 50.radius,
       contentPadding: EdgeInsets.symmetric(
         horizontal: 16.padding,
-        vertical: 18.padding,
+        vertical: 0.padding,
       ),
       onChanged: (value) {
         setState(() {});
@@ -127,13 +138,12 @@ class _FollowFavouritesScreenState extends State<FollowFavouritesScreen> {
 
   Widget _buildArtistsGrid() {
     return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+      padding: EdgeInsets.zero,
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 3,
-        crossAxisSpacing: 16,
-        mainAxisSpacing: 24,
-        childAspectRatio: 0.8,
+        crossAxisSpacing: 16.padding,
+        mainAxisSpacing: 24.padding,
+        childAspectRatio: 0.85.maxHeight,
       ),
       itemCount: _filteredArtists.length,
       itemBuilder: (context, index) {
@@ -232,6 +242,7 @@ class _FollowFavouritesScreenState extends State<FollowFavouritesScreen> {
     return CustomButton.signUp(
       text: 'Complete',
       width: double.infinity,
+      height: 56.buttonHeight,
       onPressed: () {
         HapticFeedback.lightImpact();
         context.push(AppRouter.congratulations);
