@@ -35,10 +35,10 @@ class NowPlayingBar extends StatelessWidget {
         // margin: EdgeInsets.only(bottom: 16.padding),
         padding: EdgeInsets.all(12.padding),
         decoration: BoxDecoration(
-          color: const Color(0xFF78D6E3).withValues(alpha: 0.5),
+          color: AppColors.nowPlayingBackground.withValues(alpha: 0.5),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.3),
+              color: AppColors.shadowColor.withValues(alpha: 0.3),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),

@@ -32,7 +32,9 @@ class TabOptionButton extends StatelessWidget {
           vertical: 10.padding,
         ),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFFE5E5E5) : const Color(0xFF2A2A2A),
+          color: isSelected
+              ? AppColors.toggleSelected
+              : AppColors.toggleUnselected,
           borderRadius: BorderRadius.circular(25.radius),
         ),
         child: Row(
@@ -41,13 +43,15 @@ class TabOptionButton extends StatelessWidget {
             Icon(
               icon,
               size: 18.icon,
-              color: isSelected ? Colors.black : AppColors.text,
+              color: isSelected ? AppColors.toggleSelectedText : AppColors.text,
             ),
             8.row,
             Text(
               title,
               style: AppTextStyles.bodyMedium.copyWith(
-                color: isSelected ? Colors.black : AppColors.text,
+                color: isSelected
+                    ? AppColors.toggleSelectedText
+                    : AppColors.text,
                 fontWeight: FontWeight.w500,
                 fontSize: 14.font,
               ),

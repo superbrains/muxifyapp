@@ -58,8 +58,8 @@ class PlaylistCard extends StatelessWidget {
                   end: Alignment.topRight,
                   transform: const GradientRotation(1.5),
                   colors: [
-                    const Color(0xFF141414),
-                    const Color(0xFF141414).withValues(alpha: 0.6),
+                    AppColors.playlistGradientStart,
+                    AppColors.playlistGradientStart.withValues(alpha: 0.6),
                     Colors.transparent,
                   ],
                   stops: const [0, 0.4, 0.8],
@@ -211,10 +211,8 @@ class PlaylistCard extends StatelessWidget {
                     final track = playlist.tracks[index];
                     return PlaylistTrackItem(
                       track: track,
-                      onTap: () {
-                      },
-                      onMenuTap: () {
-                      },
+                      onTap: () {},
+                      onMenuTap: () {},
                     );
                   },
                 ),

@@ -55,8 +55,8 @@ class NewReleaseCard extends StatelessWidget {
                     colors: [
                       Colors.transparent,
                       Colors.transparent,
-                      const Color(0xFF000000).withValues(alpha: 0.7),
-                      const Color(0xFF000000).withValues(alpha: 0.9),
+                      AppColors.shadowColor.withValues(alpha: 0.7),
+                      AppColors.shadowColor.withValues(alpha: 0.9),
                     ],
                     stops: const [0.0, 0.4, 0.7, 0.6],
                   ),
@@ -128,7 +128,7 @@ class NewReleaseCard extends StatelessWidget {
                           width: 32.icon,
                           height: 32.icon,
                           decoration: BoxDecoration(
-                            color: const Color(0xFF555555),
+                            color: AppColors.unlockButtonDefault,
                             shape: BoxShape.circle,
                           ),
                           child: Icon(

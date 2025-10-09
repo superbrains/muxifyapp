@@ -28,8 +28,8 @@ class HomeHeader extends StatelessWidget {
           end: Alignment.topRight,
           transform: const GradientRotation(1.5),
           colors: [
-            const Color(0xFF6E1E1E).withValues(alpha: 0.4),
-            const Color(0xFF6E1E1E).withValues(alpha: 0.6),
+            AppColors.headerGradient.withValues(alpha: 0.4),
+            AppColors.headerGradient.withValues(alpha: 0.6),
             Colors.transparent,
           ],
           stops: const [0, 0.4, 0.8],

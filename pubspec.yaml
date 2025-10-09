@@ -40,3 +40,9 @@ flutter:
     - family: Manrope
       fonts:
         - asset: assets/fonts/Manrope-VariableFont_wght.ttf
+    - family: Luckiest Guy
+      fonts:
+        - asset: assets/fonts/LuckiestGuy-Regular.ttf
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/Inter-VariableFont_opsz,wght.ttf

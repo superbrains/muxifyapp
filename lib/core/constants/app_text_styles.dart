@@ -6,6 +6,7 @@ class AppTextStyles {
 
   static const String _manrope = 'Manrope';
   static const String _poppins = 'Poppins';
+  static const String _luckiestGuy = 'Luckiest Guy';
   static const TextStyle heading1 = TextStyle(
     fontFamily: _manrope,
     fontWeight: FontWeight.w900,
@@ -62,6 +63,13 @@ class AppTextStyles {
     color: AppColors.text,
   );
 
+  static const TextStyle displayText = TextStyle(
+    fontFamily: _luckiestGuy,
+    fontWeight: FontWeight.w400,
+    fontSize: 16.0,
+    color: AppColors.text,
+  );
+
   static TextStyle heading1WithColor(Color color) =>
       heading1.copyWith(color: color);
   static TextStyle heading2WithColor(Color color) =>
@@ -78,6 +86,8 @@ class AppTextStyles {
       specialText.copyWith(color: color);
   static TextStyle mediumTextWithColor(Color color) =>
       mediumText.copyWith(color: color);
+  static TextStyle displayTextWithColor(Color color) =>
+      displayText.copyWith(color: color);
 
   static TextStyle heading1Bold = heading1.copyWith(
     fontWeight: FontWeight.bold,
@@ -111,4 +121,6 @@ class AppTextStyles {
       specialText.copyWith(fontSize: size);
   static TextStyle mediumTextWithSize(double size) =>
       mediumText.copyWith(fontSize: size);
+  static TextStyle displayTextWithSize(double size) =>
+      displayText.copyWith(fontSize: size);
 }
