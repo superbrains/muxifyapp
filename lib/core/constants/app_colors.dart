@@ -25,4 +25,12 @@ class AppColors {
   static const Color modalBackground = Color(0xFF191919);
   static const Color modalCancelButtonBackground = Color(0xFF252525);
   static const Color cautionIcon = Color(0xFFA7A7A7);
+  static const Color artistProfileBackground = Color(0xFF141414);
+
+  // Artist Profile colors
+  static const Color artistProfilePurple = Color(0xFF8D4CA8);
+  static const Color artistProfilePurpleLight = Color(0xFF8C4BA7);
+  static const Color artistProfilePurpleDark = Color(0xFF683482);
+  static const Color artistProfilePurpleAccent = Color(0xFF8647A3);
+  static const Color artistProfileGreen = Color(0xFF21B141);
 }

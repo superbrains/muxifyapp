@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:muxify/core/constants/app_colors.dart';
 import 'package:muxify/core/constants/app_sizes.dart';
 import 'package:muxify/features/featured_playlist/models/genre_song_item.dart';
-import 'package:muxify/features/featured_playlist/widgets/genre_song_item_widget.dart';
+import 'package:muxify/shared/widgets/genre_song_item_widget.dart';
 import 'package:muxify/shared/widgets/content_header.dart';
 import 'package:muxify/shared/widgets/gradient_header_with_tabs.dart';
 import 'package:muxify/shared/widgets/unlock_button.dart';

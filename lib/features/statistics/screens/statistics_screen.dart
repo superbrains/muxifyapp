@@ -3,14 +3,17 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:muxify/core/constants/app_colors.dart';
 import 'package:muxify/core/constants/app_sizes.dart';
+import 'package:muxify/core/utils/logger.dart';
 import 'package:muxify/features/statistics/models/gift_statistics_item.dart';
 import 'package:muxify/features/statistics/models/top_giver_item.dart';
 import 'package:muxify/features/statistics/models/most_given_item.dart';
+import 'package:muxify/features/statistics/models/gift_item.dart';
 import 'package:muxify/features/statistics/widgets/gift_statistics_item.dart';
 import 'package:muxify/features/statistics/widgets/top_giver_item_widget.dart';
 import 'package:muxify/features/statistics/widgets/most_given_item_widget.dart';
 import 'package:muxify/shared/widgets/content_header.dart';
 import 'package:muxify/shared/widgets/gradient_header_with_tabs.dart';
+import 'package:muxify/shared/widgets/gift_selection_modal.dart';
 import 'package:muxify/features/home/models/category_tab.dart';
 
 class StatisticsScreen extends StatefulWidget {
@@ -212,6 +215,170 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     ),
   ];
 
+  // Gift items for the modal
+  final List<GiftItem> _giftItems = [
+    GiftItem(
+      id: '1',
+      name: 'Big Box',
+      backgroundImage: 'assets/pngs/gift_bg1.png',
+      emojiImage: 'assets/pngs/emoj1.png',
+      stickerText: 'X20',
+      count: 20,
+    ),
+    GiftItem(
+      id: '2',
+      name: 'Big Box',
+      backgroundImage: 'assets/pngs/gift_bg2.png',
+      emojiImage: 'assets/pngs/emoj4.png',
+      stickerText: 'X20',
+      count: 20,
+    ),
+    GiftItem(
+      id: '3',
+      name: 'Big Box',
+      backgroundImage: 'assets/pngs/gift_bg3.png',
+      emojiImage: 'assets/pngs/emoj3.png',
+      stickerText: 'X20',
+      count: 20,
+    ),
+    GiftItem(
+      id: '4',
+      name: 'Big Box',
+      backgroundImage: 'assets/pngs/gift_bg4.png',
+      emojiImage: 'assets/pngs/emoj6.png',
+      stickerText: 'X20',
+      count: 20,
+    ),
+    GiftItem(
+      id: '5',
+      name: 'Big Box',
+      backgroundImage: 'assets/pngs/gift_bg1.png',
+      emojiImage: 'assets/pngs/emoj7.png',
+      stickerText: 'X20',
+      count: 20,
+    ),
+    GiftItem(
+      id: '6',
+      name: 'Big Box',
+      backgroundImage: 'assets/pngs/gift_bg2.png',
+      emojiImage: 'assets/pngs/emoj6.png',
+      stickerText: 'X20',
+      count: 20,
+    ),
+    GiftItem(
+      id: '7',
+      name: 'Big Box',
+      backgroundImage: 'assets/pngs/gift_bg3.png',
+      emojiImage: 'assets/pngs/emoj1.png',
+      stickerText: 'X20',
+      count: 20,
+    ),
+    GiftItem(
+      id: '8',
+      name: 'Big Box',
+      backgroundImage: 'assets/pngs/gift_bg4.png',
+      emojiImage: 'assets/pngs/emoj7.png',
+      stickerText: 'X20',
+      count: 20,
+    ),
+    GiftItem(
+      id: '9',
+      name: 'Big Box',
+      backgroundImage: 'assets/pngs/gift_bg1.png',
+      emojiImage: 'assets/pngs/emoj3.png',
+      stickerText: 'X20',
+      count: 20,
+    ),
+    GiftItem(
+      id: '10',
+      name: 'Big Box',
+      backgroundImage: 'assets/pngs/gift_bg2.png',
+      emojiImage: 'assets/pngs/emoj4.png',
+      stickerText: 'X20',
+      count: 20,
+    ),
+    GiftItem(
+      id: '11',
+      name: 'Big Box',
+      backgroundImage: 'assets/pngs/gift_bg3.png',
+      emojiImage: 'assets/pngs/emoj5.png',
+      stickerText: 'X20',
+      count: 20,
+    ),
+    GiftItem(
+      id: '12',
+      name: 'Big Box',
+      backgroundImage: 'assets/pngs/gift_bg4.png',
+      emojiImage: 'assets/pngs/emoj6.png',
+      stickerText: 'X20',
+      count: 20,
+    ),
+    GiftItem(
+      id: '13',
+      name: 'Big Box',
+      backgroundImage: 'assets/pngs/gift_bg1.png',
+      emojiImage: 'assets/pngs/emoj1.png',
+      stickerText: 'X20',
+      count: 20,
+    ),
+    GiftItem(
+      id: '14',
+      name: 'Big Box',
+      backgroundImage: 'assets/pngs/gift_bg2.png',
+      emojiImage: 'assets/pngs/emoj4.png',
+      stickerText: 'X20',
+      count: 20,
+    ),
+    GiftItem(
+      id: '15',
+      name: 'Big Box',
+      backgroundImage: 'assets/pngs/gift_bg3.png',
+      emojiImage: 'assets/pngs/emoj3.png',
+      stickerText: 'X20',
+      count: 20,
+    ),
+    GiftItem(
+      id: '16',
+      name: 'Big Box',
+      backgroundImage: 'assets/pngs/gift_bg4.png',
+      emojiImage: 'assets/pngs/emoj4.png',
+      stickerText: 'X20',
+      count: 20,
+    ),
+    GiftItem(
+      id: '17',
+      name: 'Big Box',
+      backgroundImage: 'assets/pngs/gift_bg1.png',
+      emojiImage: 'assets/pngs/emoj5.png',
+      stickerText: 'X20',
+      count: 20,
+    ),
+    GiftItem(
+      id: '18',
+      name: 'Big Box',
+      backgroundImage: 'assets/pngs/gift_bg2.png',
+      emojiImage: 'assets/pngs/emoj6.png',
+      stickerText: 'X20',
+      count: 20,
+    ),
+    GiftItem(
+      id: '19',
+      name: 'Big Box',
+      backgroundImage: 'assets/pngs/gift_bg3.png',
+      emojiImage: 'assets/pngs/emoj1.png',
+      stickerText: 'X20',
+      count: 20,
+    ),
+    GiftItem(
+      id: '20',
+      name: 'Big Box',
+      backgroundImage: 'assets/pngs/gift_bg4.png',
+      emojiImage: 'assets/pngs/emoj7.png',
+      stickerText: 'X20',
+      count: 20,
+    ),
+  ];
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -227,7 +394,6 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               setState(() {
                 _selectedMediaType = mediaType;
               });
-              
             },
             onBackTap: () {
               Navigator.of(context).pop();
@@ -281,6 +447,9 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             return GiftStatisticsItemWidget(
               item: _mostGiftedItems[index],
               onTap: () {},
+              onGiftCountTap: () {
+                _showGiftSelectionModal();
+              },
             );
           },
         );
@@ -294,7 +463,12 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           itemBuilder: (context, index) {
             return TopGiverItemWidget(
               item: _topGiversItems[index],
-              onTap: () {},
+              onTap: () {
+                // _showGiftSelectionModal();
+              },
+              onGiftWorthTap: () {
+                _showGiftSelectionModal();
+              },
             );
           },
         );
@@ -308,7 +482,12 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           itemBuilder: (context, index) {
             return MostGivenItemWidget(
               item: _mostGivenItems[index],
-              onTap: () {},
+              onTap: () {
+                // _showGiftSelectionModal();
+              },
+              onGiftWorthTap: () {
+                _showGiftSelectionModal();
+              },
             );
           },
         );
@@ -323,6 +502,9 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             return GiftStatisticsItemWidget(
               item: _mostGiftedItems[index],
               onTap: () {},
+              onGiftCountTap: () {
+                _showGiftSelectionModal();
+              },
             );
           },
         );
@@ -340,5 +522,24 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       default:
         return 'Statistics';
     }
+  }
+
+  void _showGiftSelectionModal() {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (BuildContext context) {
+        return GiftSelectionModal(
+          totalGiftValue: '156,000',
+          giftItems: _giftItems,
+          onClose: () {},
+          onGiftSelected: (giftItem) {
+            Logger.debug(
+              'Selected gift: ${giftItem.name} (${giftItem.stickerText})',
+            );
+          },
+        );
+      },
+    );
   }
 }

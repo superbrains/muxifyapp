@@ -43,7 +43,6 @@ class UnlockAllSongsModal extends StatelessWidget {
                 onTap: () {
                   HapticFeedback.lightImpact();
                   onClose?.call();
-                  Navigator.of(context).pop();
                 },
                 child: Container(
                   margin: EdgeInsets.only(top: 7.padding, right: 8.padding),
@@ -86,7 +85,6 @@ class UnlockAllSongsModal extends StatelessWidget {
                     onTap: () {
                       HapticFeedback.lightImpact();
                       onUnlockPremium?.call();
-                      Navigator.of(context).pop();
                     },
                   ),
                   22.column,
@@ -99,7 +97,6 @@ class UnlockAllSongsModal extends StatelessWidget {
                     onTap: () {
                       HapticFeedback.lightImpact();
                       onUnlockFree?.call();
-                      Navigator.of(context).pop();
                     },
                   ),
                 ],

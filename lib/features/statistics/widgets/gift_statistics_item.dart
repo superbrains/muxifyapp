@@ -9,8 +9,14 @@ import 'package:muxify/shared/widgets/gift_worth_widget.dart';
 class GiftStatisticsItemWidget extends StatelessWidget {
   final GiftStatisticsItem item;
   final VoidCallback? onTap;
+  final VoidCallback? onGiftCountTap;
 
-  const GiftStatisticsItemWidget({super.key, required this.item, this.onTap});
+  const GiftStatisticsItemWidget({
+    super.key,
+    required this.item,
+    this.onTap,
+    this.onGiftCountTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -71,12 +77,18 @@ class GiftStatisticsItemWidget extends StatelessWidget {
             ),
           ),
           // Gift Count Section
-          GiftWorthWidget(
-            amount: item.giftCount,
-            label: item.giftLabel,
-            iconSize: 22.icon,
-            amountFontSize: 16.font,
-            labelFontSize: 10.font,
+          GestureDetector(
+            onTap: () {
+              HapticFeedback.lightImpact();
+              onGiftCountTap?.call();
+            },
+            child: GiftWorthWidget(
+              amount: item.giftCount,
+              label: item.giftLabel,
+              iconSize: 22.icon,
+              amountFontSize: 16.font,
+              labelFontSize: 10.font,
+            ),
           ),
         ],
       ),

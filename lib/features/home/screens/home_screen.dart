@@ -202,7 +202,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       30.column,
                       RecentlyPlayedSection(items: _recentlyPlayed),
                       30.column,
-                      TrendingArtistsSection(artists: _trendingArtists),
+                      TrendingArtistsSection(artists: _trendingArtists, title: 'Trending artists', showLeadingIcon: true),
                       30.column,
                       // Category Tabs Section
                       CategoryTabsSection(

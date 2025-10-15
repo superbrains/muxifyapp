@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:muxify/core/constants/app_colors.dart';
 import 'package:muxify/core/constants/app_sizes.dart';
 import 'package:muxify/core/constants/app_text_styles.dart';
@@ -8,8 +9,14 @@ import 'package:muxify/shared/widgets/gift_worth_widget.dart';
 class TopGiverItemWidget extends StatelessWidget {
   final TopGiverItem item;
   final VoidCallback? onTap;
+  final VoidCallback? onGiftWorthTap;
 
-  const TopGiverItemWidget({super.key, required this.item, this.onTap});
+  const TopGiverItemWidget({
+    super.key,
+    required this.item,
+    this.onTap,
+    this.onGiftWorthTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -60,12 +67,18 @@ class TopGiverItemWidget extends StatelessWidget {
             ),
           ),
           // Gift Worth Section
-          GiftWorthWidget(
-            amount: item.giftWorth,
-            label: 'Gift Worth',
-            iconSize: 22.icon,
-            amountFontSize: 18.font,
-            labelFontSize: 12.font,
+          GestureDetector(
+            onTap: () {
+              HapticFeedback.lightImpact();
+              onGiftWorthTap?.call();
+            },
+            child: GiftWorthWidget(
+              amount: item.giftWorth,
+              label: 'Gift Worth',
+              iconSize: 22.icon,
+              amountFontSize: 18.font,
+              labelFontSize: 12.font,
+            ),
           ),
         ],
       ),

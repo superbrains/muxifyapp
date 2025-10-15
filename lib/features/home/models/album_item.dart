@@ -3,15 +3,15 @@ class AlbumItem {
   final String id;
   final String title;
   final String artist;
-  final String? imageUrl;
-  final String? description;
+  final String giftCount;
+  final String? albumArtUrl;
 
   AlbumItem({
     required this.id,
     required this.title,
     required this.artist,
-    this.imageUrl,
-    this.description,
+    required this.giftCount,
+    this.albumArtUrl,
   });
 
   // Factory constructor for creating from JSON (backend data)
@@ -20,8 +20,8 @@ class AlbumItem {
       id: json['id'] as String,
       title: json['title'] as String,
       artist: json['artist'] as String,
-      imageUrl: json['imageUrl'] as String?,
-      description: json['description'] as String?,
+      giftCount: json['giftCount'] as String,
+      albumArtUrl: json['albumArtUrl'] as String?,
     );
   }
 }

@@ -3,19 +3,19 @@ import 'package:flutter/services.dart';
 import 'package:muxify/core/constants/app_colors.dart';
 import 'package:muxify/core/constants/app_sizes.dart';
 import 'package:muxify/core/constants/app_text_styles.dart';
-import 'package:muxify/shared/widgets/unlock_button.dart';
-import 'package:muxify/features/featured_playlist/models/genre_song_item.dart';
+import 'package:muxify/features/home/models/album_item.dart';
+import 'package:muxify/shared/widgets/gift_worth_widget.dart';
 
-class GenreSongItemWidget extends StatelessWidget {
-  final GenreSongItem item;
+class AlbumItemWidget extends StatelessWidget {
+  final AlbumItem item;
   final VoidCallback? onTap;
-  final VoidCallback? onPlayUnlockTap;
+  final VoidCallback? onGiftCountTap;
 
-  const GenreSongItemWidget({
+  const AlbumItemWidget({
     super.key,
     required this.item,
     this.onTap,
-    this.onPlayUnlockTap,
+    this.onGiftCountTap,
   });
 
   @override
@@ -28,29 +28,26 @@ class GenreSongItemWidget extends StatelessWidget {
       child: Row(
         children: [
           // Album Art
-          Container(
-            width: 40.maxWidth,
-            height: 40.maxHeight,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(8.radius),
-            ),
+          SizedBox(
+            width: 61.maxWidth,
+            height: 61.maxHeight,
             child: ClipRRect(
               borderRadius: BorderRadius.circular(6.radius),
               child: Image.asset(
-                item.albumArtUrl,
+                item.albumArtUrl ?? 'assets/pngs/follows.png',
                 fit: BoxFit.cover,
                 width: double.infinity,
                 height: double.infinity,
               ),
             ),
           ),
-          16.row,
-          // Song Information
+          11.row,
+          // Album Information
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Song Title
+                // Album Title
                 Text(
                   item.title,
                   style: AppTextStyles.bodyMedium.copyWith(
@@ -61,7 +58,7 @@ class GenreSongItemWidget extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                4.column,
+                5.column,
                 // Artist Name
                 Text(
                   item.artist,
@@ -76,36 +73,22 @@ class GenreSongItemWidget extends StatelessWidget {
               ],
             ),
           ),
-          // Play/Unlock Button
-          _buildPlayUnlockButton(),
+          // Gift Count Section
+          GestureDetector(
+            onTap: () {
+              HapticFeedback.lightImpact();
+              onGiftCountTap?.call();
+            },
+            child: GiftWorthWidget(
+              amount: item.giftCount,
+              label: 'Received Gifts',
+              iconSize: 22.icon,
+              amountFontSize: 16.font,
+              labelFontSize: 10.font,
+            ),
+          ),
         ],
       ),
     );
-  }
-
-  Widget _buildPlayUnlockButton() {
-    if (item.isUnlocked) {
-      // Play Button
-      return UnlockButton(
-        padding: EdgeInsets.symmetric(
-          horizontal: 10.padding,
-          vertical: 6.padding,
-        ),
-        onTap: onPlayUnlockTap,
-        text: 'Play',
-        iconPath: 'assets/pngs/play_red.png',
-      );
-    } else {
-      // Unlock Button
-      return UnlockButton(
-        padding: EdgeInsets.symmetric(
-          horizontal: 6.padding,
-          vertical: 5.padding,
-        ),
-        onTap: onPlayUnlockTap,
-        text: 'Unlock',
-        iconPath: 'assets/pngs/Bitcoin_musixfy.png',
-      );
-    }
   }
 }

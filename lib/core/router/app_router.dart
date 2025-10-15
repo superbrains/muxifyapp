@@ -15,6 +15,11 @@ import 'package:muxify/features/auth/verify_email_for_password_reset_screen.dart
 import 'package:muxify/features/home/screens/home_screen.dart';
 import 'package:muxify/features/statistics/screens/statistics_screen.dart';
 import 'package:muxify/features/featured_playlist/screens/featured_playlist_screen.dart';
+import 'package:muxify/features/artist_profile/screens/artist_profile_screen.dart';
+import 'package:muxify/features/artist_profile/screens/new_release_screen.dart';
+import 'package:muxify/features/artist_profile/screens/albums_screen.dart';
+import 'package:muxify/features/artist_profile/screens/singles_screen.dart';
+import 'package:muxify/features/artist_profile/screens/album_details_screen.dart';
 
 class AppRouter {
   AppRouter._();
@@ -35,6 +40,11 @@ class AppRouter {
   static const String home = '/home';
   static const String statistics = '/statistics';
   static const String trending = '/trending';
+  static const String artistProfile = '/artist-profile';
+  static const String newRelease = '/new-release';
+  static const String albums = '/albums';
+  static const String singles = '/singles';
+  static const String albumDetails = '/album-details';
 
   static final GoRouter router = GoRouter(
     initialLocation: splash,
@@ -157,6 +167,38 @@ class AppRouter {
           key: state.pageKey,
           child: const FeaturedPlaylistScreen(),
         ),
+      ),
+      GoRoute(
+        path: artistProfile,
+        name: 'artist-profile',
+        pageBuilder: (context, state) => MaterialPage(
+          key: state.pageKey,
+          child: const ArtistProfileScreen(),
+        ),
+      ),
+      GoRoute(
+        path: newRelease,
+        name: 'new-release',
+        pageBuilder: (context, state) =>
+            MaterialPage(key: state.pageKey, child: const NewReleaseScreen()),
+      ),
+      GoRoute(
+        path: albums,
+        name: 'albums',
+        pageBuilder: (context, state) =>
+            MaterialPage(key: state.pageKey, child: const AlbumsScreen()),
+      ),
+      GoRoute(
+        path: singles,
+        name: 'singles',
+        pageBuilder: (context, state) =>
+            MaterialPage(key: state.pageKey, child: const SinglesScreen()),
+      ),
+      GoRoute(
+        path: albumDetails,
+        name: 'album-details',
+        pageBuilder: (context, state) =>
+            MaterialPage(key: state.pageKey, child: const AlbumDetailsScreen()),
       ),
     ],
     errorBuilder: (context, state) =>

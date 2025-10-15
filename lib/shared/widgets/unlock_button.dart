@@ -51,6 +51,10 @@ class UnlockButton extends StatelessWidget {
         decoration: BoxDecoration(
           color: backgroundColor ?? AppColors.text.withValues(alpha: 0.75),
           borderRadius: BorderRadius.circular(borderRadius ?? 20.radius),
+          // border: Border.all(
+          //   color: AppColors.text.withValues(alpha: 0.75),
+          //   width: 1.2.border,
+          // ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
