@@ -20,6 +20,8 @@ import 'package:muxify/features/artist_profile/screens/new_release_screen.dart';
 import 'package:muxify/features/artist_profile/screens/albums_screen.dart';
 import 'package:muxify/features/artist_profile/screens/singles_screen.dart';
 import 'package:muxify/features/artist_profile/screens/album_details_screen.dart';
+import 'package:muxify/features/music_player/screens/music_player_screen.dart';
+import 'package:muxify/features/music_player/screens/get_coins_screen.dart';
 
 class AppRouter {
   AppRouter._();
@@ -45,6 +47,8 @@ class AppRouter {
   static const String albums = '/albums';
   static const String singles = '/singles';
   static const String albumDetails = '/album-details';
+  static const String musicPlayer = '/music-player';
+  static const String getCoins = '/get-coins';
 
   static final GoRouter router = GoRouter(
     initialLocation: splash,
@@ -199,6 +203,18 @@ class AppRouter {
         name: 'album-details',
         pageBuilder: (context, state) =>
             MaterialPage(key: state.pageKey, child: const AlbumDetailsScreen()),
+      ),
+      GoRoute(
+        path: musicPlayer,
+        name: 'music-player',
+        pageBuilder: (context, state) =>
+            MaterialPage(key: state.pageKey, child: const MusicPlayerScreen()),
+      ),
+      GoRoute(
+        path: getCoins,
+        name: 'get-coins',
+        pageBuilder: (context, state) =>
+            MaterialPage(key: state.pageKey, child: const GetCoinsScreen()),
       ),
     ],
     errorBuilder: (context, state) =>

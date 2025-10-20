@@ -17,7 +17,9 @@ class UnlockButton extends StatelessWidget {
   final double? borderRadius;
   final double? iconSize;
   final double? spacing;
-
+  final double? fontSize;
+  final BoxBorder? border;
+  
   const UnlockButton({
     super.key,
     this.text = 'Unlock',
@@ -32,6 +34,8 @@ class UnlockButton extends StatelessWidget {
     this.borderRadius,
     this.iconSize,
     this.spacing,
+    this.fontSize,
+    this.border,
   });
 
   @override
@@ -51,10 +55,7 @@ class UnlockButton extends StatelessWidget {
         decoration: BoxDecoration(
           color: backgroundColor ?? AppColors.text.withValues(alpha: 0.75),
           borderRadius: BorderRadius.circular(borderRadius ?? 20.radius),
-          // border: Border.all(
-          //   color: AppColors.text.withValues(alpha: 0.75),
-          //   width: 1.2.border,
-          // ),
+          border: border,
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -69,7 +70,10 @@ class UnlockButton extends StatelessWidget {
               ),
               SizedBox(width: spacing ?? 4.padding),
             ],
-            Text(text, style: AppTextStyles.unlockButtonText),
+            Text(
+              text,
+              style: AppTextStyles.unlockButtonText.copyWith(color: textColor, fontSize: fontSize),
+            ),
           ],
         ),
       ),

@@ -5,6 +5,7 @@ class GiftItem {
   final String emojiImage;
   final String stickerText;
   final int count;
+  final double? amount;
 
   const GiftItem({
     required this.id,
@@ -13,6 +14,7 @@ class GiftItem {
     required this.emojiImage,
     required this.stickerText,
     required this.count,
+    this.amount,
   });
 
   @override

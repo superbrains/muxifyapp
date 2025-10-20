@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
 import 'package:muxify/core/constants/app_colors.dart';
 import 'package:muxify/core/constants/app_sizes.dart';
 import 'package:muxify/core/constants/app_text_styles.dart';
+import 'package:muxify/core/router/app_router.dart';
 import 'package:muxify/features/artist_profile/widgets/custom_app_bar_widget.dart';
 import 'package:muxify/features/featured_playlist/models/genre_song_item.dart';
 import 'package:muxify/features/artist_profile/widgets/songs_list_widget.dart';
@@ -87,7 +89,8 @@ class _AlbumDetailsScreenState extends State<AlbumDetailsScreen> {
                 songs: _songs,
                 onSongTap: (song) {
                   HapticFeedback.lightImpact();
-                  // Navigate to song details
+                  // Navigate to music player
+                  context.push(AppRouter.musicPlayer);
                 },
                 onPlayUnlockTap: (song) {
                   setState(() {

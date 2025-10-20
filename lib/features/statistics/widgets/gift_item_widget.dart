@@ -84,6 +84,26 @@ class GiftItemWidget extends StatelessWidget {
           //     vertical: 6.padding,
           //   ),
           // ),
+          3.column,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Image.asset(
+                'assets/pngs/Bitcoin_musixfy.png',
+                width: 12.icon,
+                height: 12.icon,
+              ),
+              8.row,
+              Text(
+                "m${item.amount?.toString()}",
+              style: AppTextStyles.bodySmall.copyWith(
+                fontSize: 8.font,
+                fontWeight: FontWeight.w500,
+                color: AppColors.text,
+              ),
+              ),
+            ],
+          ),
         ],
       ),
     );

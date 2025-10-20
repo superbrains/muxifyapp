@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:muxify/core/constants/app_colors.dart';
 import 'package:muxify/core/constants/app_sizes.dart';
+import 'package:muxify/shared/widgets/circular_icon_button.dart';
+
+/// Reusable CircularIconButton widget for any icon in a circular container.
 
 class TopIconsWidget extends StatelessWidget {
   final VoidCallback onBackTap;
@@ -27,74 +28,22 @@ class TopIconsWidget extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // Back button
-            GestureDetector(
-              onTap: () {
-                HapticFeedback.lightImpact();
-                onBackTap();
-              },
-              child: Container(
-                padding: EdgeInsets.all(11.padding),
-                width: 44.maxWidth,
-                height: 44.maxHeight,
-                decoration: BoxDecoration(
-                  color: AppColors.text.withValues(alpha: 0.16),
-                  shape: BoxShape.circle,
-                ),
-                child: Center(
-                  child: Icon(
-                    Icons.arrow_back_ios,
-                    color: AppColors.text,
-                    size: 22.icon,
-                  ),
-                ),
-              ),
+            // Use the reusable CircularIconButton for back
+            CircularIconButton(
+              onTap: onBackTap,
+              icon: Icons.arrow_back_ios,
             ),
-            // Comment and Menu icons
+            // Search and Menu icons
             Row(
               children: [
-                GestureDetector(
-                  onTap: () {
-                    HapticFeedback.lightImpact();
-                    onSearchTap();
-                  },
-                  child: Container(
-                    padding: EdgeInsets.all(11.padding),
-                    width: 44.maxWidth,
-                    height: 44.maxHeight,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: AppColors.text.withValues(alpha: 0.16),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.search_rounded,
-                      color: AppColors.text,
-                      size: 22.icon,
-                    ),
-                  ),
+                CircularIconButton(
+                  onTap: onSearchTap,
+                  icon: Icons.search_rounded,
                 ),
                 15.row,
-                GestureDetector(
-                  onTap: () {
-                    HapticFeedback.lightImpact();
-                    onMenuTap();
-                  },
-                  child: Container(
-                    padding: EdgeInsets.all(11.padding),
-                    width: 44.maxWidth,
-                    height: 44.maxHeight,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: AppColors.text.withValues(alpha: 0.16),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.more_vert,
-                      color: AppColors.text,
-                      size: 22.icon,
-                    ),
-                  ),
+                CircularIconButton(
+                  onTap: onMenuTap,
+                  icon: Icons.more_vert,
                 ),
               ],
             ),

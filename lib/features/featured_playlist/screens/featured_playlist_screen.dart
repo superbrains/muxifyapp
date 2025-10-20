@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:muxify/core/constants/app_colors.dart';
 import 'package:muxify/core/constants/app_sizes.dart';
+import 'package:muxify/core/router/app_router.dart';
 import 'package:muxify/features/featured_playlist/models/genre_song_item.dart';
 import 'package:muxify/shared/widgets/genre_song_item_widget.dart';
 import 'package:muxify/shared/widgets/content_header.dart';
@@ -32,7 +34,7 @@ class _FeaturedPlaylistScreenState extends State<FeaturedPlaylistScreen> {
     CategoryTab(id: 'new_release', title: 'New Release', icon: Icons.fiber_new),
   ];
 
-  // Sample data 
+  // Sample data
   final List<GenreSongItem> _genreSongs = [
     GenreSongItem(
       id: '1',
@@ -122,7 +124,7 @@ class _FeaturedPlaylistScreenState extends State<FeaturedPlaylistScreen> {
             },
             text: 'Play All',
             iconPath: 'assets/pngs/shuffle.png',
-            backgroundColor: AppColors.toggleSelected, 
+            backgroundColor: AppColors.toggleSelected,
             iconColor: AppColors.buttonColor,
             iconSize: 20.icon,
             spacing: 8.padding,
@@ -155,14 +157,18 @@ class _FeaturedPlaylistScreenState extends State<FeaturedPlaylistScreen> {
       itemBuilder: (context, index) {
         return GenreSongItemWidget(
           item: _genreSongs[index],
-          onTap: () {},
+          onTap: () {
+            // Navigate to music player when song is tapped
+            context.push(AppRouter.musicPlayer);
+          },
           onPlayUnlockTap: () {
-            setState(() {
-              // Toggle play/unlock state
-              _genreSongs[index] = _genreSongs[index].copyWith(
-                isUnlocked: !_genreSongs[index].isUnlocked,
-              );
-            });
+            if (_genreSongs[index].isUnlocked) {
+              // If unlocked, navigate to music player
+              context.push(AppRouter.musicPlayer);
+            } else {
+              // If locked, show unlock modal
+              _showUnlockModal(_genreSongs[index]);
+            }
           },
         );
       },
@@ -191,11 +197,51 @@ class _FeaturedPlaylistScreenState extends State<FeaturedPlaylistScreen> {
       builder: (BuildContext context) {
         return UnlockAllSongsModal(
           onClose: () {
+            Navigator.of(context).pop();
           },
           onUnlockPremium: () {
-           
+            Navigator.of(context).pop();
+            // Handle premium unlock
           },
           onUnlockFree: () {
+            Navigator.of(context).pop();
+            // Handle free unlock
+          },
+        );
+      },
+    );
+  }
+
+  void _showUnlockModal(GenreSongItem song) {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (BuildContext context) {
+        return UnlockAllSongsModal(
+          onClose: () {
+            Navigator.of(context).pop();
+          },
+          onUnlockPremium: () {
+            Navigator.of(context).pop();
+            setState(() {
+              final index = _genreSongs.indexOf(song);
+              if (index != -1) {
+                _genreSongs[index] = _genreSongs[index].copyWith(
+                  isUnlocked: true,
+                );
+              }
+            });
+          },
+          onUnlockFree: () {
+            Navigator.of(context).pop();
+            setState(() {
+              final index = _genreSongs.indexOf(song);
+              if (index != -1) {
+                _genreSongs[index] = _genreSongs[index].copyWith(
+                  isUnlocked: true,
+                );
+              }
+            });
           },
         );
       },
