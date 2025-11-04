@@ -19,6 +19,7 @@ class GridVideoCard extends StatelessWidget {
         onTap?.call();
       },
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           ClipRRect(
@@ -30,7 +31,7 @@ class GridVideoCard extends StatelessWidget {
               fit: BoxFit.cover,
             ),
           ),
-          9.column,
+          5.column,
           Text(
             item.title,
             style: AppTextStyles.bodyMedium.copyWith(
@@ -40,7 +41,7 @@ class GridVideoCard extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
-          4.column,
+          2.column,
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.center,

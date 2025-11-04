@@ -57,6 +57,7 @@ class _VideoFollowedCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox(
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           ClipRRect(
@@ -68,7 +69,7 @@ class _VideoFollowedCard extends StatelessWidget {
               fit: BoxFit.cover,
             ),
           ),
-          9.column,
+          5.column,
           Text(
             item.title,
             style: AppTextStyles.bodyMedium.copyWith(
@@ -79,7 +80,7 @@ class _VideoFollowedCard extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
-          6.column,
+          2.column,
           Row(
             children: [
               CircleAvatar(
@@ -106,4 +107,3 @@ class _VideoFollowedCard extends StatelessWidget {
     );
   }
 }
-

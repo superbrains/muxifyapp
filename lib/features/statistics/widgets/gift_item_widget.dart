@@ -58,7 +58,7 @@ class GiftItemWidget extends StatelessWidget {
               ),
             ],
           ),
-          15.column,
+          13.column,
           // Gift name
           Text(
             item.name,
@@ -84,7 +84,7 @@ class GiftItemWidget extends StatelessWidget {
           //     vertical: 6.padding,
           //   ),
           // ),
-          3.column,
+          2.column,
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -96,11 +96,11 @@ class GiftItemWidget extends StatelessWidget {
               8.row,
               Text(
                 "m${item.amount?.toString()}",
-              style: AppTextStyles.bodySmall.copyWith(
-                fontSize: 8.font,
-                fontWeight: FontWeight.w500,
-                color: AppColors.text,
-              ),
+                style: AppTextStyles.bodySmall.copyWith(
+                  fontSize: 8.font,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.text,
+                ),
               ),
             ],
           ),
