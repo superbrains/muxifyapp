@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
 import 'package:muxify/core/constants/app_colors.dart';
 import 'package:muxify/core/constants/app_sizes.dart';
 import 'package:muxify/core/constants/app_text_styles.dart';
+import 'package:muxify/core/router/app_router.dart';
 import 'package:muxify/features/home/models/tab_option.dart';
 import 'package:muxify/features/home/widgets/tab_option_button.dart';
 
@@ -68,7 +70,7 @@ class HomeHeader extends StatelessWidget {
                   ],
                 ),
                 const Spacer(),
-                _buildHeaderIcons(),
+                _buildHeaderIcons(context),
               ],
             ),
           ),
@@ -105,7 +107,7 @@ class HomeHeader extends StatelessWidget {
     );
   }
 
-  Widget _buildHeaderIcons() {
+  Widget _buildHeaderIcons(BuildContext context) {
     return Row(
       children: [
         GestureDetector(
@@ -135,6 +137,8 @@ class HomeHeader extends StatelessWidget {
         GestureDetector(
           onTap: () {
             HapticFeedback.lightImpact();
+            // Navigate to fan profile screen using GoRouter
+            context.push(AppRouter.fanProfile);
           },
           child: ClipOval(
             child: Image.asset(

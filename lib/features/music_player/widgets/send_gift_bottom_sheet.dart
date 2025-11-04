@@ -71,13 +71,13 @@ class SendGiftBottomSheet extends StatelessWidget {
               HapticFeedback.lightImpact();
               onClose();
             },
-            child: Icon(Icons.arrow_back, color: Colors.white, size: 30.icon),
+            child: Icon(Icons.arrow_back, color: AppColors.text, size: 30.icon),
           ),
           Expanded(
             child: Text(
               'Send Gifts',
               style: AppTextStyles.heading2.copyWith(
-                color: Colors.white,
+                color: AppColors.text,
                 fontSize: 20.font,
                 fontWeight: FontWeight.w600,
               ),
@@ -197,7 +197,7 @@ class SendGiftBottomSheet extends StatelessWidget {
       child: Text(
         'You don\'t have enough coins gift this item',
         style: AppTextStyles.bodyMedium.copyWith(
-          color: Colors.white,
+          color: AppColors.text,
           fontSize: 14.font,
           fontWeight: FontWeight.w400,
         ),
@@ -215,7 +215,7 @@ class SendGiftBottomSheet extends StatelessWidget {
           Text(
             'Terms of Gifting',
             style: AppTextStyles.heading2.copyWith(
-              color: Colors.white,
+              color: AppColors.text,
               fontSize: 12.font,
               fontWeight: FontWeight.w400,
             ),
@@ -226,7 +226,7 @@ class SendGiftBottomSheet extends StatelessWidget {
           Text(
             'By clicking Gifts, you coins equivalent to this user, this will be deducted from your coin balance. Lorem ipsum dolor sit amet consectetur. Purus odio ultrices eleifend mollis eu duis vel sed.',
             style: AppTextStyles.bodySmall.copyWith(
-              color: Colors.white.withValues(alpha: 0.6),
+              color: AppColors.text.withValues(alpha: 0.6),
               fontSize: 10.font,
               height: 1.4,
             ),
@@ -308,7 +308,7 @@ class SendGiftBottomSheet extends StatelessWidget {
             Text(
               'Get Coins',
               style: AppTextStyles.bodyLarge.copyWith(
-                color: Colors.white,
+                color: AppColors.text,
                 fontSize: 18.font,
                 fontWeight: FontWeight.w400,
               ),

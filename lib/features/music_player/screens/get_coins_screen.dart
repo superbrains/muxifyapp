@@ -3,10 +3,10 @@ import 'package:muxify/core/constants/app_colors.dart';
 import 'package:muxify/core/constants/app_sizes.dart';
 import 'package:muxify/features/music_player/widgets/get_coins_header.dart';
 import 'package:muxify/features/music_player/widgets/coin_balance_section.dart';
-import 'package:muxify/features/music_player/widgets/buy_coin_header.dart';
+import 'package:muxify/shared/widgets/buy_coin_header.dart';
 import 'package:muxify/features/music_player/widgets/coin_package_card.dart';
-import 'package:muxify/features/music_player/widgets/large_coin_package_card.dart';
-import 'package:muxify/features/music_player/widgets/buy_coin_button.dart';
+import 'package:muxify/shared/widgets/large_coin_package_card.dart';
+import 'package:muxify/shared/widgets/buy_coin_button.dart';
 
 class GetCoinsScreen extends StatefulWidget {
   const GetCoinsScreen({super.key});

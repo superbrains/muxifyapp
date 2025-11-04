@@ -4,14 +4,17 @@ import 'package:muxify/core/constants/app_sizes.dart';
 import 'package:muxify/core/constants/app_text_styles.dart';
 
 class BuyCoinHeader extends StatelessWidget {
-  const BuyCoinHeader({super.key});
+
+  final String? title;
+  final String? subtitle;
+  const BuyCoinHeader({super.key, this.title, this.subtitle});
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
         Text(
-          'Buy Coin',
+          title ?? 'Buy Coin',
           style: AppTextStyles.heading2.copyWith(
             color: AppColors.text,
             fontSize: 16.font,
@@ -22,7 +25,7 @@ class BuyCoinHeader extends StatelessWidget {
         3.column,
 
         Text(
-          'Choose how much coin to buy',
+          subtitle ?? 'Choose how much coin to buy',
           style: AppTextStyles.bodySmall.copyWith(
             color: AppColors.text,
             fontSize: 14.font,

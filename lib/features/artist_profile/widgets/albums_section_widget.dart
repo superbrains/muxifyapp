@@ -9,12 +9,14 @@ class AlbumsSectionWidget extends StatelessWidget {
   final List<AlbumItem> albums;
   final VoidCallback onTap;
   final VoidCallback onGiftCountTap;
+  final String? mediaType;
 
   const AlbumsSectionWidget({
     super.key,
     required this.albums,
     required this.onTap,
     required this.onGiftCountTap,
+    this.mediaType,
   });
 
   @override
@@ -40,7 +42,7 @@ class AlbumsSectionWidget extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Most Played',
+                    mediaType == 'Videos' ? 'Most Played' : 'Most Played',
                     style: AppTextStyles.bodyLarge.copyWith(
                       fontSize: 21.font,
                       fontWeight: FontWeight.bold,

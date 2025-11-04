@@ -10,6 +10,8 @@ class GlassButtonWidget extends StatelessWidget {
   final double? width;
   final double? height;
   final bool showGiftIcon;
+  final Color? backgroundColor;
+  final Color? iconColor;
 
   const GlassButtonWidget({
     super.key,
@@ -18,6 +20,8 @@ class GlassButtonWidget extends StatelessWidget {
     this.width,
     this.height,
     this.showGiftIcon = false,
+    this.backgroundColor,
+    this.iconColor,
   });
 
   @override
@@ -32,7 +36,7 @@ class GlassButtonWidget extends StatelessWidget {
         height: height ?? 52.maxHeight,
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: AppColors.text.withValues(alpha: 0.1),
+          color: backgroundColor ?? AppColors.text.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(35.radius),
         ),
         child: Row(
@@ -43,6 +47,7 @@ class GlassButtonWidget extends StatelessWidget {
                 'assets/pngs/gift.png',
                 width: 28.icon,
                 height: 28.icon,
+                color: iconColor ?? AppColors.buttonColor,
               ),
               4.row,
             ],

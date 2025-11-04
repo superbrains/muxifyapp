@@ -8,8 +8,14 @@ import 'package:muxify/features/home/models/trending_artist.dart';
 class TrendingArtistCard extends StatelessWidget {
   final TrendingArtist artist;
   final VoidCallback? onTap;
+  final String? mediaType;
 
-  const TrendingArtistCard({super.key, required this.artist, this.onTap});
+  const TrendingArtistCard({
+    super.key,
+    required this.artist,
+    this.onTap,
+    this.mediaType,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -57,7 +63,9 @@ class TrendingArtistCard extends StatelessWidget {
                     top: 0,
                     right: 0,
                     child: Image.asset(
-                      'assets/pngs/verify.png',
+                      mediaType == 'Videos'
+                          ? 'assets/pngs/verify_green.png'
+                          : 'assets/pngs/verify.png',
                       width: 24.icon,
                       height: 24.icon,
                     ),

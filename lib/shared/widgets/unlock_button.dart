@@ -19,7 +19,7 @@ class UnlockButton extends StatelessWidget {
   final double? spacing;
   final double? fontSize;
   final BoxBorder? border;
-  
+
   const UnlockButton({
     super.key,
     this.text = 'Unlock',
@@ -72,7 +72,10 @@ class UnlockButton extends StatelessWidget {
             ],
             Text(
               text,
-              style: AppTextStyles.unlockButtonText.copyWith(color: textColor, fontSize: fontSize),
+              style: AppTextStyles.unlockButtonText.copyWith(
+                color: textColor,
+                fontSize: fontSize,
+              ),
             ),
           ],
         ),

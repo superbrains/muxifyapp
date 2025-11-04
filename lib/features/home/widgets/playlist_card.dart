@@ -5,6 +5,7 @@ import 'package:muxify/core/constants/app_sizes.dart';
 import 'package:muxify/core/constants/app_text_styles.dart';
 import 'package:muxify/features/home/models/playlist_item.dart';
 import 'package:muxify/features/home/widgets/playlist_track_item.dart';
+import 'package:muxify/features/home/widgets/see_all_button.dart';
 
 class PlaylistCard extends StatelessWidget {
   final PlaylistItem playlist;
@@ -225,36 +226,7 @@ class PlaylistCard extends StatelessWidget {
                 // See All Button
                 Align(
                   alignment: Alignment.bottomRight,
-                  child: GestureDetector(
-                    onTap: () {
-                      HapticFeedback.lightImpact();
-                      onSeeAllTap?.call();
-                    },
-                    child: Container(
-                      margin: EdgeInsets.only(
-                        right: 16.padding,
-                        // bottom: 16.padding,
-                      ),
-                      alignment: Alignment.center,
-                      width: 64.maxWidth,
-                      height: 30.buttonHeight,
-                      // padding: EdgeInsets.symmetric(vertical: 12.padding),
-                      decoration: BoxDecoration(
-                        color: AppColors.text.withValues(alpha: 0.75),
-                        borderRadius: BorderRadius.circular(25.radius),
-                      ),
-                      child: Text(
-                        'See All',
-                        textAlign: TextAlign.center,
-                        style: AppTextStyles.bodyMedium.copyWith(
-                          fontWeight: FontWeight.w600,
-
-                          fontSize: 12.font,
-                          color: AppColors.background,
-                        ),
-                      ),
-                    ),
-                  ),
+                  child: SeeAllButton(onTap: onSeeAllTap),
                 ),
                 16.column,
               ],
@@ -265,3 +237,4 @@ class PlaylistCard extends StatelessWidget {
     );
   }
 }
+

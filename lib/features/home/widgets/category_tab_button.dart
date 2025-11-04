@@ -7,6 +7,10 @@ import 'package:muxify/core/constants/app_text_styles.dart';
 class CategoryTabButton extends StatelessWidget {
   final String title;
   final IconData icon;
+  final double? width;
+  final double? height;
+  final double? paddingHorizontal;
+  final double? paddingVertical;
   final bool isSelected;
   final VoidCallback onTap;
 
@@ -14,6 +18,10 @@ class CategoryTabButton extends StatelessWidget {
     super.key,
     required this.title,
     required this.icon,
+    this.width,
+    this.height,
+    this.paddingHorizontal,
+    this.paddingVertical,
     required this.isSelected,
     required this.onTap,
   });
@@ -26,10 +34,12 @@ class CategoryTabButton extends StatelessWidget {
         onTap();
       },
       child: AnimatedContainer(
+        height: height,
+        width: width,
         duration: const Duration(milliseconds: 200),
         padding: EdgeInsets.symmetric(
-          horizontal: 16.padding,
-          vertical: 8.padding,
+          horizontal: paddingHorizontal ?? 16.padding,
+          vertical: paddingVertical ?? 8.padding,
         ),
         decoration: BoxDecoration(
           color: isSelected ? AppColors.glassyDark : Colors.transparent,

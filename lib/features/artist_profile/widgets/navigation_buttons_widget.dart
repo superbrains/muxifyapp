@@ -7,10 +7,37 @@ import 'package:muxify/core/constants/app_text_styles.dart';
 import 'package:muxify/core/router/app_router.dart';
 
 class NavigationButtonsWidget extends StatelessWidget {
-  const NavigationButtonsWidget({super.key});
+  final String? mediaType;
+
+  const NavigationButtonsWidget({super.key, this.mediaType});
 
   @override
   Widget build(BuildContext context) {
+    // Show video buttons when mediaType is "Videos"
+    if (mediaType == 'Videos') {
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        spacing: 15.padding,
+        children: [
+          Expanded(
+            child: _buildNavButton(
+              'New Release',
+              'assets/pngs/new_release.png',
+              () {
+                context.push('${AppRouter.newRelease}?mediaType=Videos');
+              },
+            ),
+          ),
+          Expanded(
+            child: _buildNavButton('All Videos', 'assets/pngs/singles.png', () {
+              context.push(AppRouter.allVideos);
+            }),
+          ),
+        ],
+      );
+    }
+
+    // Default music buttons
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [

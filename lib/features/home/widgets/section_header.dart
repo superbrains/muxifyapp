@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:muxify/core/constants/app_colors.dart';
 import 'package:muxify/core/constants/app_sizes.dart';
 import 'package:muxify/core/constants/app_text_styles.dart';
 
@@ -39,8 +40,9 @@ class SectionHeader extends StatelessWidget {
               child: Text(
                 'See All',
                 style: AppTextStyles.bodyMedium.copyWith(
-                  color: Colors.white.withValues(alpha: 0.7),
-                  fontSize: 14.font,
+                  color: AppColors.text,
+                  fontSize: 16.font,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
             ),

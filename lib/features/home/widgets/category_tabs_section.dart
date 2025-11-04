@@ -7,12 +7,20 @@ class CategoryTabsSection extends StatelessWidget {
   final List<CategoryTab> categories;
   final String selectedCategoryId;
   final Function(String) onCategoryChanged;
+  final double? width;
+  final double? height;
+  final double? paddingHorizontal;
+  final double? paddingVertical;
 
   const CategoryTabsSection({
     super.key,
     required this.categories,
     required this.selectedCategoryId,
     required this.onCategoryChanged,
+    this.width,
+    this.height,
+    this.paddingHorizontal,
+    this.paddingVertical,
   });
 
   @override
@@ -28,6 +36,10 @@ class CategoryTabsSection extends StatelessWidget {
             children: [
               if (index > 0) 12.row,
               CategoryTabButton(
+                width: width,
+                height: height,
+                paddingHorizontal: paddingHorizontal,
+                paddingVertical: paddingVertical,
                 title: category.title,
                 icon: category.icon,
                 isSelected: selectedCategoryId == category.id,

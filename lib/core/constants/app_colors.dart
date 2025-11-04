@@ -29,6 +29,7 @@ class AppColors {
   static const Color cautionIcon = Color(0xFFA7A7A7);
   static const Color artistProfileBackground = Color(0xFF141414);
 
+
   // Artist Profile colors
   static const Color artistProfilePurple = Color(0xFF8D4CA8);
   static const Color artistProfilePurpleLight = Color(0xFF8C4BA7);

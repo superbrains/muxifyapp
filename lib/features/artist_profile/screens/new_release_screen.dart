@@ -9,7 +9,9 @@ import 'package:muxify/features/artist_profile/widgets/search_container_widget.d
 import 'package:muxify/shared/widgets/unlock_all_songs_modal.dart';
 
 class NewReleaseScreen extends StatefulWidget {
-  const NewReleaseScreen({super.key});
+  final String? mediaType;
+
+  const NewReleaseScreen({super.key, this.mediaType});
 
   @override
   State<NewReleaseScreen> createState() => _NewReleaseScreenState();
@@ -18,8 +20,8 @@ class NewReleaseScreen extends StatefulWidget {
 class _NewReleaseScreenState extends State<NewReleaseScreen> {
   final TextEditingController _searchController = TextEditingController();
 
-  // Sample data for new releases
-  final List<NewReleaseItem> _releases = [
+  // Music releases data
+  final List<NewReleaseItem> _musicReleases = [
     NewReleaseItem(
       id: '1',
       title: 'Boy Alone',
@@ -63,6 +65,56 @@ class _NewReleaseScreenState extends State<NewReleaseScreen> {
       isUnlocked: false,
     ),
   ];
+
+  // Video releases data
+  final List<NewReleaseItem> _videoReleases = [
+    NewReleaseItem(
+      id: 'v1',
+      title: 'But Why Sabinus',
+      artist: 'Mr Funny',
+      coverImageUrl: 'assets/pngs/sabinus.png',
+      isUnlocked: false,
+    ),
+    NewReleaseItem(
+      id: 'v2',
+      title: 'But Why Sabinus',
+      artist: 'Mr Funny',
+      coverImageUrl: 'assets/pngs/sabinus.png',
+      isUnlocked: false,
+    ),
+    NewReleaseItem(
+      id: 'v3',
+      title: 'But Why Sabinus',
+      artist: 'Mr Funny',
+      coverImageUrl: 'assets/pngs/sabinus.png',
+      isUnlocked: true,
+    ),
+    NewReleaseItem(
+      id: 'v4',
+      title: 'But Why Sabinus',
+      artist: 'Mr Funny',
+      coverImageUrl: 'assets/pngs/sabinus.png',
+      isUnlocked: true,
+    ),
+    NewReleaseItem(
+      id: 'v5',
+      title: 'But Why Sabinus',
+      artist: 'Mr Funny',
+      coverImageUrl: 'assets/pngs/sabinus.png',
+      isUnlocked: false,
+    ),
+    NewReleaseItem(
+      id: 'v6',
+      title: 'But Why Sabinus',
+      artist: 'Mr Funny',
+      coverImageUrl: 'assets/pngs/sabinus.png',
+      isUnlocked: true,
+    ),
+  ];
+
+  List<NewReleaseItem> get _releases {
+    return widget.mediaType == 'Videos' ? _videoReleases : _musicReleases;
+  }
 
   @override
   void dispose() {
@@ -128,13 +180,19 @@ class _NewReleaseScreenState extends State<NewReleaseScreen> {
           onUnlockPremium: () {
             Navigator.of(context).pop();
             setState(() {
-              release.isUnlocked = true;
+              final index = _releases.indexOf(release);
+              if (index != -1) {
+                _releases[index] = _releases[index].copyWith(isUnlocked: true);
+              }
             });
           },
           onUnlockFree: () {
             Navigator.of(context).pop();
             setState(() {
-              release.isUnlocked = true;
+              final index = _releases.indexOf(release);
+              if (index != -1) {
+                _releases[index] = _releases[index].copyWith(isUnlocked: true);
+              }
             });
           },
         );

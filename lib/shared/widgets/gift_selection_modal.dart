@@ -113,11 +113,11 @@ class GiftSelectionModal extends StatelessWidget {
                   scrollDirection: Axis.vertical,
                   padding: EdgeInsets.only(bottom: 42.padding),
                   // physics: const NeverScrollableScrollPhysics(),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 4,
                     crossAxisSpacing: 12,
                     mainAxisSpacing: 16,
-                    childAspectRatio: 0.6,
+                    childAspectRatio: 0.65.maxHeight,
                   ),
                   itemCount: giftItems.length,
                   itemBuilder: (context, index) {

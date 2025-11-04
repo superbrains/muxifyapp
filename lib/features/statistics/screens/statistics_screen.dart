@@ -17,7 +17,9 @@ import 'package:muxify/shared/widgets/gift_selection_modal.dart';
 import 'package:muxify/features/home/models/category_tab.dart';
 
 class StatisticsScreen extends StatefulWidget {
-  const StatisticsScreen({super.key});
+  final String? initialMediaType;
+
+  const StatisticsScreen({super.key, this.initialMediaType});
 
   @override
   State<StatisticsScreen> createState() => _StatisticsScreenState();
@@ -26,6 +28,14 @@ class StatisticsScreen extends StatefulWidget {
 class _StatisticsScreenState extends State<StatisticsScreen> {
   String _selectedTab = 'most_gifted';
   String _selectedMediaType = 'Music';
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialMediaType != null) {
+      _selectedMediaType = widget.initialMediaType!;
+    }
+  }
 
   // Badge images
   static const List<String> _badgeImages = [
@@ -61,6 +71,45 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     ),
     CategoryTab(id: 'top_giver', title: 'Top Giver', icon: Icons.emoji_events),
     CategoryTab(id: 'most_given', title: 'Most Given', icon: Icons.favorite),
+  ];
+
+  // Video-specific data
+  final List<GiftStatisticsItem> _videoMostGiftedItems = [
+    GiftStatisticsItem(
+      id: '1',
+      title: 'My Crazy Chef',
+      artist: 'Nasboi',
+      giftCount: '156,000',
+      albumArtUrl: 'assets/pngs/kiki.png',
+    ),
+    GiftStatisticsItem(
+      id: '2',
+      title: 'Bad Girl (Official Music Video)',
+      artist: 'Wizkid',
+      giftCount: '156,000',
+      albumArtUrl: 'assets/pngs/video_spotlight.png',
+    ),
+    GiftStatisticsItem(
+      id: '3',
+      title: 'Skelebu (Official Music Videos)',
+      artist: 'Rema',
+      giftCount: '156,000',
+      albumArtUrl: 'assets/pngs/kiki.png',
+    ),
+    GiftStatisticsItem(
+      id: '4',
+      title: 'Oga Sabinus and Food',
+      artist: 'Mr Funny',
+      giftCount: '156,000',
+      albumArtUrl: 'assets/pngs/sabinus.png',
+    ),
+    GiftStatisticsItem(
+      id: '5',
+      title: 'Food & Karate',
+      artist: 'KieKie',
+      giftCount: '156,000',
+      albumArtUrl: 'assets/pngs/latest_release.png',
+    ),
   ];
 
   // Sample data - replace with backend data
@@ -435,17 +484,22 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   }
 
   Widget _buildStatisticsList() {
+    // Use video-specific data when media type is Videos
+    final mostGiftedItems = _selectedMediaType == 'Videos'
+        ? _videoMostGiftedItems
+        : _mostGiftedItems;
+
     switch (_selectedTab) {
       case 'most_gifted':
         return ListView.separated(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          itemCount: _mostGiftedItems.length,
+          itemCount: mostGiftedItems.length,
           padding: EdgeInsets.only(top: 35.padding),
           separatorBuilder: (context, index) => 25.column,
           itemBuilder: (context, index) {
             return GiftStatisticsItemWidget(
-              item: _mostGiftedItems[index],
+              item: mostGiftedItems[index],
               onTap: () {},
               onGiftCountTap: () {
                 _showGiftSelectionModal();
@@ -495,12 +549,12 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         return ListView.separated(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          itemCount: _mostGiftedItems.length,
+          itemCount: mostGiftedItems.length,
           padding: EdgeInsets.only(top: 35.padding),
           separatorBuilder: (context, index) => 25.column,
           itemBuilder: (context, index) {
             return GiftStatisticsItemWidget(
-              item: _mostGiftedItems[index],
+              item: mostGiftedItems[index],
               onTap: () {},
               onGiftCountTap: () {
                 _showGiftSelectionModal();

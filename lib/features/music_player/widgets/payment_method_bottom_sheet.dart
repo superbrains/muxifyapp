@@ -110,7 +110,7 @@ class PaymentMethodBottomSheet extends StatelessWidget {
           crossAxisCount: 3,
           crossAxisSpacing: 24,
           mainAxisSpacing: 23,
-          childAspectRatio: 0.85,
+          childAspectRatio: 0.8,
         ),
         itemCount: paymentMethods.length,
         itemBuilder: (context, index) {

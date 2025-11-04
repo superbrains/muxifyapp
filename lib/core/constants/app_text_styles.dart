@@ -55,6 +55,12 @@ class AppTextStyles {
     fontSize: 12.0,
     color: AppColors.background,
   );
+  static  TextStyle trendingText = TextStyle(
+    fontFamily: _inter,
+    fontWeight: FontWeight.w700,
+    fontSize: 20.0,
+    color: AppColors.text.withValues(alpha: 0.75),
+  );
 
   static const TextStyle specialText = TextStyle(
     fontFamily: _poppins,

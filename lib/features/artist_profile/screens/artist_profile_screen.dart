@@ -5,7 +5,7 @@ import 'package:muxify/core/constants/app_sizes.dart';
 import 'package:muxify/core/constants/app_text_styles.dart';
 import 'package:muxify/features/artist_profile/models/artist_profile.dart';
 import 'package:muxify/features/artist_profile/widgets/albums_section_widget.dart';
-import 'package:muxify/features/artist_profile/widgets/glass_button_widget.dart';
+import 'package:muxify/shared/widgets/glass_button_widget.dart';
 import 'package:muxify/features/artist_profile/widgets/latest_release_banner_widget.dart';
 import 'package:muxify/features/artist_profile/widgets/navigation_buttons_widget.dart';
 import 'package:muxify/features/artist_profile/widgets/play_button_widget.dart';
@@ -17,7 +17,20 @@ import 'package:muxify/features/home/models/trending_artist.dart';
 import 'package:muxify/features/home/widgets/trending_artists_section.dart';
 
 class ArtistProfileScreen extends StatefulWidget {
-  const ArtistProfileScreen({super.key});
+  final String? artistId;
+  final String? artistName;
+  final String? coverImageUrl;
+  final String? followers;
+  final String? mediaType;
+
+  const ArtistProfileScreen({
+    super.key,
+    this.artistId,
+    this.artistName,
+    this.coverImageUrl,
+    this.followers,
+    this.mediaType,
+  });
 
   @override
   State<ArtistProfileScreen> createState() => _ArtistProfileScreenState();
@@ -48,6 +61,32 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen> {
       albumArtUrl: 'assets/pngs/follows.png',
     ),
   ];
+
+  // Video-specific album items (Most Played)
+  final List<AlbumItem> _videoAlbumItems = [
+    AlbumItem(
+      id: 'vollen1',
+      title: 'Excuse me Miss',
+      artist: 'Mr Funny',
+      giftCount: '156,000',
+      albumArtUrl: 'assets/pngs/artist_profile_video.png',
+    ),
+    AlbumItem(
+      id: 'vollen2',
+      title: 'But Why Sabinus',
+      artist: 'Mr Funny',
+      giftCount: '156,000',
+      albumArtUrl: 'assets/pngs/video_spotlight.png',
+    ),
+    AlbumItem(
+      id: 'vollen3',
+      title: 'Pastor Sabinus',
+      artist: 'Mr Funny',
+      giftCount: '156,000',
+      albumArtUrl: 'assets/pngs/sabinus.png',
+    ),
+  ];
+
   // Sample data
   final List<GenreSongItem> _genreSongs = [
     GenreSongItem(
@@ -86,6 +125,46 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen> {
       isUnlocked: true,
     ),
   ];
+
+  // Video-specific most popular items
+  final List<GenreSongItem> _videoMostPopular = [
+    GenreSongItem(
+      id: 'v1',
+      title: 'Sabinus no dey learn',
+      artist: 'Mr Funny',
+      albumArtUrl: 'assets/pngs/artist_profile_video.png',
+      isUnlocked: false,
+    ),
+    GenreSongItem(
+      id: 'v2',
+      title: 'Adventures of Sabinus',
+      artist: 'Mr Funny',
+      albumArtUrl: 'assets/pngs/video_spotlight.png',
+      isUnlocked: true,
+    ),
+    GenreSongItem(
+      id: 'v3',
+      title: 'Soso',
+      artist: 'Mr Funny',
+      albumArtUrl: 'assets/pngs/sabinus.png',
+      isUnlocked: false,
+    ),
+    GenreSongItem(
+      id: 'v4',
+      title: 'Never Forget',
+      artist: 'Mr Funny',
+      albumArtUrl: 'assets/pngs/kiki.png',
+      isUnlocked: true,
+    ),
+    GenreSongItem(
+      id: 'v5',
+      title: 'Attention ft. Justin Bieber',
+      artist: 'Mr Funny',
+      albumArtUrl: 'assets/pngs/latest_release.png',
+      isUnlocked: true,
+    ),
+  ];
+
   final List<TrendingArtist> _trendingArtists = [
     TrendingArtist(id: '1', name: 'Davido', isVerified: true),
     TrendingArtist(id: '2', name: 'Burna Boy', isVerified: true),
@@ -95,15 +174,24 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen> {
     TrendingArtist(id: '6', name: 'Omah Lay', isVerified: true),
   ];
 
+  // Video-specific similar creators
+  final List<TrendingArtist> _videoSimilarCreators = [
+    TrendingArtist(id: 'vc1', name: 'Funny Bros', isVerified: true),
+    TrendingArtist(id: 'vc2', name: 'Cute Abiola', isVerified: true),
+    TrendingArtist(id: 'vc3', name: 'Ghe Ghe', isVerified: true),
+    TrendingArtist(id: 'vc4', name: 'Kiekie', isVerified: true),
+    TrendingArtist(id: 'vc5', name: 'Mr Macaroni', isVerified: true),
+  ];
+
   @override
   void initState() {
     super.initState();
-    // Sample data 
+    // Use provided data or defaults
     _artist = ArtistProfile(
-      id: '1',
-      name: 'Burna Boy',
-      coverImageUrl: 'assets/pngs/artist_profile.png',
-      followers: "2,500,000",
+      id: widget.artistId ?? '1',
+      name: widget.artistName ?? 'Burna Boy',
+      coverImageUrl: widget.coverImageUrl ?? 'assets/pngs/artist_profile.png',
+      followers: widget.followers ?? "2,500,000",
     );
   }
 
@@ -212,7 +300,6 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen> {
           child: Container(
             height: 200.maxHeight,
             decoration: BoxDecoration(
-             
               boxShadow: [
                 BoxShadow(
                   color: AppColors.background.withValues(alpha: 0.1),
@@ -225,12 +312,12 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen> {
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  Colors.transparent, 
-                  AppColors.background.withValues(alpha: 0.1), 
-                  AppColors.background.withValues(alpha: 0.4), 
-                  AppColors.background.withValues(alpha: 0.6), 
+                  Colors.transparent,
+                  AppColors.background.withValues(alpha: 0.1),
+                  AppColors.background.withValues(alpha: 0.4),
+                  AppColors.background.withValues(alpha: 0.6),
                   AppColors.background.withValues(alpha: 0.8),
-                  AppColors.background, 
+                  AppColors.background,
                 ],
                 stops: const [0.0, 0.2, 0.4, 0.6, 0.8, 1.0],
               ),
@@ -284,9 +371,11 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen> {
                               color: AppColors.text,
                             ),
                           ),
-                         
+
                           Image.asset(
-                            'assets/pngs/verify_green.png',
+                            widget.mediaType == 'Videos'
+                                ? 'assets/pngs/verify_green.png'
+                                : 'assets/pngs/verify.png',
                             width: 25.icon,
                             height: 25.icon,
                           ),
@@ -324,7 +413,6 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen> {
                           ),
                         ],
                       ),
-                      
                     ],
                   ),
                 ),
@@ -349,7 +437,6 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen> {
     );
   }
 
-
   Widget _buildContentSections() {
     return SizedBox(
       width: double.infinity,
@@ -357,29 +444,33 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Navigation buttons (Music, Videos, Events, About)
-          const NavigationButtonsWidget(),
+          NavigationButtonsWidget(mediaType: widget.mediaType),
           18.column,
           LatestReleaseBannerWidget(onTap: () {}),
           30.column,
 
           // Albums section
           SizedBox(
-            height: 430.maxHeight, 
+            height: 430.maxHeight,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               itemCount: 2, // Only one albums section
               physics: const BouncingScrollPhysics(),
               itemBuilder: (context, index) {
+                final albums = widget.mediaType == 'Videos'
+                    ? _videoAlbumItems
+                    : _albumItems;
                 return AlbumsSectionWidget(
-                  albums: _albumItems,
+                  albums: albums,
                   onTap: () {},
                   onGiftCountTap: () {},
+                  mediaType: widget.mediaType,
                 );
               },
               separatorBuilder: (context, index) => SizedBox(width: 15.padding),
             ),
           ),
-      
+
           41.column,
           Text(
             'Most Popular',
@@ -391,16 +482,28 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen> {
           ),
           15.column,
           SongsListWidget(
-            songs: _genreSongs,
+            songs: widget.mediaType == 'Videos'
+                ? _videoMostPopular
+                : _genreSongs,
             onSongTap: (song) {},
             onPlayUnlockTap: (song) {
               setState(() {
                 // Toggle play/unlock state
-                final index = _genreSongs.indexOf(song);
+                final songsList = widget.mediaType == 'Videos'
+                    ? _videoMostPopular
+                    : _genreSongs;
+                final index = songsList.indexOf(song);
                 if (index != -1) {
-                  _genreSongs[index] = _genreSongs[index].copyWith(
-                    isUnlocked: !_genreSongs[index].isUnlocked,
-                  );
+                  if (widget.mediaType == 'Videos') {
+                    _videoMostPopular[index] = _videoMostPopular[index]
+                        .copyWith(
+                          isUnlocked: !_videoMostPopular[index].isUnlocked,
+                        );
+                  } else {
+                    _genreSongs[index] = _genreSongs[index].copyWith(
+                      isUnlocked: !_genreSongs[index].isUnlocked,
+                    );
+                  }
                 }
               });
             },
@@ -430,9 +533,14 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen> {
           ),
           47.column,
           TrendingArtistsSection(
-            artists: _trendingArtists,
-            title: 'Similar artists',
+            artists: widget.mediaType == 'Videos'
+                ? _videoSimilarCreators
+                : _trendingArtists,
+            title: widget.mediaType == 'Videos'
+                ? 'Similar Creators'
+                : 'Similar artists',
             showLeadingIcon: false,
+            mediaType: widget.mediaType,
           ),
         ],
       ),
