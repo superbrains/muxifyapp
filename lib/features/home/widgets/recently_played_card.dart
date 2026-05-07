@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:muxify/core/constants/api_constants.dart';
 import 'package:muxify/core/constants/app_colors.dart';
 import 'package:muxify/core/constants/app_sizes.dart';
 import 'package:muxify/core/constants/app_text_styles.dart';
@@ -22,40 +24,8 @@ class RecentlyPlayedCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.center,
         mainAxisAlignment: MainAxisAlignment.start,
         children: [
-          Container(
-            width: 80.buttonHeight,
-            height: 80.buttonHeight,
-            alignment: Alignment.bottomLeft,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12.radius),
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  const Color(0xFF6E1E1E).withValues(alpha: 0.4),
-                  const Color(0xFF6E1E1E).withValues(alpha: 0.6),
-                ],
-              ),
-            ),
-            child: Container(
-              width: 24.icon,
-              height: 24.icon,
-              margin: EdgeInsets.symmetric(
-                horizontal: 12.padding,
-                vertical: 12.padding,
-              ),
-              decoration: BoxDecoration(
-                color: AppColors.text,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.play_arrow,
-                color: AppColors.background,
-                size: 16.icon,
-              ),
-            ),
-          ),
-          8.column, 
+          _buildArtwork(),
+          8.column,
           SizedBox(
             width: 80.maxWidth,
             child: Text(
@@ -70,6 +40,69 @@ class RecentlyPlayedCard extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildArtwork() {
+    final imageUrl = item.imageUrl?.trim() ?? '';
+    final hasImage = imageUrl.isNotEmpty;
+    final radius = BorderRadius.circular(12.radius);
+
+    return SizedBox(
+      width: 80.buttonHeight,
+      height: 80.buttonHeight,
+      child: ClipRRect(
+        borderRadius: radius,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            if (hasImage)
+              CachedNetworkImage(
+                imageUrl: ApiConstants.resolvePublicUrl(imageUrl),
+                fit: BoxFit.cover,
+                placeholder: (context, _) => _fallbackArtwork(),
+                errorWidget: (context, _, __) => _fallbackArtwork(),
+              )
+            else
+              _fallbackArtwork(),
+            Align(
+              alignment: Alignment.bottomLeft,
+              child: Container(
+                width: 24.icon,
+                height: 24.icon,
+                margin: EdgeInsets.symmetric(
+                  horizontal: 12.padding,
+                  vertical: 12.padding,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.text,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.play_arrow,
+                  color: AppColors.background,
+                  size: 16.icon,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _fallbackArtwork() {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            const Color(0xFF6E1E1E).withValues(alpha: 0.4),
+            const Color(0xFF6E1E1E).withValues(alpha: 0.6),
+          ],
+        ),
       ),
     );
   }

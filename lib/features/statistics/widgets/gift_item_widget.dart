@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:muxify/core/constants/app_colors.dart';
@@ -11,6 +12,52 @@ class GiftItemWidget extends StatelessWidget {
   final VoidCallback? onTap;
 
   const GiftItemWidget({super.key, required this.item, this.onTap});
+
+  Widget _buildImage(
+    String pathOrUrl, {
+    double? width,
+    double? height,
+    BoxFit fit = BoxFit.contain,
+  }) {
+    final t = pathOrUrl.trim();
+    if (t.isEmpty) return const SizedBox.shrink();
+
+    final isNetwork =
+        t.toLowerCase().startsWith('http://') ||
+        t.toLowerCase().startsWith('https://');
+
+    if (isNetwork) {
+      return CachedNetworkImage(
+        imageUrl: t,
+        width: width,
+        height: height,
+        fit: fit,
+        placeholder: (context, url) =>
+            const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+        errorWidget: (context, url, error) => const Icon(Icons.error),
+      );
+    }
+
+    return Image.asset(t, width: width, height: height, fit: fit);
+  }
+
+  DecorationImage? _buildDecorationImage(String pathOrUrl) {
+    final t = pathOrUrl.trim();
+    if (t.isEmpty) return null;
+
+    final isNetwork =
+        t.toLowerCase().startsWith('http://') ||
+        t.toLowerCase().startsWith('https://');
+
+    if (isNetwork) {
+      return DecorationImage(
+        image: CachedNetworkImageProvider(t),
+        fit: BoxFit.fill,
+      );
+    }
+
+    return DecorationImage(image: AssetImage(t), fit: BoxFit.fill);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -31,15 +78,11 @@ class GiftItemWidget extends StatelessWidget {
                 width: 68.maxWidth,
                 height: 68.maxHeight,
                 decoration: BoxDecoration(
-                  // borderRadius: BorderRadius.circular(12.radius),
-                  image: DecorationImage(
-                    image: AssetImage(item.backgroundImage),
-                    fit: BoxFit.fill,
-                  ),
+                  image: _buildDecorationImage(item.backgroundImage),
                 ),
               ),
               // Emoji in the center
-              Image.asset(
+              _buildImage(
                 item.emojiImage,
                 width: 40.maxWidth,
                 height: 40.maxHeight,

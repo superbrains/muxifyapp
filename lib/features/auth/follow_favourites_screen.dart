@@ -1,12 +1,17 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:muxify/core/constants/app_colors.dart';
-import 'package:muxify/core/router/app_router.dart';
 import 'package:muxify/core/constants/app_sizes.dart';
 import 'package:muxify/core/constants/app_text_styles.dart';
+import 'package:muxify/core/models/onboarding/suggested_artist.dart';
+import 'package:muxify/core/router/app_router.dart';
+import 'package:muxify/features/auth/providers/onboarding_provider.dart';
 import 'package:muxify/shared/widgets/custom_button.dart';
 import 'package:muxify/shared/widgets/custom_input_field.dart';
+import 'package:provider/provider.dart';
+import 'package:shimmer/shimmer.dart';
 
 class FollowFavouritesScreen extends StatefulWidget {
   const FollowFavouritesScreen({super.key});
@@ -17,34 +22,19 @@ class FollowFavouritesScreen extends StatefulWidget {
 
 class _FollowFavouritesScreenState extends State<FollowFavouritesScreen> {
   final TextEditingController _searchController = TextEditingController();
-  final Set<String> _selectedArtists = {};
+  final Set<String> _selectedArtistIds = {};
 
-  final List<Map<String, String>> _artists = [
-    {'name': 'Davido', 'image': 'assets/artists/davido.png'},
-    {'name': 'Wizkid', 'image': 'assets/artists/wizkid.png'},
-    {'name': 'Burna Boy', 'image': 'assets/artists/burna_boy.png'},
-    {'name': 'Mr Funny (Sabinus)', 'image': 'assets/artists/mr_funny.png'},
-    {'name': 'Flavour', 'image': 'assets/artists/flavour.png'},
-    {'name': 'Rema', 'image': 'assets/artists/rema.png'},
-    {'name': 'Phyno', 'image': 'assets/artists/phyno.png'},
-    {'name': 'Omah Lay', 'image': 'assets/artists/omah_lay.png'},
-    {'name': 'Soso', 'image': 'assets/artists/soso.png'},
-    {'name': 'Lord Lamba', 'image': 'assets/artists/lord_lamba.png'},
-    {'name': 'Olamide', 'image': 'assets/artists/olamide.png'},
-    {'name': 'Kiekie', 'image': 'assets/artists/kiekie.png'},
-  ];
+  bool _isSubmitting = false;
 
-  List<Map<String, String>> get _filteredArtists {
-    if (_searchController.text.isEmpty) {
-      return _artists;
-    }
-    return _artists
-        .where(
-          (artist) => artist['name']!.toLowerCase().contains(
-            _searchController.text.toLowerCase(),
-          ),
-        )
-        .toList();
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      context.read<OnboardingProvider>().loadSuggestedArtists(
+            count: OnboardingProvider.defaultSuggestedArtistCount,
+          );
+    });
   }
 
   @override
@@ -53,8 +43,40 @@ class _FollowFavouritesScreenState extends State<FollowFavouritesScreen> {
     super.dispose();
   }
 
+  List<SuggestedArtist> _filtered(List<SuggestedArtist> source) {
+    final q = _searchController.text.trim().toLowerCase();
+    final withIds =
+        source.where((a) => a.id.trim().isNotEmpty).toList(growable: false);
+    if (q.isEmpty) return withIds;
+    return withIds
+        .where((a) => a.name.toLowerCase().contains(q))
+        .toList(growable: false);
+  }
+
+  Future<void> _onRefresh() async {
+    await context.read<OnboardingProvider>().loadSuggestedArtists(
+          refreshing: true,
+          count: OnboardingProvider.defaultSuggestedArtistCount,
+        );
+  }
+
+  Future<void> _onComplete() async {
+    if (_isSubmitting) return;
+    FocusScope.of(context).unfocus();
+    HapticFeedback.lightImpact();
+    final ids = List<String>.from(_selectedArtistIds);
+    final onboarding = context.read<OnboardingProvider>();
+    setState(() => _isSubmitting = true);
+    final ok = await onboarding.submitFollowOnboarding(ids);
+    if (!mounted) return;
+    setState(() => _isSubmitting = false);
+    if (ok) context.push(AppRouter.congratulations);
+  }
+
   @override
   Widget build(BuildContext context) {
+    final onboarding = context.watch<OnboardingProvider>();
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -77,24 +99,22 @@ class _FollowFavouritesScreenState extends State<FollowFavouritesScreen> {
               _buildSubtitle(),
               30.column,
               _buildSearchBar(),
-
-              // Expanded scrollable area for grid and button
               Expanded(
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    return Column(
-                      children: [
-                        20.column,
-                        // The grid should take as much space as possible, button at bottom
-                        Expanded(child: _buildArtistsGrid()),
-                        // 32.column,
-                        _buildCompleteButton(),
-                        32.column,
-                      ],
-                    );
-                  },
+                child: RefreshIndicator(
+                  color: AppColors.buttonColor,
+                  backgroundColor: AppColors.glassyDark,
+                  onRefresh: _onRefresh,
+                  child: CustomScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    slivers: [
+                      20.verticalSliverSpacing,
+                      ..._buildSuggestedContentSlivers(onboarding),
+                    ],
+                  ),
                 ),
               ),
+              _buildCompleteButton(onboarding),
+              32.column,
             ],
           ),
         ),
@@ -136,74 +156,194 @@ class _FollowFavouritesScreenState extends State<FollowFavouritesScreen> {
     );
   }
 
-  Widget _buildArtistsGrid() {
-    return GridView.builder(
-      padding: EdgeInsets.zero,
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        crossAxisSpacing: 16.padding,
-        mainAxisSpacing: 24.padding,
-        childAspectRatio: 0.85.maxHeight,
+  List<Widget> _buildSuggestedContentSlivers(OnboardingProvider onboarding) {
+    final busyEmpty =
+        onboarding.suggestedArtistsBusy && onboarding.suggestedArtists.isEmpty;
+    final hasError = onboarding.suggestedArtistsError != null &&
+        onboarding.suggestedArtists.isEmpty &&
+        !onboarding.suggestedArtistsBusy;
+
+    if (hasError) {
+      return [
+        SliverFillRemaining(
+          hasScrollBody: false,
+          child: _SuggestedError(
+            message: onboarding.suggestedArtistsError ??
+                'Something went wrong.',
+            onRetry: () => context.read<OnboardingProvider>().loadSuggestedArtists(
+                  count: OnboardingProvider.defaultSuggestedArtistCount,
+                ),
+          ),
+        ),
+      ];
+    }
+
+    if (busyEmpty) {
+      return [_buildShimmerSliverGrid()];
+    }
+
+    final filtered = _filtered(onboarding.suggestedArtists);
+    if (filtered.isEmpty) {
+      final any =
+          onboarding.suggestedArtists.any((a) => a.id.trim().isNotEmpty);
+      final msg = !any
+          ? 'No suggested artists yet.'
+          : (_searchController.text.trim().isEmpty
+              ? 'No suggested artists yet.'
+              : 'No matching artists.');
+      return [
+        SliverFillRemaining(
+          hasScrollBody: false,
+          child: Center(
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.padding),
+              child: Text(
+                msg,
+                textAlign: TextAlign.center,
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: AppColors.text.withValues(alpha: 0.65),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ];
+    }
+
+    return [
+      SliverPadding(
+        padding: EdgeInsets.zero,
+        sliver: SliverGrid.builder(
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 3,
+            crossAxisSpacing: 16,
+            mainAxisSpacing: 24,
+            childAspectRatio: 0.78,
+          ),
+          itemCount: filtered.length,
+          itemBuilder: (context, index) =>
+              _buildArtistItem(filtered[index]),
+        ),
       ),
-      itemCount: _filteredArtists.length,
-      itemBuilder: (context, index) {
-        final artist = _filteredArtists[index];
-        return _buildArtistItem(artist);
-      },
+      if (onboarding.suggestedArtistsRefreshing) ...[
+        16.verticalSliverSpacing,
+        SliverToBoxAdapter(
+          child: Center(
+            child: SizedBox(
+              height: 4,
+              width: 160,
+              child: LinearProgressIndicator(
+                borderRadius: BorderRadius.circular(2),
+                backgroundColor: AppColors.glassyDark,
+                color: AppColors.buttonColor,
+              ),
+            ),
+          ),
+        ),
+      ],
+    ];
+  }
+
+  Widget _buildShimmerSliverGrid() {
+    final base = const Color(0xFF161616);
+    final highlight = const Color(0xFF2C2C2C);
+
+    return SliverPadding(
+      padding: EdgeInsets.zero,
+      sliver: SliverGrid.builder(
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 3,
+          crossAxisSpacing: 16,
+          mainAxisSpacing: 24,
+          childAspectRatio: 0.78,
+        ),
+        itemCount: 12,
+        itemBuilder: (_, __) {
+          return Shimmer.fromColors(
+            baseColor: base,
+            highlightColor: highlight,
+            period: const Duration(milliseconds: 1400),
+            child: Column(
+              children: [
+                Container(
+                  width: 80,
+                  height: 80,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFF808080),
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                8.column,
+                Container(
+                  height: 14,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF808080),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
     );
   }
 
-  Widget _buildArtistItem(Map<String, String> artist) {
-    final isSelected = _selectedArtists.contains(artist['name']);
+  Widget _buildArtistItem(SuggestedArtist artist) {
+    final isSelected = _selectedArtistIds.contains(artist.id);
 
     return GestureDetector(
       onTap: () {
         HapticFeedback.lightImpact();
         setState(() {
           if (isSelected) {
-            _selectedArtists.remove(artist['name']);
+            _selectedArtistIds.remove(artist.id);
           } else {
-            _selectedArtists.add(artist['name']!);
+            _selectedArtistIds.add(artist.id);
           }
         });
       },
       child: Column(
         children: [
-          Container(
-            width: 80,
-            height: 80,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: isSelected ? AppColors.buttonColor : Colors.transparent,
-                width: 2,
-              ),
-            ),
-            child: ClipOval(
-              child: Container(
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Container(
+                width: 80,
+                height: 80,
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      _getArtistColor(artist['name']!).withValues(alpha: 0.3),
-                      _getArtistColor(artist['name']!).withValues(alpha: 0.1),
-                    ],
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color:
+                        isSelected ? AppColors.buttonColor : Colors.transparent,
+                    width: 2,
                   ),
                 ),
-                child: Center(
-                  child: Icon(
-                    Icons.person,
-                    size: 40,
-                    color: AppColors.text.withValues(alpha: 0.7),
-                  ),
-                ),
+                child: ClipOval(child: _buildArtistAvatarInner(artist)),
               ),
-            ),
+              if (artist.isVerified)
+                Positioned(
+                  bottom: -2,
+                  right: -2,
+                  child: Container(
+                    padding: EdgeInsets.all(2.padding),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: AppColors.background,
+                    ),
+                    child: Icon(
+                      Icons.verified,
+                      size: 18,
+                      color: AppColors.buttonColor,
+                    ),
+                  ),
+                ),
+            ],
           ),
           8.column,
           Text(
-            artist['name']!,
+            artist.name,
             style: AppTextStyles.bodySmall.copyWith(
               color: AppColors.text,
               fontWeight: FontWeight.w500,
@@ -217,8 +357,57 @@ class _FollowFavouritesScreenState extends State<FollowFavouritesScreen> {
     );
   }
 
+  Widget _buildArtistAvatarInner(SuggestedArtist artist) {
+    final url = artist.resolvedImageUrl;
+    if (url.isEmpty) {
+      return Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              _getArtistColor(artist.name).withValues(alpha: 0.3),
+              _getArtistColor(artist.name).withValues(alpha: 0.1),
+            ],
+          ),
+        ),
+        child: Center(
+          child: Icon(
+            Icons.person,
+            size: 40,
+            color: AppColors.text.withValues(alpha: 0.7),
+          ),
+        ),
+      );
+    }
+
+    return CachedNetworkImage(
+      imageUrl: url,
+      fit: BoxFit.cover,
+      width: 80,
+      height: 80,
+      memCacheWidth: 160,
+      memCacheHeight: 160,
+      progressIndicatorBuilder: (_, __, ___) => Shimmer.fromColors(
+        baseColor: const Color(0xFF161616),
+        highlightColor: const Color(0xFF2C2C2C),
+        period: const Duration(milliseconds: 1400),
+        child: const ColoredBox(color: Color(0xFF808080)),
+      ),
+      errorWidget: (_, __, ___) {
+        return ColoredBox(
+          color: AppColors.glassyDark,
+          child: Icon(
+            Icons.broken_image_outlined,
+            size: 32,
+            color: AppColors.text.withValues(alpha: 0.4),
+          ),
+        );
+      },
+    );
+  }
+
   Color _getArtistColor(String artistName) {
-    // Generate consistent colors for each artist
     final colors = [
       Colors.red,
       Colors.blue,
@@ -234,19 +423,67 @@ class _FollowFavouritesScreenState extends State<FollowFavouritesScreen> {
       Colors.deepOrange,
     ];
 
-    int hash = artistName.hashCode;
+    final hash = artistName.hashCode;
     return colors[hash.abs() % colors.length];
   }
 
-  Widget _buildCompleteButton() {
+  Widget _buildCompleteButton(OnboardingProvider onboarding) {
+    final disableGrid = onboarding.suggestedArtistsBusy &&
+        onboarding.suggestedArtists.isEmpty;
+
     return CustomButton.signUp(
       text: 'Complete',
       width: double.infinity,
       height: 56.buttonHeight,
-      onPressed: () {
-        HapticFeedback.lightImpact();
-        context.push(AppRouter.congratulations);
-      },
+      isLoading: _isSubmitting,
+      onPressed: disableGrid
+          ? null
+          : _onComplete,
+    );
+  }
+}
+
+extension on int {
+  SliverToBoxAdapter get verticalSliverSpacing =>
+      SliverToBoxAdapter(child: SizedBox(height: toDouble()));
+}
+
+/// Error only when grid is otherwise empty ([loadSuggestedArtists] failed initially).
+class _SuggestedError extends StatelessWidget {
+  const _SuggestedError({required this.message, required this.onRetry});
+
+  final String message;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 24.padding),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: AppColors.text.withValues(alpha: 0.75),
+              ),
+            ),
+            SizedBox(height: 16.padding),
+            TextButton(
+              onPressed: onRetry,
+              child: Text(
+                'Retry',
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: AppColors.buttonColor,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

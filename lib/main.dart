@@ -6,7 +6,10 @@ import 'package:muxify/core/router/app_router.dart';
 import 'package:muxify/core/themes/app_theme.dart';
 import 'package:muxify/core/constants/app_strings.dart';
 import 'package:muxify/core/services/storage_service.dart';
+import 'package:muxify/features/auth/providers/auth_provider.dart';
+import 'package:muxify/features/auth/providers/onboarding_provider.dart';
 import 'package:muxify/features/home/providers/home_provider.dart';
+import 'package:muxify/features/artist_profile/providers/artist_profile_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -34,7 +37,12 @@ class MyApp extends StatelessWidget {
       splitScreenMode: true,
       builder: (context, child) {
         return MultiProvider(
-          providers: [ChangeNotifierProvider(create: (_) => HomeProvider())],
+          providers: [
+            ChangeNotifierProvider(create: (_) => AuthProvider()),
+            ChangeNotifierProvider(create: (_) => OnboardingProvider()),
+            ChangeNotifierProvider(create: (_) => HomeProvider()),
+            ChangeNotifierProvider(create: (_) => ArtistProfileProvider()),
+          ],
           child: MaterialApp.router(
             title: AppStrings.appName,
             debugShowCheckedModeBanner: false,

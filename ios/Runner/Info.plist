@@ -45,5 +45,9 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Pick a photo to use as your profile avatar.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Take a photo to use as your profile avatar.</string>
 </dict>
 </plist>

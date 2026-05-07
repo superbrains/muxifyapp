@@ -1,5 +1,7 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:muxify/core/constants/api_constants.dart';
 import 'package:muxify/core/constants/app_colors.dart';
 import 'package:muxify/core/constants/app_sizes.dart';
 import 'package:muxify/core/constants/app_text_styles.dart';
@@ -19,6 +21,9 @@ class TrendingArtistCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final imageUrl = artist.imageUrl?.trim() ?? '';
+    final hasImage = imageUrl.isNotEmpty;
+
     return GestureDetector(
       onTap: () {
         HapticFeedback.lightImpact();
@@ -46,18 +51,18 @@ class TrendingArtistCard extends StatelessWidget {
                     ),
                   ),
                   child: ClipOval(
-                    child: Container(
-                      color: AppColors.glassyDark,
-                      // When you have images: Image.network(artist.imageUrl, fit: BoxFit.cover)
-                      child: Icon(
-                        Icons.person,
-                        size: 32.icon,
-                        color: AppColors.text.withValues(alpha: 0.5),
-                      ),
-                    ),
+                    child: hasImage
+                        ? CachedNetworkImage(
+                            imageUrl: ApiConstants.resolvePublicUrl(imageUrl),
+                            fit: BoxFit.cover,
+                            width: 64.buttonHeight,
+                            height: 64.buttonHeight,
+                            placeholder: (context, _) => _avatarFallback(),
+                            errorWidget: (context, _, __) => _avatarFallback(),
+                          )
+                        : _avatarFallback(),
                   ),
                 ),
-                // Verified Badge
                 if (artist.isVerified)
                   Positioned(
                     top: 0,
@@ -85,6 +90,18 @@ class TrendingArtistCard extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _avatarFallback() {
+    return Container(
+      color: AppColors.glassyDark,
+      alignment: Alignment.center,
+      child: Icon(
+        Icons.person,
+        size: 32.icon,
+        color: AppColors.text.withValues(alpha: 0.5),
       ),
     );
   }

@@ -18,7 +18,7 @@ class RecentlyPlayedItem {
       id: json['id'] as String,
       title: json['title'] as String,
       imageUrl: json['imageUrl'] as String?,
-      artist: json['artist'] as String?,
+      artist: (json['artist'] ?? json['artistName']) as String?,
     );
   }
 }

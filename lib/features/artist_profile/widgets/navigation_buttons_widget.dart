@@ -8,8 +8,15 @@ import 'package:muxify/core/router/app_router.dart';
 
 class NavigationButtonsWidget extends StatelessWidget {
   final String? mediaType;
+  final String artistId;
+  final String artistName;
 
-  const NavigationButtonsWidget({super.key, this.mediaType});
+  const NavigationButtonsWidget({
+    super.key,
+    this.mediaType,
+    required this.artistId,
+    required this.artistName,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -24,7 +31,9 @@ class NavigationButtonsWidget extends StatelessWidget {
               'New Release',
               'assets/pngs/new_release.png',
               () {
-                context.push('${AppRouter.newRelease}?mediaType=Videos');
+                context.push(
+                  '${AppRouter.newRelease}?mediaType=Videos&artistId=$artistId&artistName=${Uri.encodeComponent(artistName)}',
+                );
               },
             ),
           ),
@@ -42,13 +51,19 @@ class NavigationButtonsWidget extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         _buildNavButton('New Release', 'assets/pngs/new_release.png', () {
-          context.push(AppRouter.newRelease);
+          context.push(
+            '${AppRouter.newRelease}?artistId=$artistId&artistName=${Uri.encodeComponent(artistName)}',
+          );
         }),
         _buildNavButton('Singles', 'assets/pngs/singles.png', () {
-          context.push(AppRouter.singles);
+          context.push(
+            '${AppRouter.singles}?artistId=$artistId&artistName=${Uri.encodeComponent(artistName)}',
+          );
         }),
         _buildNavButton('Albums', 'assets/pngs/albums.png', () {
-          context.push(AppRouter.albums);
+          context.push(
+            '${AppRouter.albums}?artistId=$artistId&artistName=${Uri.encodeComponent(artistName)}',
+          );
         }),
       ],
     );

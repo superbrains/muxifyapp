@@ -3,12 +3,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import 'package:muxify/core/constants/app_colors.dart';
 import 'package:muxify/core/constants/app_sizes.dart';
 import 'package:muxify/core/constants/app_text_styles.dart';
 import 'package:muxify/core/router/app_router.dart';
 import 'package:muxify/core/services/biometric_auth_service.dart';
 import 'package:muxify/core/services/local_storage_service.dart';
+import 'package:muxify/features/auth/providers/auth_provider.dart';
 import 'package:muxify/shared/widgets/custom_button.dart';
 import 'package:muxify/shared/widgets/custom_input_field.dart';
 
@@ -29,6 +31,9 @@ class _LoginScreenState extends State<LoginScreen> {
   void initState() {
     super.initState();
     _checkBiometricAvailability();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) context.read<AuthProvider>().resetLoginPresentationState();
+    });
   }
 
   @override
@@ -49,6 +54,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final auth = context.watch<AuthProvider>();
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
@@ -72,9 +79,9 @@ class _LoginScreenState extends State<LoginScreen> {
               40.column,
               _buildSocialLoginSection(),
               74.column,
-              _buildBiometricLogin(),
+              _buildBiometricLogin(auth),
               54.column,
-              _buildLoginButton(),
+              _buildLoginButton(auth),
               32.column,
             ],
           ),
@@ -253,7 +260,7 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _buildBiometricLogin() {
+  Widget _buildBiometricLogin(AuthProvider auth) {
     if (!_isBiometricAvailable) {
       return const SizedBox.shrink();
     }
@@ -261,7 +268,7 @@ class _LoginScreenState extends State<LoginScreen> {
     return Column(
       children: [
         GestureDetector(
-          onTap: _handleBiometricLogin,
+          onTap: () => _handleBiometricLogin(auth),
           child: const Icon(Icons.fingerprint, color: AppColors.text, size: 50),
         ),
         8.column,
@@ -276,42 +283,52 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Future<void> _handleBiometricLogin() async {
+  Future<void> _handleBiometricLogin(AuthProvider auth) async {
     HapticFeedback.lightImpact();
 
     final bool isAuthenticated = await BiometricAuthService.authenticate();
 
-    if (isAuthenticated && mounted) {
+    if (!mounted) return;
+
+    if (isAuthenticated) {
       final String? savedEmail = await LocalStorageService.getUserEmail();
       final String? savedPassword = await LocalStorageService.getUserPassword();
 
       if (savedEmail != null && savedPassword != null) {
         _emailController.text = savedEmail;
         _passwordController.text = savedPassword;
-        _performLogin();
+
+        FocusScope.of(context).unfocus();
+        final ok = await auth.signInWithPassword(
+          email: savedEmail,
+          password: savedPassword,
+        );
+        if (mounted && ok) context.go(AppRouter.home);
       } else {
         context.go(AppRouter.home);
       }
     }
   }
 
-  Future<void> _performLogin() async {
-    if (_emailController.text.isNotEmpty &&
-        _passwordController.text.isNotEmpty) {
-      await LocalStorageService.setUserEmail(_emailController.text);
-      await LocalStorageService.setUserPassword(_passwordController.text);
-      context.go(AppRouter.home);
-    }
-  }
-
-  Widget _buildLoginButton() {
+  Widget _buildLoginButton(AuthProvider auth) {
     return CustomButton.signUp(
       text: 'Login',
       width: double.infinity,
+      isLoading: auth.isLoginLoading,
       onPressed: () {
         HapticFeedback.lightImpact();
-        _performLogin();
+        _submitLogin(auth);
       },
     );
+  }
+
+  Future<void> _submitLogin(AuthProvider auth) async {
+    FocusScope.of(context).unfocus();
+    final ok = await auth.signInWithPassword(
+      email: _emailController.text,
+      password: _passwordController.text,
+    );
+    if (!mounted || !ok) return;
+    context.go(AppRouter.home);
   }
 }

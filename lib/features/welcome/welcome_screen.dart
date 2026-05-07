@@ -18,7 +18,6 @@ class WelcomeScreen extends StatelessWidget {
       body: Stack(
         children: [
           _buildBackgroundImage(),
-          _buildGradientOverlay(),
           _buildContent(context),
         ],
       ),
@@ -30,7 +29,7 @@ class WelcomeScreen extends StatelessWidget {
       child: Container(
         decoration: const BoxDecoration(
           image: DecorationImage(
-            image: AssetImage('assets/pngs/logo.png'),
+            image: AssetImage('assets/pngs/bg.png'),
             fit: BoxFit.cover,
           ),
         ),
@@ -46,24 +45,6 @@ class WelcomeScreen extends StatelessWidget {
               ],
               stops: const [0.0, 0.5, 1.0],
             ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildGradientOverlay() {
-    return Positioned.fill(
-      child: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Colors.red.withValues(alpha: 0.3),
-              Colors.purple.withValues(alpha: 0.3),
-            ],
-            stops: const [0.0, 1.0],
           ),
         ),
       ),

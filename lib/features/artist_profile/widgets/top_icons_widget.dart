@@ -31,7 +31,7 @@ class TopIconsWidget extends StatelessWidget {
             // Use the reusable CircularIconButton for back
             CircularIconButton(
               onTap: onBackTap,
-              icon: Icons.arrow_back_ios,
+              icon: Icons.arrow_back_rounded,
             ),
             // Search and Menu icons
             Row(

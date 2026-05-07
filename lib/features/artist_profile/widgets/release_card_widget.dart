@@ -1,5 +1,7 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:muxify/core/constants/api_constants.dart';
 import 'package:muxify/core/constants/app_colors.dart';
 import 'package:muxify/core/constants/app_sizes.dart';
 import 'package:muxify/core/constants/app_text_styles.dart';
@@ -18,6 +20,39 @@ class ReleaseCardWidget extends StatelessWidget {
     this.onTap,
     this.onUnlockTap,
   });
+
+  Widget _buildCoverImage() {
+    final t = release.coverImageUrl.trim();
+    if (t.isEmpty) {
+      return Container(
+        color: AppColors.text.withValues(alpha: 0.1),
+        child: Icon(Icons.music_note, color: AppColors.text.withValues(alpha: 0.3)),
+      );
+    }
+    final lower = t.toLowerCase();
+    if (lower.startsWith('http://') || lower.startsWith('https://')) {
+      return CachedNetworkImage(
+        imageUrl: ApiConstants.resolvePublicUrl(t),
+        fit: BoxFit.cover,
+        placeholder: (context, url) => Container(
+          color: AppColors.text.withValues(alpha: 0.1),
+          child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+        ),
+        errorWidget: (context, url, error) => Container(
+          color: AppColors.text.withValues(alpha: 0.1),
+          child: const Icon(Icons.error),
+        ),
+      );
+    }
+    return Image.asset(
+      t,
+      fit: BoxFit.cover,
+      errorBuilder: (context, error, stackTrace) => Container(
+        color: AppColors.text.withValues(alpha: 0.1),
+        child: const Icon(Icons.broken_image),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -38,14 +73,10 @@ class ReleaseCardWidget extends StatelessWidget {
               flex: 3,
               child: Stack(
                 children: [
-                  Container(
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12.radius),
-                      image: DecorationImage(
-                        image: AssetImage(release.coverImageUrl),
-                        fit: BoxFit.cover,
-                      ),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(12.radius),
+                    child: SizedBox.expand(
+                      child: _buildCoverImage(),
                     ),
                   ),
                   // Button Overlay - Different buttons based on unlock status

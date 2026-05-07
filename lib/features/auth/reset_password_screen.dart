@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import 'package:muxify/core/constants/app_colors.dart';
 import 'package:muxify/core/constants/app_sizes.dart';
 import 'package:muxify/core/constants/app_text_styles.dart';
 import 'package:muxify/core/router/app_router.dart';
+import 'package:muxify/core/utils/validators.dart';
+import 'package:muxify/features/auth/providers/auth_provider.dart';
 import 'package:muxify/shared/widgets/custom_button.dart';
 import 'package:muxify/shared/widgets/custom_input_field.dart';
 
@@ -16,6 +19,7 @@ class ResetPasswordScreen extends StatefulWidget {
 }
 
 class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
+  final _formKey = GlobalKey<FormState>();
   final TextEditingController _emailController = TextEditingController();
 
   @override
@@ -24,28 +28,50 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     super.dispose();
   }
 
+  Future<void> _submit(AuthProvider auth) async {
+    if (!(_formKey.currentState?.validate() ?? false)) return;
+    FocusScope.of(context).unfocus();
+    HapticFeedback.lightImpact();
+    final email = _emailController.text.trim();
+    final ok = await auth.requestPasswordReset(email);
+    if (!mounted || !ok) return;
+    context.push(
+      '${AppRouter.verifyEmailForPasswordReset}?email=${Uri.encodeComponent(email)}',
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final auth = context.watch<AuthProvider>();
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
         child: Padding(
           padding: EdgeInsets.symmetric(horizontal: 24.padding),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              24.column,
-              _buildHeader(),
-              40.column,
-              _buildTitle(),
-              8.column,
-              _buildSubtitle(),
-              40.column,
-              _buildEmailField(),
-              const Spacer(),
-              _buildResetButton(),
-              32.column,
-            ],
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                24.column,
+                _buildHeader(),
+                40.column,
+                _buildTitle(),
+                8.column,
+                _buildSubtitle(),
+                40.column,
+                _buildEmailField(),
+                const Spacer(),
+                CustomButton.signUp(
+                  text: 'Reset Password',
+                  width: double.infinity,
+                  isLoading: auth.isForgotPasswordLoading,
+                  onPressed: () => _submit(auth),
+                ),
+                32.column,
+              ],
+            ),
           ),
         ),
       ),
@@ -64,7 +90,6 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
           child: SizedBox(
             width: 40,
             height: 40,
-
             child: const Icon(
               Icons.arrow_back_ios_new,
               color: AppColors.text,
@@ -107,7 +132,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
   Widget _buildSubtitle() {
     return Text(
-      'Provide the email or phone number used for registration',
+      'Enter the email address on your account. We will send reset instructions if an account exists.',
       style: AppTextStyles.bodyLarge.copyWith(
         color: AppColors.text.withValues(alpha: 0.7),
       ),
@@ -120,7 +145,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Email Address or Phone Number',
+          'Email address',
           style: AppTextStyles.bodyMedium.copyWith(
             color: AppColors.text,
             fontWeight: FontWeight.w500,
@@ -129,30 +154,16 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
         8.column,
         CustomInputField(
           controller: _emailController,
-          hintText: 'Email Address or Phone Number',
+          hintText: 'you@example.com',
           keyboardType: TextInputType.emailAddress,
           borderRadius: 12.radius,
           contentPadding: EdgeInsets.symmetric(
             horizontal: 16.padding,
             vertical: 16.padding,
           ),
+          validator: Validators.email,
         ),
       ],
-    );
-  }
-
-  Widget _buildResetButton() {
-    return CustomButton.signUp(
-      text: 'Reset Password',
-      width: double.infinity,
-      onPressed: () {
-        HapticFeedback.lightImpact();
-        if (_emailController.text.isNotEmpty) {
-          context.push(
-            '${AppRouter.verifyEmailForPasswordReset}?email=${_emailController.text}',
-          );
-        }
-      },
     );
   }
 }

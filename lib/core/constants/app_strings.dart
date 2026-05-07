@@ -33,7 +33,13 @@ class AppStrings {
   static const String invalidPhone = 'Please enter a valid phone number';
   static const String passwordTooShort =
       'Password must be at least 8 characters';
+  static const String passwordTooLong = 'Password is too long';
+  static const String passwordNeedsUppercase = 'Include an uppercase letter';
+  static const String passwordNeedsLowercase = 'Include a lowercase letter';
+  static const String passwordNeedsDigit = 'Include a digit';
   static const String passwordsDoNotMatch = 'Passwords do not match';
+  static const String displayNameTooLong =
+      'Name must be 100 characters or less';
 
   static const String homeTitle = 'Muxify Home';
   static const String welcomeMessage = 'Welcome to Muxify!';

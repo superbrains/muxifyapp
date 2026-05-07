@@ -1,0 +1,21 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "muxify (production API)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart"
+    },
+    {
+      "name": "muxify (local Docker — LAN)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "toolArgs": [
+        "--dart-define=USE_LOCAL_BACKEND=true",
+        "--dart-define=LAN_HOST=172.20.10.3"
+      ]
+    }
+  ]
+}

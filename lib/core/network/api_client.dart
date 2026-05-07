@@ -7,8 +7,9 @@ class ApiClient {
   final String baseUrl;
   final Map<String, String> defaultHeaders;
 
-  ApiClient({this.baseUrl = ApiConstants.baseUrl, Map<String, String>? headers})
-    : defaultHeaders = {
+  ApiClient({String? baseUrl, Map<String, String>? headers})
+    : baseUrl = baseUrl ?? ApiConstants.resolvedBaseUrl,
+      defaultHeaders = {
         ApiConstants.contentType: ApiConstants.applicationJson,
         ApiConstants.accept: ApiConstants.applicationJson,
         ...?headers,
@@ -33,6 +34,39 @@ class ApiClient {
       return response;
     } catch (e, stackTrace) {
       Logger.error('GET request failed', e, stackTrace);
+      rethrow;
+    }
+  }
+
+  /// `multipart/form-data`. Do **not** set JSON `Content-Type`; the boundary is applied automatically.
+  Future<http.Response> postMultipart(
+    String endpoint, {
+    Map<String, String>? fields,
+    List<http.MultipartFile>? files,
+    Map<String, String>? headers,
+  }) async {
+    try {
+      final uri = _buildUri(endpoint);
+      final request = http.MultipartRequest('POST', uri);
+      request.fields.addAll(fields ?? {});
+      if (files != null) request.files.addAll(files);
+
+      final merged = {...defaultHeaders};
+      merged.remove(ApiConstants.contentType);
+
+      request.headers.addAll({...merged, ...?headers});
+
+      Logger.debug('POST multipart: $uri');
+
+      final streamed = await request.send().timeout(ApiConstants.sendTimeout);
+      final response = await http.Response.fromStream(
+        streamed,
+      ).timeout(ApiConstants.receiveTimeout);
+
+      _logResponse(response);
+      return response;
+    } catch (e, stackTrace) {
+      Logger.error('POST multipart failed', e, stackTrace);
       rethrow;
     }
   }
@@ -150,7 +184,10 @@ class ApiClient {
 
   void _logResponse(http.Response response) {
     Logger.debug('Response Status: ${response.statusCode}');
-    Logger.debug('Response Body: ${response.body}');
+    final body = response.body;
+    Logger.debug(
+      body.trim().isEmpty ? 'Response Body: (empty)' : 'Response Body: $body',
+    );
   }
 
   static void handleError(http.Response response) {

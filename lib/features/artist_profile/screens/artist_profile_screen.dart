@@ -1,10 +1,19 @@
 import 'dart:ui';
+
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:muxify/shared/widgets/gift_box_modal.dart';
+import 'package:provider/provider.dart';
+import 'package:muxify/core/constants/api_constants.dart';
 import 'package:muxify/core/constants/app_colors.dart';
 import 'package:muxify/core/constants/app_sizes.dart';
 import 'package:muxify/core/constants/app_text_styles.dart';
+import 'package:muxify/core/utils/app_toast.dart';
 import 'package:muxify/features/artist_profile/models/artist_profile.dart';
+import 'package:muxify/features/artist_profile/providers/artist_profile_provider.dart';
 import 'package:muxify/features/artist_profile/widgets/albums_section_widget.dart';
+import 'package:muxify/features/statistics/models/gift_item.dart';
 import 'package:muxify/shared/widgets/glass_button_widget.dart';
 import 'package:muxify/features/artist_profile/widgets/latest_release_banner_widget.dart';
 import 'package:muxify/features/artist_profile/widgets/navigation_buttons_widget.dart';
@@ -17,27 +26,20 @@ import 'package:muxify/features/home/models/trending_artist.dart';
 import 'package:muxify/features/home/widgets/trending_artists_section.dart';
 
 class ArtistProfileScreen extends StatefulWidget {
-  final String? artistId;
-  final String? artistName;
-  final String? coverImageUrl;
-  final String? followers;
+  final TrendingArtist artist;
   final String? mediaType;
 
-  const ArtistProfileScreen({
-    super.key,
-    this.artistId,
-    this.artistName,
-    this.coverImageUrl,
-    this.followers,
-    this.mediaType,
-  });
+  const ArtistProfileScreen({super.key, required this.artist, this.mediaType});
 
   @override
   State<ArtistProfileScreen> createState() => _ArtistProfileScreenState();
 }
 
 class _ArtistProfileScreenState extends State<ArtistProfileScreen> {
+  final NumberFormat _followerFormat = NumberFormat.decimalPattern();
+
   late ArtistProfile _artist;
+  late bool _isFollowing;
   final List<AlbumItem> _albumItems = [
     AlbumItem(
       id: '1',
@@ -186,13 +188,93 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen> {
   @override
   void initState() {
     super.initState();
-    // Use provided data or defaults
+    final a = widget.artist;
+    _isFollowing = a.isFollowing;
+    final rawCover = a.imageUrl?.trim() ?? '';
+    final cover = rawCover.isEmpty
+        ? 'assets/pngs/artist_profile.png'
+        : rawCover;
     _artist = ArtistProfile(
-      id: widget.artistId ?? '1',
-      name: widget.artistName ?? 'Burna Boy',
-      coverImageUrl: widget.coverImageUrl ?? 'assets/pngs/artist_profile.png',
-      followers: widget.followers ?? "2,500,000",
+      id: a.id.isNotEmpty ? a.id : '1',
+      name: a.name.isNotEmpty ? a.name : 'Artist',
+      coverImageUrl: cover,
+      followerCount: a.followerCount,
     );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<ArtistProfileProvider>().loadGiftTypes();
+    });
+  }
+
+  Future<void> _toggleFollow() async {
+    final provider = context.read<ArtistProfileProvider>();
+    if (provider.isActionInFlight) return;
+
+    final id = _artist.id.trim();
+    if (id.isEmpty) {
+      await AppToast.showError('Missing artist.');
+      return;
+    }
+
+    try {
+      final r = _isFollowing
+          ? await provider.unfollowArtist(id)
+          : await provider.followArtist(id);
+
+      if (!mounted || r == null) return;
+
+      setState(() {
+        _isFollowing = r.isFollowing;
+        _artist = _artist.copyWith(followerCount: r.artistFollowerCount);
+      });
+
+      final msg = r.message?.trim();
+      if (msg != null && msg.isNotEmpty) {
+        await AppToast.showInfo(msg);
+      }
+    } catch (e) {
+      await AppToast.showError(e.toString());
+    }
+  }
+
+  Future<void> _handleRefresh() async {
+    final provider = context.read<ArtistProfileProvider>();
+    await provider.loadGiftTypes();
+
+    if (!mounted) return;
+    final error = provider.giftsError?.trim();
+    if (error != null && error.isNotEmpty) {
+      await AppToast.showError(error);
+    }
+  }
+
+  Widget _buildCoverImage(String urlOrPath) {
+    final t = urlOrPath.trim();
+    if (t.isEmpty) {
+      return Image.asset(
+        'assets/pngs/artist_profile.png',
+        fit: BoxFit.cover,
+        alignment: Alignment.topCenter,
+      );
+    }
+    final lower = t.toLowerCase();
+    if (lower.startsWith('http://') || lower.startsWith('https://')) {
+      return CachedNetworkImage(
+        imageUrl: ApiConstants.resolvePublicUrl(t),
+        fit: BoxFit.cover,
+        alignment: Alignment.topCenter,
+        placeholder: (_, _) => Image.asset(
+          'assets/pngs/artist_profile.png',
+          fit: BoxFit.cover,
+          alignment: Alignment.topCenter,
+        ),
+        errorWidget: (_, _, _) => Image.asset(
+          'assets/pngs/artist_profile.png',
+          fit: BoxFit.cover,
+          alignment: Alignment.topCenter,
+        ),
+      );
+    }
+    return Image.asset(t, fit: BoxFit.cover, alignment: Alignment.topCenter);
   }
 
   @override
@@ -202,48 +284,56 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen> {
       body: Stack(
         children: [
           // CustomScrollView for the main content
-          CustomScrollView(
-            slivers: [
-              // Flexible app bar with the artist image
-              SliverAppBar(
-                expandedHeight: 400.maxHeight,
-                pinned: false,
-                floating: true,
-                backgroundColor: Colors.transparent,
-                elevation: 0,
-                automaticallyImplyLeading: false,
-                flexibleSpace: FlexibleSpaceBar(
-                  background: _buildArtistImageWithOverlay(),
-                ),
+          RefreshIndicator(
+            color: AppColors.buttonColor,
+            backgroundColor: AppColors.background,
+            onRefresh: _handleRefresh,
+            child: CustomScrollView(
+              physics: const AlwaysScrollableScrollPhysics(
+                parent: BouncingScrollPhysics(),
               ),
+              slivers: [
+                // Flexible app bar with the artist image
+                SliverAppBar(
+                  expandedHeight: 400.maxHeight,
+                  pinned: false,
+                  floating: true,
+                  backgroundColor: Colors.transparent,
+                  elevation: 0,
+                  automaticallyImplyLeading: false,
+                  flexibleSpace: FlexibleSpaceBar(
+                    background: _buildArtistImageWithOverlay(),
+                  ),
+                ),
 
-              // Content below the image
-              SliverToBoxAdapter(
-                child: Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Colors.transparent,
-                        AppColors.background.withValues(alpha: 0.1),
-                        AppColors.background.withValues(alpha: 0.3),
-                        AppColors.background.withValues(alpha: 0.6),
-                        AppColors.background,
-                        AppColors.background,
+                // Content below the image
+                SliverToBoxAdapter(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.transparent,
+                          AppColors.background.withValues(alpha: 0.1),
+                          AppColors.background.withValues(alpha: 0.3),
+                          AppColors.background.withValues(alpha: 0.6),
+                          AppColors.background,
+                          AppColors.background,
+                        ],
+                        stops: const [0.0, 0.1, 0.2, 0.4, 0.6, 1.0],
+                      ),
+                    ),
+                    child: Column(
+                      children: [
+                        // Content sections
+                        _buildProfileContent(),
                       ],
-                      stops: const [0.0, 0.1, 0.2, 0.4, 0.6, 1.0],
                     ),
                   ),
-                  child: Column(
-                    children: [
-                      // Content sections
-                      _buildProfileContent(),
-                    ],
-                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
 
           // Top icons (fixed position)
@@ -283,14 +373,8 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen> {
           ),
         ),
 
-        // Artist image
-        Positioned.fill(
-          child: Image.asset(
-            _artist.coverImageUrl,
-            fit: BoxFit.cover,
-            alignment: Alignment.topCenter,
-          ),
-        ),
+        // Artist image (asset or network)
+        Positioned.fill(child: _buildCoverImage(_artist.coverImageUrl)),
 
         // Glass effect positioned closer to bottom of artist image
         Positioned(
@@ -371,20 +455,22 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen> {
                               color: AppColors.text,
                             ),
                           ),
-
-                          Image.asset(
-                            widget.mediaType == 'Videos'
-                                ? 'assets/pngs/verify_green.png'
-                                : 'assets/pngs/verify.png',
-                            width: 25.icon,
-                            height: 25.icon,
-                          ),
+                          if (widget.artist.isVerified) ...[
+                            6.row,
+                            Image.asset(
+                              widget.mediaType == 'Videos'
+                                  ? 'assets/pngs/verify_green.png'
+                                  : 'assets/pngs/verify.png',
+                              width: 25.icon,
+                              height: 25.icon,
+                            ),
+                          ],
                         ],
                       ),
                       8.column,
                       // Gift fans count
                       Text(
-                        '${_artist.followers} Gift Fans',
+                        '${_followerFormat.format(_artist.followerCount)} Gift Fans',
                         style: AppTextStyles.bodyMedium.copyWith(
                           fontSize: 16.font,
                           color: AppColors.text.withValues(alpha: 0.8),
@@ -395,10 +481,26 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          GlassButtonWidget(text: 'Following', onTap: () {}),
+                          Opacity(
+                            opacity:
+                                context
+                                    .watch<ArtistProfileProvider>()
+                                    .isActionInFlight
+                                ? 0.55
+                                : 1,
+                            child: AbsorbPointer(
+                              absorbing: context
+                                  .watch<ArtistProfileProvider>()
+                                  .isActionInFlight,
+                              child: GlassButtonWidget(
+                                text: _isFollowing ? 'Following' : 'Follow',
+                                onTap: _toggleFollow,
+                              ),
+                            ),
+                          ),
                           GlassButtonWidget(
                             text: 'Gift Me',
-                            onTap: () {},
+                            onTap: _showGiftBoxModal,
                             showGiftIcon: true,
                           ),
                           PlayButtonWidget(
@@ -424,6 +526,36 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen> {
     );
   }
 
+  void _showGiftBoxModal() {
+    final provider = context.read<ArtistProfileProvider>();
+    if (provider.isLoadingGifts) {
+      AppToast.showInfo('Loading gifts...');
+      return;
+    }
+    if (provider.gifts.isEmpty) {
+      AppToast.showError('No gifts available at the moment.');
+      return;
+    }
+
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (BuildContext context) {
+        return GiftBoxModal(
+          headerText: 'GIFTBOX',
+          subHeaderText: 'Tap to send gift',
+          giftItems: provider.gifts,
+          onClose: () {
+            Navigator.of(context).pop();
+          },
+          onGiftSelected: (GiftItem gift) {
+            // TODO: Implement sending gift
+          },
+        );
+      },
+    );
+  }
+
   Widget _buildProfileContent() {
     return Container(
       margin: EdgeInsets.only(bottom: 70.padding),
@@ -444,7 +576,11 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Navigation buttons (Music, Videos, Events, About)
-          NavigationButtonsWidget(mediaType: widget.mediaType),
+          NavigationButtonsWidget(
+            mediaType: widget.mediaType,
+            artistId: widget.artist.id,
+            artistName: widget.artist.name,
+          ),
           18.column,
           LatestReleaseBannerWidget(onTap: () {}),
           30.column,

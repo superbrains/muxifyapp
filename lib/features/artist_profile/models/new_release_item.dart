@@ -1,3 +1,7 @@
+import 'package:muxify/features/artist_profile/models/artist_albums_response.dart';
+import 'package:muxify/features/artist_profile/models/artist_new_releases_response.dart';
+import 'package:muxify/features/artist_profile/models/artist_tracks_response.dart';
+
 class NewReleaseItem {
   final String id;
   final String title;
@@ -12,6 +16,46 @@ class NewReleaseItem {
     required this.coverImageUrl,
     this.isUnlocked = false,
   });
+
+  factory NewReleaseItem.fromArtistNewReleaseItem(
+    ArtistNewReleaseItem item,
+    String artistName,
+  ) {
+    return NewReleaseItem(
+      id: item.id,
+      title: item.title,
+      artist: artistName,
+      coverImageUrl: item.imageUrl,
+      isUnlocked:
+          false, // Default to false, can be updated if API provides this
+    );
+  }
+
+  factory NewReleaseItem.fromArtistAlbumItem(
+    ArtistAlbumItem item,
+    String artistName,
+  ) {
+    return NewReleaseItem(
+      id: item.id,
+      title: item.title,
+      artist: artistName,
+      coverImageUrl: item.coverArtUrl,
+      isUnlocked: false,
+    );
+  }
+
+  factory NewReleaseItem.fromArtistTrackItem(
+    ArtistTrackItem item,
+    String artistName,
+  ) {
+    return NewReleaseItem(
+      id: item.id,
+      title: item.title,
+      artist: artistName,
+      coverImageUrl: item.coverArtUrl,
+      isUnlocked: item.isUnlocked,
+    );
+  }
 
   NewReleaseItem copyWith({
     String? id,

@@ -1,68 +1,135 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import 'package:muxify/core/constants/app_colors.dart';
 import 'package:muxify/core/constants/app_sizes.dart';
 import 'package:muxify/core/constants/app_text_styles.dart';
 import 'package:muxify/core/router/app_router.dart';
+import 'package:muxify/core/utils/validators.dart';
+import 'package:muxify/features/auth/providers/auth_provider.dart';
 import 'package:muxify/shared/widgets/custom_button.dart';
 import 'package:muxify/shared/widgets/custom_input_field.dart';
 
 class CreateNewPasswordScreen extends StatefulWidget {
-  final String email;
+  const CreateNewPasswordScreen({
+    super.key,
+    this.initialToken,
+    this.email,
+  });
 
-  const CreateNewPasswordScreen({super.key, required this.email});
+  /// From deep link or email: `?token=...`
+  final String? initialToken;
+
+  /// Optional; for display context only.
+  final String? email;
 
   @override
-  State<CreateNewPasswordScreen> createState() =>
-      _CreateNewPasswordScreenState();
+  State<CreateNewPasswordScreen> createState() => _CreateNewPasswordScreenState();
 }
 
 class _CreateNewPasswordScreenState extends State<CreateNewPasswordScreen> {
-  final TextEditingController _newPasswordController = TextEditingController();
-  final TextEditingController _confirmPasswordController =
-      TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+  final _tokenController = TextEditingController();
+  final _newPasswordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
   bool _isNewPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
 
+  bool get _hasPresetToken {
+    final t = widget.initialToken?.trim() ?? '';
+    return t.isNotEmpty;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    final t = widget.initialToken?.trim();
+    if (t != null && t.isNotEmpty) {
+      _tokenController.text = t;
+    }
+  }
+
   @override
   void dispose() {
+    _tokenController.dispose();
     _newPasswordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
   }
 
+  Future<void> _submit(AuthProvider auth) async {
+    if (!(_formKey.currentState?.validate() ?? false)) return;
+    FocusScope.of(context).unfocus();
+    HapticFeedback.lightImpact();
+
+    final pwd = _newPasswordController.text;
+    final token = _tokenController.text.trim();
+    final ok = await auth.submitPasswordReset(token: token, password: pwd);
+    if (!mounted || !ok) return;
+    context.go(AppRouter.login);
+  }
+
+  String? _confirmPasswordValidator(String? value) {
+    if (value == null || value.isEmpty) {
+      return Validators.required(value);
+    }
+    if (value != _newPasswordController.text) {
+      return 'Passwords do not match.';
+    }
+    return null;
+  }
+
+  String? _tokenValidator(String? value) {
+    if (_hasPresetToken) return null;
+    return Validators.required(value);
+  }
+
   @override
   Widget build(BuildContext context) {
+    final auth = context.watch<AuthProvider>();
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: EdgeInsets.symmetric(horizontal: 24.padding),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              24.column,
-              Align(alignment: Alignment.centerLeft, child: _buildHeader()),
-              40.column,
-              _buildTitle(),
-              8.column,
-              _buildSubtitle(),
-              40.column,
-              _buildNewPasswordField(),
-              16.column,
-              _buildConfirmPasswordField(),
-              250.column,
-              _buildCreateButton(),
-              32.column,
-            ],
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                24.column,
+                Align(alignment: Alignment.centerLeft, child: _buildHeader(context)),
+                40.column,
+                _buildTitle(),
+                8.column,
+                _buildSubtitle(),
+                40.column,
+                if (!_hasPresetToken) ...[
+                  _buildTokenField(),
+                  16.column,
+                ],
+                _buildNewPasswordField(),
+                16.column,
+                _buildConfirmPasswordField(),
+                250.column,
+                CustomButton.signUp(
+                  text: 'Create Password',
+                  width: double.infinity,
+                  isLoading: auth.isResetPasswordSubmitting,
+                  onPressed: () => _submit(auth),
+                ),
+                32.column,
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -115,11 +182,41 @@ class _CreateNewPasswordScreenState extends State<CreateNewPasswordScreen> {
   }
 
   Widget _buildSubtitle() {
+    final hint = widget.email?.trim();
     return Text(
-      'Create a new password you can remember',
+      hint != null && hint.isNotEmpty
+          ? 'Use the reset token from your email for $hint.'
+          : 'Use the reset token from your email, then choose a new password.',
       style: AppTextStyles.bodyLarge.copyWith(
         color: AppColors.text.withValues(alpha: 0.7),
       ),
+      textAlign: TextAlign.center,
+    );
+  }
+
+  Widget _buildTokenField() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Reset token',
+          style: AppTextStyles.bodyMedium.copyWith(
+            color: AppColors.text,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        8.column,
+        CustomInputField(
+          controller: _tokenController,
+          hintText: 'Paste the token from the reset email',
+          borderRadius: 12.radius,
+          contentPadding: EdgeInsets.symmetric(
+            horizontal: 16.padding,
+            vertical: 16.padding,
+          ),
+          validator: _tokenValidator,
+        ),
+      ],
     );
   }
 
@@ -144,6 +241,7 @@ class _CreateNewPasswordScreenState extends State<CreateNewPasswordScreen> {
             horizontal: 16.padding,
             vertical: 16.padding,
           ),
+          validator: Validators.signupPassword,
           suffixIcon: GestureDetector(
             onTap: () {
               HapticFeedback.lightImpact();
@@ -186,6 +284,7 @@ class _CreateNewPasswordScreenState extends State<CreateNewPasswordScreen> {
             horizontal: 16.padding,
             vertical: 16.padding,
           ),
+          validator: _confirmPasswordValidator,
           suffixIcon: GestureDetector(
             onTap: () {
               HapticFeedback.lightImpact();
@@ -206,21 +305,6 @@ class _CreateNewPasswordScreenState extends State<CreateNewPasswordScreen> {
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildCreateButton() {
-    return CustomButton.signUp(
-      text: 'Create Password',
-      width: double.infinity,
-      onPressed: () {
-        HapticFeedback.lightImpact();
-        if (_newPasswordController.text.isNotEmpty &&
-            _confirmPasswordController.text.isNotEmpty &&
-            _newPasswordController.text == _confirmPasswordController.text) {
-          context.go(AppRouter.login);
-        }
-      },
     );
   }
 }

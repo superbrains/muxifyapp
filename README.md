@@ -14,3 +14,23 @@ A few resources to get you started if this is your first Flutter project:
 For help getting started with Flutter development, view the
 [online documentation](https://docs.flutter.dev/), which offers tutorials,
 samples, guidance on mobile development, and a full API reference.
+
+
+Push to origin (Habedexise1/muxify):
+./push_to_repo.sh origin
+
+Push to muxifyapp (superbrains/muxifyapp):
+./push_to_repo.sh muxifyapp
+
+
+
+cd /Users/apple/Documents/contract/mux/muxify
+flutter run --dart-define=ADB_REVERSE=true
+
+
+cd Muxify.Backend docker compose down -v && docker compose up --build -d
+
+
+discovery-seed-fan@muxify.local
+
+ChangeMe_Seed123!

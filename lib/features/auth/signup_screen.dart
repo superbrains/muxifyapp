@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import 'package:muxify/core/constants/app_colors.dart';
 import 'package:muxify/core/constants/app_sizes.dart';
 import 'package:muxify/core/constants/app_text_styles.dart';
 import 'package:muxify/core/router/app_router.dart';
+import 'package:muxify/core/utils/validators.dart';
+import 'package:muxify/features/auth/providers/auth_provider.dart';
 import 'package:muxify/shared/widgets/custom_button.dart';
 import 'package:muxify/shared/widgets/custom_input_field.dart';
 
@@ -17,6 +20,7 @@ class SignupScreen extends StatefulWidget {
 
 class _SignupScreenState extends State<SignupScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -25,10 +29,31 @@ class _SignupScreenState extends State<SignupScreen> {
 
   @override
   void dispose() {
+    _nameController.dispose();
     _emailController.dispose();
     _phoneController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  Future<void> _submitSignup(AuthProvider auth) async {
+    if (!_agreeToTerms) return;
+    if (!(_formKey.currentState?.validate() ?? false)) return;
+    FocusScope.of(context).unfocus();
+    HapticFeedback.lightImpact();
+    final phoneE164 = Validators.nigeriaPhoneSuffixToE164(_phoneController.text);
+    final ok = await auth.register(
+      email: _emailController.text,
+      password: _passwordController.text,
+      name: _nameController.text.trim().isEmpty
+          ? null
+          : _nameController.text.trim(),
+      phone: phoneE164,
+    );
+    if (!mounted || !ok) return;
+    context.push(
+      '${AppRouter.verifyEmail}?email=${Uri.encodeComponent(_emailController.text.trim())}',
+    );
   }
 
   @override
@@ -44,7 +69,7 @@ class _SignupScreenState extends State<SignupScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () {},
+            onPressed: () => context.go(AppRouter.login),
             child: Text(
               'Login',
               style: AppTextStyles.bodyMedium.copyWith(
@@ -68,6 +93,8 @@ class _SignupScreenState extends State<SignupScreen> {
                 8.column,
                 _buildSubtitle(),
                 40.column,
+                _buildNameField(),
+                24.column,
                 _buildEmailField(),
                 24.column,
                 _buildPhoneField(),
@@ -109,6 +136,25 @@ class _SignupScreenState extends State<SignupScreen> {
     );
   }
 
+  Widget _buildNameField() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Full name',
+          style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w500),
+        ),
+        8.column,
+        CustomInputField(
+          controller: _nameController,
+          hintText: 'Your display name',
+          keyboardType: TextInputType.name,
+          validator: Validators.signupOptionalDisplayName,
+        ),
+      ],
+    );
+  }
+
   Widget _buildEmailField() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -122,6 +168,7 @@ class _SignupScreenState extends State<SignupScreen> {
           controller: _emailController,
           hintText: 'Email Address',
           keyboardType: TextInputType.emailAddress,
+          validator: Validators.email,
         ),
       ],
     );
@@ -180,6 +227,7 @@ class _SignupScreenState extends State<SignupScreen> {
                 controller: _phoneController,
                 hintText: 'e.g 90 345 6789',
                 keyboardType: TextInputType.phone,
+                validator: Validators.signupNgPhoneSuffix,
               ),
             ),
           ],
@@ -201,6 +249,7 @@ class _SignupScreenState extends State<SignupScreen> {
           controller: _passwordController,
           hintText: 'Password',
           obscureText: !_isPasswordVisible,
+          validator: Validators.signupPassword,
           suffixIcon: IconButton(
             icon: Icon(
               _isPasswordVisible
@@ -325,17 +374,17 @@ class _SignupScreenState extends State<SignupScreen> {
   }
 
   Widget _buildCreateAccountButton() {
-    return CustomButton.signUp(
-      text: 'Create Account',
-      width: double.infinity,
-      onPressed: _agreeToTerms
-          ? () {
-              HapticFeedback.lightImpact();
-              context.push(
-                '${AppRouter.verifyEmail}?email=${Uri.encodeComponent(_emailController.text)}',
-              );
-            }
-          : null,
+    return Consumer<AuthProvider>(
+      builder: (context, auth, _) {
+        return CustomButton.signUp(
+          text: 'Create Account',
+          width: double.infinity,
+          isLoading: auth.isSignupLoading,
+          onPressed: _agreeToTerms
+              ? () => _submitSignup(auth)
+              : null,
+        );
+      },
     );
   }
 }

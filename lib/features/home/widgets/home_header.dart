@@ -43,32 +43,7 @@ class HomeHeader extends StatelessWidget {
             padding: EdgeInsets.only(left: 26.padding, right: 21.padding),
             child: Row(
               children: [
-                // Left: Logo
-                Image.asset(
-                  'assets/pngs/Bitcoin_musixfy.png',
-                  height: 40.buttonHeight,
-                  width: 40.buttonHeight,
-                ),
-                4.row,
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'm100,250',
-                      style: AppTextStyles.bodyMedium.copyWith(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 15.font,
-                      ),
-                    ),
-                    Text(
-                      'Wallet Balance',
-                      style: AppTextStyles.bodyMedium.copyWith(
-                        fontWeight: FontWeight.w400,
-                        fontSize: 12.font,
-                      ),
-                    ),
-                  ],
-                ),
+                _buildWalletBrand(),
                 const Spacer(),
                 _buildHeaderIcons(context),
               ],
@@ -78,6 +53,38 @@ class HomeHeader extends StatelessWidget {
           _buildToggleButtons(),
         ],
       ),
+    );
+  }
+
+  Widget _buildWalletBrand() {
+    return Row(
+      children: [
+        Image.asset(
+          'assets/pngs/Bitcoin_musixfy.png',
+          height: 40.buttonHeight,
+          width: 40.buttonHeight,
+        ),
+        4.row,
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'm100,250',
+              style: AppTextStyles.bodyMedium.copyWith(
+                fontWeight: FontWeight.w600,
+                fontSize: 15.font,
+              ),
+            ),
+            Text(
+              'Wallet Balance',
+              style: AppTextStyles.bodyMedium.copyWith(
+                fontWeight: FontWeight.w400,
+                fontSize: 12.font,
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 
@@ -137,8 +144,12 @@ class HomeHeader extends StatelessWidget {
         GestureDetector(
           onTap: () {
             HapticFeedback.lightImpact();
-            // Navigate to fan profile screen using GoRouter
-            context.push(AppRouter.fanProfile);
+            final isPhoneLayout = MediaQuery.sizeOf(context).width < 650;
+            if (isPhoneLayout) {
+              Scaffold.maybeOf(context)?.openEndDrawer();
+            } else {
+              context.push(AppRouter.fanProfile);
+            }
           },
           child: ClipOval(
             child: Image.asset(

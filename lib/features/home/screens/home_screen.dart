@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import 'package:muxify/core/constants/app_colors.dart';
 import 'package:muxify/core/constants/app_sizes.dart';
 import 'package:muxify/features/home/models/tab_option.dart';
-import 'package:muxify/features/home/models/recently_played_item.dart';
+import 'package:muxify/features/artist_profile/models/artist_profile_route_args.dart';
 import 'package:muxify/features/home/models/trending_artist.dart';
 import 'package:muxify/features/home/models/track_item.dart';
 import 'package:muxify/features/home/models/category_tab.dart';
@@ -16,6 +16,7 @@ import 'package:muxify/features/home/models/followed_item.dart';
 import 'package:muxify/features/home/models/now_playing_item.dart';
 import 'package:muxify/features/home/models/video_item.dart';
 import 'package:muxify/features/home/widgets/home_header.dart';
+import 'package:muxify/features/home/widgets/home_menu_drawer.dart';
 import 'package:muxify/features/home/widgets/recently_played_section.dart';
 import 'package:muxify/features/home/widgets/trending_artists_section.dart';
 import 'package:muxify/features/home/widgets/category_tabs_section.dart';
@@ -30,6 +31,7 @@ import 'package:muxify/features/home/widgets/video_popular_new_releases_section.
 import 'package:muxify/features/home/widgets/trending_videos_section.dart';
 import 'package:muxify/features/home/widgets/video_spotlight_section.dart';
 import 'package:muxify/features/home/widgets/video_followed_section.dart';
+import 'package:muxify/features/home/providers/home_provider.dart';
 import 'package:muxify/core/router/app_router.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -62,25 +64,6 @@ class _HomeScreenState extends State<HomeScreen> {
     ),
     CategoryTab(id: 'top_chart', title: 'Top Chart', icon: Icons.bar_chart),
     CategoryTab(id: 'new_release', title: 'New Release', icon: Icons.fiber_new),
-  ];
-
-  // Recently played data - replace with backend data
-  final List<RecentlyPlayedItem> _recentlyPlayed = [
-    RecentlyPlayedItem(id: '1', title: '5ive', artist: 'Artist Name'),
-    RecentlyPlayedItem(id: '2', title: 'Olamide', artist: 'Artist Name'),
-    RecentlyPlayedItem(id: '3', title: 'Boy Alone', artist: 'Artist Name'),
-    RecentlyPlayedItem(id: '4', title: 'Morayo', artist: 'Artist Name'),
-    RecentlyPlayedItem(id: '5', title: 'New Album', artist: 'Artist Name'),
-  ];
-
-  // Trending artists data - replace with backend data
-  final List<TrendingArtist> _trendingArtists = [
-    TrendingArtist(id: '1', name: 'Davido', isVerified: true),
-    TrendingArtist(id: '2', name: 'Burna Boy', isVerified: true),
-    TrendingArtist(id: '3', name: 'Flavour', isVerified: true),
-    TrendingArtist(id: '4', name: 'Rema', isVerified: true),
-    TrendingArtist(id: '5', name: 'Omah Lay', isVerified: true),
-    TrendingArtist(id: '6', name: 'Omah Lay', isVerified: true),
   ];
 
   // Featured playlists data - replace with backend data
@@ -330,38 +313,75 @@ class _HomeScreenState extends State<HomeScreen> {
     isUnlocked: false,
   );
 
-  Widget _buildTabContent() {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final home = context.read<HomeProvider>();
+      home.loadRecentlyPlayed();
+      home.loadTrendingArtists();
+    });
+  }
+
+  void _pushArtistProfile(
+    BuildContext context,
+    TrendingArtist artist, {
+    String? mediaType,
+  }) {
+    context.push(
+      AppRouter.artistProfile,
+      extra: ArtistProfileRouteArgs(artist: artist, mediaType: mediaType),
+    );
+  }
+
+  Widget _buildTabContent(HomeProvider homeProvider) {
     switch (_selectedTab) {
       case 'Music':
-        return _buildMusicContent();
+        return _buildMusicContent(homeProvider);
       case 'Videos':
-        return _buildVideosContent();
+        return _buildVideosContent(homeProvider);
       case 'DJ Mix':
         return _buildDjMixContent();
       case 'Podcast':
         return _buildPodcastContent();
       default:
-        return _buildMusicContent();
+        return _buildMusicContent(homeProvider);
     }
   }
 
-  Widget _buildMusicContent() {
+  Widget _buildMusicContent(HomeProvider homeProvider) {
+    final showRecentlyPlayedSection =
+        homeProvider.isLoadingRecentlyPlayed ||
+        (homeProvider.hasLoadedRecentlyPlayed &&
+            homeProvider.recentlyPlayed.isNotEmpty);
+
+    final showTrendingArtistsSection =
+        homeProvider.isLoadingTrendingArtists ||
+        (homeProvider.hasLoadedTrendingArtists &&
+            homeProvider.trendingArtists.isNotEmpty);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         30.column,
-        RecentlyPlayedSection(items: _recentlyPlayed),
-        30.column,
-        TrendingArtistsSection(
-          artists: _trendingArtists,
-          title: 'Trending artists',
-          showLeadingIcon: true,
-          onTap: () {
-            HapticFeedback.lightImpact();
-            context.push(AppRouter.artistProfile);
-          },
-        ),
-        30.column,
+        if (homeProvider.isLoadingRecentlyPlayed)
+          RecentlyPlayedSection(items: const [], isLoading: true)
+        else if (homeProvider.hasLoadedRecentlyPlayed &&
+            homeProvider.recentlyPlayed.isNotEmpty)
+          RecentlyPlayedSection(items: homeProvider.recentlyPlayed),
+        if (showRecentlyPlayedSection)
+          30.column,
+        if (showTrendingArtistsSection)
+          TrendingArtistsSection(
+            artists: homeProvider.trendingArtists,
+            title: 'Trending artists',
+            showLeadingIcon: true,
+            isLoading: homeProvider.isLoadingTrendingArtists,
+            onArtistTap: (artist) => _pushArtistProfile(context, artist),
+          ),
+        if (showTrendingArtistsSection)
+          30.column,
         // Category Tabs Section
         CategoryTabsSection(
           categories: _categoryTabs,
@@ -406,7 +426,12 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildVideosContent() {
+  Widget _buildVideosContent(HomeProvider homeProvider) {
+    final showTrendingArtistsSection =
+        homeProvider.isLoadingTrendingArtists ||
+        (homeProvider.hasLoadedTrendingArtists &&
+            homeProvider.trendingArtists.isNotEmpty);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -425,18 +450,21 @@ class _HomeScreenState extends State<HomeScreen> {
         30.column,
         RecentlyPlayedVideosSection(items: _recentlyPlayedVideos),
         30.column,
-        TrendingArtistsSection(
-          artists: _trendingArtists,
-          title: 'Trending artists',
-          showLeadingIcon: true,
-          onTap: () {
-            HapticFeedback.lightImpact();
-            context.push(
-              '${AppRouter.artistProfile}?artistId=1&artistName=Mr Funny&coverImageUrl=assets/pngs/artist_profile_video.png&followers=2,500,000&mediaType=Videos',
-            );
-          },
-        ),
-        30.column,
+        if (showTrendingArtistsSection)
+          TrendingArtistsSection(
+            artists: homeProvider.trendingArtists,
+            title: 'Trending artists',
+            showLeadingIcon: true,
+            isLoading: homeProvider.isLoadingTrendingArtists,
+            mediaType: 'Videos',
+            onArtistTap: (artist) => _pushArtistProfile(
+              context,
+              artist,
+              mediaType: 'Videos',
+            ),
+          ),
+        if (showTrendingArtistsSection)
+          30.column,
         CategoryTabsSection(
           categories: _categoryTabs,
           selectedCategoryId: _selectedCategoryId,
@@ -529,8 +557,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final homeProvider = context.watch<HomeProvider>();
+    final isPhoneLayout = MediaQuery.sizeOf(context).width < 650;
+
     return Scaffold(
       backgroundColor: AppColors.background,
+      endDrawer: isPhoneLayout ? const HomeMenuDrawer() : null,
       body: Stack(
         children: [
           Column(
@@ -545,13 +577,17 @@ class _HomeScreenState extends State<HomeScreen> {
                 },
               ),
               Expanded(
-                child: SingleChildScrollView(
-                  padding: EdgeInsets.only(left: 24.padding),
-                  child: _buildTabContent(),
-                  // Column(
-                  //   crossAxisAlignment: CrossAxisAlignment.start,
-                  //   children: [30.column, _buildTabContent()],
-                  // ),
+                child: RefreshIndicator(
+                  onRefresh: () => context.read<HomeProvider>().refreshHome(),
+                  child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: EdgeInsets.only(left: 24.padding),
+                    child: _buildTabContent(homeProvider),
+                    // Column(
+                    //   crossAxisAlignment: CrossAxisAlignment.start,
+                    //   children: [30.column, _buildTabContent()],
+                    // ),
+                  ),
                 ),
               ),
             ],

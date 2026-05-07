@@ -17,6 +17,8 @@ import 'package:muxify/features/statistics/screens/statistics_screen.dart';
 import 'package:muxify/features/featured_playlist/screens/featured_playlist_screen.dart';
 import 'package:muxify/features/trending_videos/screens/trending_videos_screen.dart';
 import 'package:muxify/features/artist_profile/screens/artist_profile_screen.dart';
+import 'package:muxify/features/artist_profile/models/artist_profile_route_args.dart';
+import 'package:muxify/features/home/models/trending_artist.dart';
 import 'package:muxify/features/video_player/screens/video_player_screen.dart';
 import 'package:muxify/features/artist_profile/screens/new_release_screen.dart';
 import 'package:muxify/features/artist_profile/screens/all_videos_screen.dart';
@@ -140,11 +142,17 @@ class AppRouter {
         path: createNewPassword,
         name: 'create-new-password',
         pageBuilder: (context, state) {
-          final email =
-              state.uri.queryParameters['email'] ?? 'johndoe@gmail.com';
+          final email = state.uri.queryParameters['email'];
+          final token = state.uri.queryParameters['token'];
+          final trimmedToken = token?.trim();
           return MaterialPage(
             key: state.pageKey,
-            child: CreateNewPasswordScreen(email: email),
+            child: CreateNewPasswordScreen(
+              email: email,
+              initialToken: (trimmedToken == null || trimmedToken.isEmpty)
+                  ? null
+                  : trimmedToken,
+            ),
           );
         },
       ),
@@ -203,21 +211,28 @@ class AppRouter {
         path: artistProfile,
         name: 'artist-profile',
         pageBuilder: (context, state) {
-          final artistId = state.uri.queryParameters['artistId'];
-          final artistName = state.uri.queryParameters['artistName'];
-          final coverImageUrl = state.uri.queryParameters['coverImageUrl'];
-          final followers = state.uri.queryParameters['followers'];
-          final mediaType = state.uri.queryParameters['mediaType'];
+          final TrendingArtist artist;
+          final String? mediaType;
+
+          final extra = state.extra;
+          if (extra is ArtistProfileRouteArgs) {
+            artist = extra.artist;
+            mediaType = extra.mediaType;
+          } else {
+            final q = state.uri.queryParameters;
+            artist = TrendingArtist(
+              id: q['artistId'] ?? '',
+              name: q['artistName'] ?? 'Artist',
+              imageUrl: q['coverImageUrl'],
+              followerCount: int.tryParse(q['followerCount'] ?? '') ?? 0,
+              isFollowing: q['isFollowing'] == 'true',
+            );
+            mediaType = q['mediaType'];
+          }
 
           return MaterialPage(
             key: state.pageKey,
-            child: ArtistProfileScreen(
-              artistId: artistId,
-              artistName: artistName,
-              coverImageUrl: coverImageUrl,
-              followers: followers,
-              mediaType: mediaType,
-            ),
+            child: ArtistProfileScreen(artist: artist, mediaType: mediaType),
           );
         },
       ),
@@ -225,11 +240,18 @@ class AppRouter {
         path: newRelease,
         name: 'new-release',
         pageBuilder: (context, state) {
-          final mediaType = state.uri.queryParameters['mediaType'];
+          final q = state.uri.queryParameters;
+          final mediaType = q['mediaType'];
+          final artistId = q['artistId'];
+          final artistName = q['artistName'];
 
           return MaterialPage(
             key: state.pageKey,
-            child: NewReleaseScreen(mediaType: mediaType),
+            child: NewReleaseScreen(
+              mediaType: mediaType,
+              artistId: artistId,
+              artistName: artistName,
+            ),
           );
         },
       ),
@@ -242,14 +264,30 @@ class AppRouter {
       GoRoute(
         path: albums,
         name: 'albums',
-        pageBuilder: (context, state) =>
-            MaterialPage(key: state.pageKey, child: const AlbumsScreen()),
+        pageBuilder: (context, state) {
+          final q = state.uri.queryParameters;
+          final artistId = q['artistId'];
+          final artistName = q['artistName'];
+
+          return MaterialPage(
+            key: state.pageKey,
+            child: AlbumsScreen(artistId: artistId, artistName: artistName),
+          );
+        },
       ),
       GoRoute(
         path: singles,
         name: 'singles',
-        pageBuilder: (context, state) =>
-            MaterialPage(key: state.pageKey, child: const SinglesScreen()),
+        pageBuilder: (context, state) {
+          final q = state.uri.queryParameters;
+          final artistId = q['artistId'];
+          final artistName = q['artistName'];
+
+          return MaterialPage(
+            key: state.pageKey,
+            child: SinglesScreen(artistId: artistId, artistName: artistName),
+          );
+        },
       ),
       GoRoute(
         path: albumDetails,

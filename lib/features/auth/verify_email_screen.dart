@@ -5,7 +5,9 @@ import 'package:muxify/core/constants/app_colors.dart';
 import 'package:muxify/core/constants/app_sizes.dart';
 import 'package:muxify/core/constants/app_text_styles.dart';
 import 'package:muxify/core/router/app_router.dart';
+import 'package:muxify/features/auth/providers/auth_provider.dart';
 import 'package:muxify/shared/widgets/custom_button.dart';
+import 'package:provider/provider.dart';
 import 'package:muxify/shared/widgets/otp_text_field.dart';
 
 class VerifyEmailScreen extends StatefulWidget {
@@ -83,7 +85,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
     return Column(
       children: [
         Text(
-          'An verification code has sent to',
+          'A verification code has sent to',
           style: AppTextStyles.bodyMedium.copyWith(),
         ),
         4.column,
@@ -95,7 +97,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
   Widget _buildCodeInputFields() {
     return OtpTextField(
       controller: _otpController,
-      otpLength: 5,
+      otpLength: 6,
       onOtpCompleted: _onOtpCompleted,
       filledColor: AppColors.glassyDark,
       borderColor: AppColors.text.withValues(alpha: 0.2),
@@ -140,15 +142,26 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
   }
 
   Widget _buildVerifyButton() {
-    return CustomButton.signUp(
-      text: 'Verify Email',
-      width: double.infinity,
-      onPressed: _verificationCode.length == 5
-          ? () {
-              HapticFeedback.lightImpact();
-              context.push(AppRouter.createUsername);
-            }
-          : null,
+    return Consumer<AuthProvider>(
+      builder: (context, auth, _) {
+        final ready = _verificationCode.length == 6;
+        return CustomButton.signUp(
+          text: 'Verify Email',
+          width: double.infinity,
+          isLoading: auth.isVerifyEmailLoading,
+          onPressed: ready && !auth.isVerifyEmailLoading
+              ? () async {
+                  FocusScope.of(context).unfocus();
+                  HapticFeedback.lightImpact();
+                  final ok = await auth.verifyEmailCode(
+                    _verificationCode.trim(),
+                  );
+                  if (!context.mounted || !ok) return;
+                  context.push(AppRouter.createUsername);
+                }
+              : null,
+        );
+      },
     );
   }
 }
