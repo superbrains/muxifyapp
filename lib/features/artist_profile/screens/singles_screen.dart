@@ -1,15 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:muxify/core/constants/app_colors.dart';
 import 'package:muxify/core/constants/app_sizes.dart';
 import 'package:muxify/core/constants/app_text_styles.dart';
-import 'package:muxify/features/artist_profile/models/new_release_item.dart';
 import 'package:muxify/features/artist_profile/providers/artist_profile_provider.dart';
+import 'package:muxify/features/artist_profile/utils/release_playback_helper.dart';
 import 'package:muxify/features/artist_profile/widgets/custom_app_bar_widget.dart';
 import 'package:muxify/features/artist_profile/widgets/release_card_widget.dart';
 import 'package:muxify/features/artist_profile/widgets/search_container_widget.dart';
-import 'package:muxify/shared/widgets/unlock_all_songs_modal.dart';
 
 class SinglesScreen extends StatefulWidget {
   final String? artistId;
@@ -23,6 +21,8 @@ class SinglesScreen extends StatefulWidget {
 
 class _SinglesScreenState extends State<SinglesScreen> {
   final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+  bool _isOpeningPlayer = false;
 
   @override
   void initState() {
@@ -59,7 +59,14 @@ class _SinglesScreenState extends State<SinglesScreen> {
           children: [
             20.column,
             // Search Bar
-            SearchContainerWidget(controller: _searchController),
+            SearchContainerWidget(
+              controller: _searchController,
+              onChanged: (value) {
+                setState(() {
+                  _searchQuery = value.trim().toLowerCase();
+                });
+              },
+            ),
             30.column,
             // Singles Grid
             Expanded(child: _buildSinglesGrid()),
@@ -94,6 +101,22 @@ class _SinglesScreenState extends State<SinglesScreen> {
             ),
           );
         }
+
+        final filteredTracks = provider.tracks.where((track) {
+          if (_searchQuery.isEmpty) return true;
+          return track.title.toLowerCase().contains(_searchQuery) ||
+              track.artist.toLowerCase().contains(_searchQuery);
+        }).toList();
+
+        if (filteredTracks.isEmpty) {
+          return Center(
+            child: Text(
+              'No singles match your search',
+              style: AppTextStyles.bodyMedium.copyWith(color: AppColors.text),
+            ),
+          );
+        }
+
         return GridView.builder(
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 2,
@@ -101,15 +124,30 @@ class _SinglesScreenState extends State<SinglesScreen> {
             mainAxisSpacing: 20.padding,
             childAspectRatio: 0.75,
           ),
-          itemCount: provider.tracks.length,
+          itemCount: filteredTracks.length,
           itemBuilder: (context, index) {
+            final sourceTrack = filteredTracks[index];
+            final displayTrack = sourceTrack.copyWith(isUnlocked: true);
             return ReleaseCardWidget(
-              release: provider.tracks[index],
-              onTap: () {
-                HapticFeedback.lightImpact();
-                // Navigate to single details
+              release: displayTrack,
+              onTap: () async {
+                if (_isOpeningPlayer) return;
+                setState(() {
+                  _isOpeningPlayer = true;
+                });
+                await ReleasePlaybackHelper.openFromRelease(
+                  context,
+                  release: sourceTrack,
+                  albumName: 'Singles',
+                  tryBackendStream: true,
+                );
+                if (!mounted) return;
+                setState(() {
+                  _isOpeningPlayer = false;
+                });
               },
-              onUnlockTap: () => _showUnlockModal(provider.tracks[index]),
+              // TEMP: Unlock flow removed for now; always show Play button.
+              // onUnlockTap: () => _showUnlockModal(track),
             );
           },
         );
@@ -117,25 +155,4 @@ class _SinglesScreenState extends State<SinglesScreen> {
     );
   }
 
-  void _showUnlockModal(NewReleaseItem single) {
-    showDialog(
-      context: context,
-      barrierDismissible: true,
-      builder: (BuildContext context) {
-        return UnlockAllSongsModal(
-          onClose: () {
-            Navigator.of(context).pop();
-          },
-          onUnlockPremium: () {
-            Navigator.of(context).pop();
-            // TODO: Implement unlocking in provider if needed
-          },
-          onUnlockFree: () {
-            Navigator.of(context).pop();
-            // TODO: Implement unlocking in provider if needed
-          },
-        );
-      },
-    );
-  }
 }

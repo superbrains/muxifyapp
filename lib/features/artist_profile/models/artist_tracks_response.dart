@@ -18,17 +18,33 @@ class ArtistTracksResponse {
   });
 
   factory ArtistTracksResponse.fromJson(Map<String, dynamic> json) {
+    final itemsJson = json['items'];
+    final parsedItems = itemsJson is List
+        ? itemsJson
+              .whereType<Map<String, dynamic>>()
+              .map(ArtistTrackItem.fromJson)
+              .toList()
+        : const <ArtistTrackItem>[];
+
     return ArtistTracksResponse(
-      artistId: json['artistId'] as String,
-      artistName: json['artistName'] as String,
-      items: (json['items'] as List<dynamic>)
-          .map((e) => ArtistTrackItem.fromJson(e as Map<String, dynamic>))
-          .toList(),
-      totalCount: json['totalCount'] as int,
-      page: json['page'] as int,
-      pageSize: json['pageSize'] as int,
-      totalPages: json['totalPages'] as int,
+      artistId: (json['artistId'] as String?) ?? '',
+      artistName: (json['artistName'] as String?) ?? 'Artist',
+      items: parsedItems,
+      totalCount: _asInt(json['totalCount']),
+      page: _asInt(json['page'], fallback: 1),
+      pageSize: _asInt(
+        json['pageSize'],
+        fallback: parsedItems.isEmpty ? 0 : parsedItems.length,
+      ),
+      totalPages: _asInt(json['totalPages'], fallback: 1),
     );
+  }
+
+  static int _asInt(dynamic value, {int fallback = 0}) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    if (value is String) return int.tryParse(value) ?? fallback;
+    return fallback;
   }
 }
 
@@ -65,19 +81,33 @@ class ArtistTrackItem {
 
   factory ArtistTrackItem.fromJson(Map<String, dynamic> json) {
     return ArtistTrackItem(
-      id: json['id'] as String,
-      title: json['title'] as String,
-      coverArtUrl: json['coverArtUrl'] as String,
-      albumId: json['albumId'] as String,
-      albumName: json['albumName'] as String,
-      genreName: json['genreName'] as String,
-      durationSeconds: json['durationSeconds'] as int,
-      playCount: json['playCount'] as int,
-      likeCount: json['likeCount'] as int,
-      releaseDate: DateTime.parse(json['releaseDate'] as String),
-      createdAt: DateTime.parse(json['createdAt'] as String),
-      isUnlocked: json['isUnlocked'] as bool,
-      unlockCostCoins: json['unlockCostCoins'] as int,
+      id: (json['id'] as String?) ?? '',
+      title: (json['title'] as String?) ?? 'Untitled',
+      coverArtUrl: (json['coverArtUrl'] as String?) ?? '',
+      albumId: (json['albumId'] as String?) ?? '',
+      albumName: (json['albumName'] as String?) ?? '',
+      genreName: (json['genreName'] as String?) ?? '',
+      durationSeconds: _asInt(json['durationSeconds']),
+      playCount: _asInt(json['playCount']),
+      likeCount: _asInt(json['likeCount']),
+      releaseDate: _asDateTime(json['releaseDate']),
+      createdAt: _asDateTime(json['createdAt']),
+      isUnlocked: (json['isUnlocked'] as bool?) ?? false,
+      unlockCostCoins: _asInt(json['unlockCostCoins']),
     );
+  }
+
+  static int _asInt(dynamic value, {int fallback = 0}) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    if (value is String) return int.tryParse(value) ?? fallback;
+    return fallback;
+  }
+
+  static DateTime _asDateTime(dynamic value) {
+    if (value is String) {
+      return DateTime.tryParse(value) ?? DateTime.fromMillisecondsSinceEpoch(0);
+    }
+    return DateTime.fromMillisecondsSinceEpoch(0);
   }
 }

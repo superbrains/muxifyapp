@@ -17,7 +17,6 @@ import 'package:muxify/features/statistics/screens/statistics_screen.dart';
 import 'package:muxify/features/featured_playlist/screens/featured_playlist_screen.dart';
 import 'package:muxify/features/trending_videos/screens/trending_videos_screen.dart';
 import 'package:muxify/features/artist_profile/screens/artist_profile_screen.dart';
-import 'package:muxify/features/artist_profile/models/artist_profile_route_args.dart';
 import 'package:muxify/features/home/models/trending_artist.dart';
 import 'package:muxify/features/video_player/screens/video_player_screen.dart';
 import 'package:muxify/features/artist_profile/screens/new_release_screen.dart';
@@ -211,24 +210,16 @@ class AppRouter {
         path: artistProfile,
         name: 'artist-profile',
         pageBuilder: (context, state) {
-          final TrendingArtist artist;
-          final String? mediaType;
-
-          final extra = state.extra;
-          if (extra is ArtistProfileRouteArgs) {
-            artist = extra.artist;
-            mediaType = extra.mediaType;
-          } else {
-            final q = state.uri.queryParameters;
-            artist = TrendingArtist(
-              id: q['artistId'] ?? '',
-              name: q['artistName'] ?? 'Artist',
-              imageUrl: q['coverImageUrl'],
-              followerCount: int.tryParse(q['followerCount'] ?? '') ?? 0,
-              isFollowing: q['isFollowing'] == 'true',
-            );
-            mediaType = q['mediaType'];
-          }
+          final q = state.uri.queryParameters;
+          final artist = TrendingArtist(
+            id: q['artistId'] ?? '',
+            name: q['artistName'] ?? 'Artist',
+            imageUrl: q['coverImageUrl'],
+            followerCount: int.tryParse(q['followerCount'] ?? '') ?? 0,
+            isFollowing: q['isFollowing'] == 'true',
+            isVerified: q['isVerified'] == 'true',
+          );
+          final mediaType = q['mediaType'];
 
           return MaterialPage(
             key: state.pageKey,
@@ -298,8 +289,21 @@ class AppRouter {
       GoRoute(
         path: musicPlayer,
         name: 'music-player',
-        pageBuilder: (context, state) =>
-            MaterialPage(key: state.pageKey, child: const MusicPlayerScreen()),
+        pageBuilder: (context, state) {
+          final q = state.uri.queryParameters;
+          return MaterialPage(
+            key: state.pageKey,
+            child: MusicPlayerScreen(
+              trackId: q['trackId'],
+              title: q['title'],
+              artistName: q['artistName'],
+              albumName: q['albumName'],
+              backgroundImageUrl: q['backgroundImageUrl'],
+              audioUrl: q['audioUrl'],
+              isUnlocked: q['isUnlocked'] == 'true',
+            ),
+          );
+        },
       ),
       GoRoute(
         path: getCoins,

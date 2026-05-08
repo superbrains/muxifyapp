@@ -2,7 +2,9 @@ import 'dart:ui';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:muxify/core/router/app_router.dart';
 import 'package:muxify/shared/widgets/gift_box_modal.dart';
 import 'package:provider/provider.dart';
 import 'package:muxify/core/constants/api_constants.dart';
@@ -621,7 +623,20 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen> {
             songs: widget.mediaType == 'Videos'
                 ? _videoMostPopular
                 : _genreSongs,
-            onSongTap: (song) {},
+            onSongTap: (song) {
+              final uri = Uri(
+                path: AppRouter.musicPlayer,
+                queryParameters: {
+                  'trackId': song.id,
+                  'title': song.title,
+                  'artistName': song.artist,
+                  'albumName': 'Most Popular',
+                  'backgroundImageUrl': song.albumArtUrl,
+                  'isUnlocked': song.isUnlocked.toString(),
+                },
+              );
+              context.push(uri.toString());
+            },
             onPlayUnlockTap: (song) {
               setState(() {
                 // Toggle play/unlock state

@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 import 'package:muxify/core/constants/app_colors.dart';
 import 'package:muxify/core/constants/app_sizes.dart';
 import 'package:muxify/features/home/models/tab_option.dart';
-import 'package:muxify/features/artist_profile/models/artist_profile_route_args.dart';
 import 'package:muxify/features/home/models/trending_artist.dart';
 import 'package:muxify/features/home/models/track_item.dart';
 import 'package:muxify/features/home/models/category_tab.dart';
@@ -329,10 +328,22 @@ class _HomeScreenState extends State<HomeScreen> {
     TrendingArtist artist, {
     String? mediaType,
   }) {
-    context.push(
-      AppRouter.artistProfile,
-      extra: ArtistProfileRouteArgs(artist: artist, mediaType: mediaType),
+    final queryParameters = <String, String>{
+      'artistId': artist.id,
+      'artistName': artist.name,
+      'followerCount': artist.followerCount.toString(),
+      'isFollowing': artist.isFollowing.toString(),
+      'isVerified': artist.isVerified.toString(),
+      if ((artist.imageUrl ?? '').trim().isNotEmpty)
+        'coverImageUrl': artist.imageUrl!.trim(),
+      if ((mediaType ?? '').trim().isNotEmpty) 'mediaType': mediaType!.trim(),
+    };
+
+    final uri = Uri(
+      path: AppRouter.artistProfile,
+      queryParameters: queryParameters,
     );
+    context.push(uri.toString());
   }
 
   Widget _buildTabContent(HomeProvider homeProvider) {
@@ -342,9 +353,9 @@ class _HomeScreenState extends State<HomeScreen> {
       case 'Videos':
         return _buildVideosContent(homeProvider);
       case 'DJ Mix':
-        return _buildDjMixContent();
+        return _buildDjMixContent(homeProvider);
       case 'Podcast':
-        return _buildPodcastContent();
+        return _buildPodcastContent(homeProvider);
       default:
         return _buildMusicContent(homeProvider);
     }
@@ -370,8 +381,7 @@ class _HomeScreenState extends State<HomeScreen> {
         else if (homeProvider.hasLoadedRecentlyPlayed &&
             homeProvider.recentlyPlayed.isNotEmpty)
           RecentlyPlayedSection(items: homeProvider.recentlyPlayed),
-        if (showRecentlyPlayedSection)
-          30.column,
+        if (showRecentlyPlayedSection) 30.column,
         if (showTrendingArtistsSection)
           TrendingArtistsSection(
             artists: homeProvider.trendingArtists,
@@ -380,8 +390,7 @@ class _HomeScreenState extends State<HomeScreen> {
             isLoading: homeProvider.isLoadingTrendingArtists,
             onArtistTap: (artist) => _pushArtistProfile(context, artist),
           ),
-        if (showTrendingArtistsSection)
-          30.column,
+        if (showTrendingArtistsSection) 30.column,
         // Category Tabs Section
         CategoryTabsSection(
           categories: _categoryTabs,
@@ -457,14 +466,10 @@ class _HomeScreenState extends State<HomeScreen> {
             showLeadingIcon: true,
             isLoading: homeProvider.isLoadingTrendingArtists,
             mediaType: 'Videos',
-            onArtistTap: (artist) => _pushArtistProfile(
-              context,
-              artist,
-              mediaType: 'Videos',
-            ),
+            onArtistTap: (artist) =>
+                _pushArtistProfile(context, artist, mediaType: 'Videos'),
           ),
-        if (showTrendingArtistsSection)
-          30.column,
+        if (showTrendingArtistsSection) 30.column,
         CategoryTabsSection(
           categories: _categoryTabs,
           selectedCategoryId: _selectedCategoryId,
@@ -499,60 +504,12 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildDjMixContent() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // DJ Mix content will be built here
-        Container(
-          height: 200,
-          decoration: BoxDecoration(
-            color: AppColors.text.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(12.radius),
-          ),
-          child: Center(
-            child: Text(
-              'DJ Mix Content\nComing Soon!',
-              style: TextStyle(
-                color: AppColors.text,
-                fontSize: 18.font,
-                fontWeight: FontWeight.w500,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ),
-        ),
-        32.column,
-      ],
-    );
+  Widget _buildDjMixContent(HomeProvider homeProvider) {
+    return _buildMusicContent(homeProvider);
   }
 
-  Widget _buildPodcastContent() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Podcast content will be built here
-        Container(
-          height: 200,
-          decoration: BoxDecoration(
-            color: AppColors.text.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(12.radius),
-          ),
-          child: Center(
-            child: Text(
-              'Podcast Content\nComing Soon!',
-              style: TextStyle(
-                color: AppColors.text,
-                fontSize: 18.font,
-                fontWeight: FontWeight.w500,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ),
-        ),
-        32.column,
-      ],
-    );
+  Widget _buildPodcastContent(HomeProvider homeProvider) {
+    return _buildMusicContent(homeProvider);
   }
 
   @override

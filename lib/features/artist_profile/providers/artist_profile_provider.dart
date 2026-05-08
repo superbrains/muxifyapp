@@ -2,9 +2,6 @@ import 'package:flutter/foundation.dart';
 import 'package:muxify/core/models/artists/artist_follow_response.dart';
 import 'package:muxify/core/network/api_exceptions.dart';
 import 'package:muxify/features/artist_profile/data/artists_repository.dart';
-import 'package:muxify/features/artist_profile/models/artist_albums_response.dart';
-import 'package:muxify/features/artist_profile/models/artist_new_releases_response.dart';
-import 'package:muxify/features/artist_profile/models/artist_tracks_response.dart';
 import 'package:muxify/features/artist_profile/models/new_release_item.dart';
 import 'package:muxify/features/statistics/models/gift_item.dart';
 
@@ -48,6 +45,8 @@ class ArtistProfileProvider extends ChangeNotifier {
 
   bool _isActionInFlight = false;
   bool get isActionInFlight => _isActionInFlight;
+  bool _isPlaybackActionInFlight = false;
+  bool get isPlaybackActionInFlight => _isPlaybackActionInFlight;
 
   Future<void> loadArtistNewReleases(String artistId, String artistName) async {
     if (_isLoadingReleases) return;
@@ -170,5 +169,36 @@ class ArtistProfileProvider extends ChangeNotifier {
     }
   }
 
-  // Add more methods for tracks and albums if needed
+  Future<String> getTrackStreamUrl(String trackId) async {
+    return _repository.getTrackStreamUrl(trackId);
+  }
+
+  Future<void> unlockTrack(String trackId) async {
+    if (_isPlaybackActionInFlight) return;
+    _isPlaybackActionInFlight = true;
+    notifyListeners();
+    try {
+      await _repository.unlockTrack(trackId);
+    } finally {
+      _isPlaybackActionInFlight = false;
+      notifyListeners();
+    }
+  }
+
+  void markTrackUnlocked(String trackId) {
+    final updatedTracks = <NewReleaseItem>[];
+    var changed = false;
+    for (final track in _tracks) {
+      if (track.id == trackId && !track.isUnlocked) {
+        changed = true;
+        updatedTracks.add(track.copyWith(isUnlocked: true, unlockCostCoins: 0));
+      } else {
+        updatedTracks.add(track);
+      }
+    }
+
+    if (!changed) return;
+    _tracks = updatedTracks;
+    notifyListeners();
+  }
 }

@@ -4,12 +4,11 @@ import 'package:provider/provider.dart';
 import 'package:muxify/core/constants/app_colors.dart';
 import 'package:muxify/core/constants/app_sizes.dart';
 import 'package:muxify/core/constants/app_text_styles.dart';
-import 'package:muxify/features/artist_profile/models/new_release_item.dart';
 import 'package:muxify/features/artist_profile/providers/artist_profile_provider.dart';
+import 'package:muxify/features/artist_profile/utils/release_playback_helper.dart';
 import 'package:muxify/features/artist_profile/widgets/custom_app_bar_widget.dart';
 import 'package:muxify/features/artist_profile/widgets/release_card_widget.dart';
 import 'package:muxify/features/artist_profile/widgets/search_container_widget.dart';
-import 'package:muxify/shared/widgets/unlock_all_songs_modal.dart';
 
 class AlbumsScreen extends StatefulWidget {
   final String? artistId;
@@ -23,6 +22,7 @@ class AlbumsScreen extends StatefulWidget {
 
 class _AlbumsScreenState extends State<AlbumsScreen> {
   final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
 
   @override
   void initState() {
@@ -59,7 +59,14 @@ class _AlbumsScreenState extends State<AlbumsScreen> {
           children: [
             20.column,
             // Search Bar
-            SearchContainerWidget(controller: _searchController),
+            SearchContainerWidget(
+              controller: _searchController,
+              onChanged: (value) {
+                setState(() {
+                  _searchQuery = value.trim().toLowerCase();
+                });
+              },
+            ),
             30.column,
             // Albums Grid
             Expanded(child: _buildAlbumsGrid()),
@@ -94,6 +101,22 @@ class _AlbumsScreenState extends State<AlbumsScreen> {
             ),
           );
         }
+
+        final filteredAlbums = provider.albums.where((album) {
+          if (_searchQuery.isEmpty) return true;
+          return album.title.toLowerCase().contains(_searchQuery) ||
+              album.artist.toLowerCase().contains(_searchQuery);
+        }).toList();
+
+        if (filteredAlbums.isEmpty) {
+          return Center(
+            child: Text(
+              'No albums match your search',
+              style: AppTextStyles.bodyMedium.copyWith(color: AppColors.text),
+            ),
+          );
+        }
+
         return GridView.builder(
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 2,
@@ -101,38 +124,23 @@ class _AlbumsScreenState extends State<AlbumsScreen> {
             mainAxisSpacing: 20.padding,
             childAspectRatio: 0.75,
           ),
-          itemCount: provider.albums.length,
+          itemCount: filteredAlbums.length,
           itemBuilder: (context, index) {
+            final album = filteredAlbums[index].copyWith(isUnlocked: true);
             return ReleaseCardWidget(
-              release: provider.albums[index],
-              onTap: () {
+              release: album,
+              onTap: () async {
                 HapticFeedback.lightImpact();
-                // Navigate to album details
+                await ReleasePlaybackHelper.openFromRelease(
+                  context,
+                  release: album,
+                  albumName: 'Albums',
+                  tryBackendStream: true,
+                );
               },
-              onUnlockTap: () => _showUnlockModal(provider.albums[index]),
+              // TEMP: Unlock flow removed for now; always show Play button.
+              // onUnlockTap: () => _showUnlockModal(album),
             );
-          },
-        );
-      },
-    );
-  }
-
-  void _showUnlockModal(NewReleaseItem album) {
-    showDialog(
-      context: context,
-      barrierDismissible: true,
-      builder: (BuildContext context) {
-        return UnlockAllSongsModal(
-          onClose: () {
-            Navigator.of(context).pop();
-          },
-          onUnlockPremium: () {
-            Navigator.of(context).pop();
-            // TODO: Implement unlocking in provider if needed
-          },
-          onUnlockFree: () {
-            Navigator.of(context).pop();
-            // TODO: Implement unlocking in provider if needed
           },
         );
       },

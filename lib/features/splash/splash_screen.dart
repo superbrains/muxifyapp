@@ -4,6 +4,7 @@ import 'package:muxify/core/constants/app_strings.dart';
 import 'package:muxify/core/constants/app_sizes.dart';
 import 'package:muxify/core/constants/app_text_styles.dart';
 import 'package:muxify/core/router/app_router.dart';
+import 'package:muxify/core/services/local_storage_service.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -21,9 +22,13 @@ class _SplashScreenState extends State<SplashScreen> {
 
   Future<void> _navigateToHome() async {
     await Future.delayed(const Duration(seconds: 3));
-    if (mounted) {
-      context.go(AppRouter.welcome);
-    }
+    if (!mounted) return;
+
+    final accessToken = (await LocalStorageService.getAccessToken())?.trim() ?? '';
+    final refreshToken = (await LocalStorageService.getRefreshToken())?.trim() ?? '';
+    final hasSession = accessToken.isNotEmpty || refreshToken.isNotEmpty;
+
+    context.go(hasSession ? AppRouter.home : AppRouter.welcome);
   }
 
   @override

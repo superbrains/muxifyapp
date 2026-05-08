@@ -90,6 +90,12 @@ class ApiConstants {
   static String artistAlbumsPath(String artistId) =>
       '$apiV1Prefix/artists/${Uri.encodeComponent(artistId.trim())}/albums';
 
+  static String trackStreamPath(String trackId) =>
+      '$apiV1Prefix/content/tracks/${Uri.encodeComponent(trackId.trim())}/stream';
+
+  static String trackUnlockPath(String trackId) =>
+      '$apiV1Prefix/content/tracks/${Uri.encodeComponent(trackId.trim())}/unlock';
+
   static const String giftTypesPath = '$apiV1Prefix/gifts/types';
 
   static const Duration connectTimeout = Duration(seconds: 30);

@@ -7,6 +7,7 @@ class NewReleaseItem {
   final String title;
   final String artist;
   final String coverImageUrl;
+  final int unlockCostCoins;
   bool isUnlocked;
 
   NewReleaseItem({
@@ -14,6 +15,7 @@ class NewReleaseItem {
     required this.title,
     required this.artist,
     required this.coverImageUrl,
+    this.unlockCostCoins = 0,
     this.isUnlocked = false,
   });
 
@@ -26,6 +28,7 @@ class NewReleaseItem {
       title: item.title,
       artist: artistName,
       coverImageUrl: item.imageUrl,
+      unlockCostCoins: 0,
       isUnlocked:
           false, // Default to false, can be updated if API provides this
     );
@@ -40,6 +43,7 @@ class NewReleaseItem {
       title: item.title,
       artist: artistName,
       coverImageUrl: item.coverArtUrl,
+      unlockCostCoins: 0,
       isUnlocked: false,
     );
   }
@@ -53,6 +57,7 @@ class NewReleaseItem {
       title: item.title,
       artist: artistName,
       coverImageUrl: item.coverArtUrl,
+      unlockCostCoins: item.unlockCostCoins,
       isUnlocked: item.isUnlocked,
     );
   }
@@ -62,6 +67,7 @@ class NewReleaseItem {
     String? title,
     String? artist,
     String? coverImageUrl,
+    int? unlockCostCoins,
     bool? isUnlocked,
   }) {
     return NewReleaseItem(
@@ -69,6 +75,7 @@ class NewReleaseItem {
       title: title ?? this.title,
       artist: artist ?? this.artist,
       coverImageUrl: coverImageUrl ?? this.coverImageUrl,
+      unlockCostCoins: unlockCostCoins ?? this.unlockCostCoins,
       isUnlocked: isUnlocked ?? this.isUnlocked,
     );
   }

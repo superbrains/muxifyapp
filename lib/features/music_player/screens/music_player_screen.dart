@@ -1,9 +1,13 @@
+import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:just_audio/just_audio.dart';
+import 'package:muxify/core/constants/api_constants.dart';
 import 'package:muxify/core/constants/app_colors.dart';
 import 'package:muxify/core/constants/app_sizes.dart';
-import 'package:muxify/shared/widgets/unlock_all_songs_modal.dart';
+import 'package:muxify/core/utils/app_toast.dart';
+import 'package:muxify/core/utils/logger.dart';
 import 'package:muxify/shared/widgets/gift_box_modal.dart';
 import 'package:muxify/features/music_player/widgets/lyrics_modal.dart';
 import 'package:muxify/features/music_player/widgets/music_player_top_bar.dart';
@@ -16,30 +20,46 @@ import 'package:muxify/features/music_player/widgets/send_gifts_button.dart';
 import 'package:muxify/features/statistics/models/gift_item.dart';
 
 class MusicPlayerScreen extends StatefulWidget {
-  const MusicPlayerScreen({super.key});
+  final String? trackId;
+  final String? title;
+  final String? artistName;
+  final String? albumName;
+  final String? backgroundImageUrl;
+  final String? audioUrl;
+  final bool? isUnlocked;
+
+  const MusicPlayerScreen({
+    super.key,
+    this.trackId,
+    this.title,
+    this.artistName,
+    this.albumName,
+    this.backgroundImageUrl,
+    this.audioUrl,
+    this.isUnlocked,
+  });
 
   @override
   State<MusicPlayerScreen> createState() => _MusicPlayerScreenState();
 }
 
 class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
-  // Sample song data
-  final String _songTitle = 'Moving';
-  final String _artistName = 'Omah Lay';
-  final String _albumName = 'Latest Release';
-  final String _backgroundImageUrl = 'assets/pngs/music_player.png';
-
   // Player state
-  bool _isPlaying = true;
+  bool _isPlaying = false;
   bool _isShuffled = false;
   bool _isRepeating = false;
   bool _isLiked = false;
   bool _isAdded = false;
-  bool _isUnlocked = false; // Add this to control the conditional UI
+  bool _isUnlocked = true;
 
   // Progress state
-  double _currentPosition = 0.3; // 30 seconds
-  final double _totalDuration = 5.01; // 5 minutes 1 second
+  double _currentPosition = 0;
+  double _totalDuration = 0;
+
+  final AudioPlayer _audioPlayer = AudioPlayer();
+  StreamSubscription<Duration>? _positionSubscription;
+  StreamSubscription<PlayerState>? _playerStateSubscription;
+  StreamSubscription<Duration?>? _durationSubscription;
 
   // Mock images for locked song horizontal list
   final List<String> _lockedSongImages = [
@@ -199,14 +219,84 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    // TEMP: lock feature disabled for now.
+    _isUnlocked = true;
+    _setupAudio();
+  }
+
+  Future<void> _setupAudio() async {
+    try {
+      _durationSubscription = _audioPlayer.durationStream.listen((duration) {
+        if (!mounted) return;
+        setState(() {
+          _totalDuration = (duration ?? Duration.zero).inMilliseconds / 1000;
+        });
+      });
+
+      _positionSubscription = _audioPlayer.positionStream.listen((position) {
+        if (!mounted) return;
+        final seconds = position.inMilliseconds / 1000;
+        setState(() {
+          _currentPosition = seconds.clamp(
+            0,
+            _totalDuration > 0 ? _totalDuration : seconds,
+          );
+        });
+      });
+
+      _playerStateSubscription = _audioPlayer.playerStateStream.listen((state) {
+        if (!mounted) return;
+        setState(() {
+          _isPlaying = state.playing;
+        });
+
+        if (state.processingState == ProcessingState.completed) {
+          _audioPlayer.seek(Duration.zero);
+          _audioPlayer.pause();
+        }
+      });
+
+      final requestedAudioUrl = widget.audioUrl?.trim() ?? '';
+      if (requestedAudioUrl.isEmpty) {
+        Logger.warning('Music player missing stream URL; skipping playback');
+        if (mounted) {
+          await AppToast.showError('Missing stream URL for this track.');
+        }
+        return;
+      }
+
+      Logger.debug('Music player setUrl: $requestedAudioUrl');
+      await _audioPlayer.setUrl(requestedAudioUrl);
+      await _audioPlayer.play();
+    } catch (e, st) {
+      Logger.error('Music player audio setup failed', e, st);
+      // Keep UI responsive even if audio initialization fails.
+    }
+  }
+
+  @override
+  void dispose() {
+    _positionSubscription?.cancel();
+    _playerStateSubscription?.cancel();
+    _durationSubscription?.cancel();
+    _audioPlayer.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final background = (widget.backgroundImageUrl ?? '').trim();
     return Scaffold(
       backgroundColor: AppColors.background,
       body: Stack(
         children: [
           // Background Image
           Positioned.fill(
-            child: Image.asset(_backgroundImageUrl, fit: BoxFit.cover),
+            child: background.isEmpty
+                ? Image.asset('assets/pngs/music_player.png', fit: BoxFit.cover)
+                : _buildBackgroundImage(background),
           ),
 
           // Dark overlay for unlocked songs only
@@ -257,14 +347,11 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
               children: [
                 // Top Bar
                 MusicPlayerTopBar(
-                  artistName: _artistName,
-                  albumName: _albumName,
+                  artistName: widget.artistName ?? 'Omah Lay',
+                  albumName: widget.albumName ?? 'Latest Release',
                   isUnlocked: _isUnlocked,
-                  onToggleUnlock: () {
-                    setState(() {
-                      _isUnlocked = !_isUnlocked;
-                    });
-                  },
+                  // TEMP: lock feature disabled for now.
+                  onToggleUnlock: () {},
                 ),
 
                 // Lyrics Button
@@ -290,8 +377,8 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
                       children: [
                         // Song Info Overlay
                         SongInfoOverlay(
-                          songTitle: _songTitle,
-                          artistName: _artistName,
+                          songTitle: widget.title ?? 'Moving',
+                          artistName: widget.artistName ?? 'Omah Lay',
                           isUnlocked: _isUnlocked,
                           isLiked: _isLiked,
                           isAdded: _isAdded,
@@ -309,8 +396,7 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
                             HapticFeedback.lightImpact();
                           },
                           onUnlockSong: () {
-                            HapticFeedback.lightImpact();
-                            _showUnlockModal();
+                            // TEMP: lock feature disabled for now.
                           },
                           onShowLyrics: _showLyricsModal,
                         ),
@@ -319,16 +405,16 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
                         // Progress Bar
                         MusicProgressBar(
                           currentPosition: _currentPosition,
-                          totalDuration: _totalDuration,
+                          totalDuration: _totalDuration <= 0 ? 1 : _totalDuration,
                           onChanged: (value) {
                             setState(() {
                               _currentPosition = value;
                             });
                           },
                           onChangeEnd: (value) {
-                            setState(() {
-                              _currentPosition = value;
-                            });
+                            _audioPlayer.seek(
+                              Duration(milliseconds: (value * 1000).toInt()),
+                            );
                           },
                         ),
                         20.column,
@@ -338,15 +424,19 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
                           isRepeating: _isRepeating,
                           isShuffled: _isShuffled,
                           onTogglePlay: () {
-                            setState(() {
-                              _isPlaying = !_isPlaying;
-                            });
+                            if (_isPlaying) {
+                              _audioPlayer.pause();
+                            } else {
+                              _audioPlayer.play();
+                            }
                           },
                           onPrevious: () {
                             HapticFeedback.lightImpact();
+                            _audioPlayer.seek(Duration.zero);
                           },
                           onNext: () {
                             HapticFeedback.lightImpact();
+                            _audioPlayer.seek(Duration.zero);
                           },
                           onToggleRepeat: () {
                             setState(() {
@@ -361,9 +451,7 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
                         ),
                         54.column,
                         // Send Gifts Button
-                        SendGiftsButton(
-                          onTap: _showGiftBoxModal,
-                        ),
+                        SendGiftsButton(onTap: _showGiftBoxModal),
                         20.column, // Extra padding at bottom
                       ],
                     ),
@@ -374,33 +462,6 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
           ),
         ],
       ),
-    );
-  }
-
-
-  void _showUnlockModal() {
-    showDialog(
-      context: context,
-      barrierDismissible: true,
-      builder: (BuildContext context) {
-        return UnlockAllSongsModal(
-          onClose: () {
-            Navigator.of(context).pop();
-          },
-          onUnlockPremium: () {
-            Navigator.of(context).pop();
-            setState(() {
-              _isUnlocked = true;
-            });
-          },
-          onUnlockFree: () {
-            Navigator.of(context).pop();
-            setState(() {
-              _isUnlocked = true;
-            });
-          },
-        );
-      },
     );
   }
 
@@ -429,6 +490,27 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
           onGiftSelected: (GiftItem gift) {},
         );
       },
+    );
+  }
+
+  Widget _buildBackgroundImage(String source) {
+    final lower = source.toLowerCase();
+    if (lower.startsWith('http://') ||
+        lower.startsWith('https://') ||
+        source.startsWith('/')) {
+      return Image.network(
+        ApiConstants.resolvePublicUrl(source),
+        fit: BoxFit.cover,
+        errorBuilder: (_, _, _) =>
+            Image.asset('assets/pngs/music_player.png', fit: BoxFit.cover),
+      );
+    }
+
+    return Image.asset(
+      source,
+      fit: BoxFit.cover,
+      errorBuilder: (_, _, _) =>
+          Image.asset('assets/pngs/music_player.png', fit: BoxFit.cover),
     );
   }
 }

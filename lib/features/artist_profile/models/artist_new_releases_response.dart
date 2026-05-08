@@ -18,17 +18,33 @@ class ArtistNewReleasesResponse {
   });
 
   factory ArtistNewReleasesResponse.fromJson(Map<String, dynamic> json) {
+    final itemsJson = json['items'];
+    final parsedItems = itemsJson is List
+        ? itemsJson
+              .whereType<Map<String, dynamic>>()
+              .map(ArtistNewReleaseItem.fromJson)
+              .toList()
+        : const <ArtistNewReleaseItem>[];
+
     return ArtistNewReleasesResponse(
-      artistId: json['artistId'] as String,
-      artistName: json['artistName'] as String,
-      items: (json['items'] as List<dynamic>)
-          .map((e) => ArtistNewReleaseItem.fromJson(e as Map<String, dynamic>))
-          .toList(),
-      totalCount: json['totalCount'] as int,
-      page: json['page'] as int,
-      pageSize: json['pageSize'] as int,
-      totalPages: json['totalPages'] as int,
+      artistId: (json['artistId'] as String?) ?? '',
+      artistName: (json['artistName'] as String?) ?? 'Artist',
+      items: parsedItems,
+      totalCount: _asInt(json['totalCount']),
+      page: _asInt(json['page'], fallback: 1),
+      pageSize: _asInt(
+        json['pageSize'],
+        fallback: parsedItems.isEmpty ? 0 : parsedItems.length,
+      ),
+      totalPages: _asInt(json['totalPages'], fallback: 1),
     );
+  }
+
+  static int _asInt(dynamic value, {int fallback = 0}) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    if (value is String) return int.tryParse(value) ?? fallback;
+    return fallback;
   }
 }
 
@@ -53,13 +69,27 @@ class ArtistNewReleaseItem {
 
   factory ArtistNewReleaseItem.fromJson(Map<String, dynamic> json) {
     return ArtistNewReleaseItem(
-      id: json['id'] as String,
-      type: json['type'] as String,
-      title: json['title'] as String,
-      imageUrl: json['imageUrl'] as String,
-      releaseDate: DateTime.parse(json['releaseDate'] as String),
-      trackCount: json['trackCount'] as int,
-      durationSeconds: json['durationSeconds'] as int,
+      id: (json['id'] as String?) ?? '',
+      type: (json['type'] as String?) ?? 'track',
+      title: (json['title'] as String?) ?? 'Untitled',
+      imageUrl: (json['imageUrl'] as String?) ?? '',
+      releaseDate: _asDateTime(json['releaseDate']),
+      trackCount: _asInt(json['trackCount']),
+      durationSeconds: _asInt(json['durationSeconds']),
     );
+  }
+
+  static int _asInt(dynamic value, {int fallback = 0}) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    if (value is String) return int.tryParse(value) ?? fallback;
+    return fallback;
+  }
+
+  static DateTime _asDateTime(dynamic value) {
+    if (value is String) {
+      return DateTime.tryParse(value) ?? DateTime.fromMillisecondsSinceEpoch(0);
+    }
+    return DateTime.fromMillisecondsSinceEpoch(0);
   }
 }

@@ -5,6 +5,8 @@ import 'package:muxify/core/constants/api_constants.dart';
 import 'package:muxify/core/constants/app_colors.dart';
 import 'package:muxify/core/constants/app_sizes.dart';
 import 'package:muxify/core/constants/app_text_styles.dart';
+import 'package:muxify/core/services/local_storage_service.dart';
+import 'package:muxify/core/utils/logger.dart';
 import 'package:muxify/features/artist_profile/models/new_release_item.dart';
 import 'package:muxify/features/artist_profile/widgets/play_button_widget.dart';
 import 'package:muxify/shared/widgets/unlock_button.dart';
@@ -23,14 +25,53 @@ class ReleaseCardWidget extends StatelessWidget {
 
   Widget _buildCoverImage() {
     final t = release.coverImageUrl.trim();
+    Logger.debug('Release image raw URL/path: $t');
     if (t.isEmpty) {
       return Container(
         color: AppColors.text.withValues(alpha: 0.1),
-        child: Icon(Icons.music_note, color: AppColors.text.withValues(alpha: 0.3)),
+        child: Icon(
+          Icons.music_note,
+          color: AppColors.text.withValues(alpha: 0.3),
+        ),
       );
     }
+
+    // Backend returns relative proxy paths like `/api/v1/media/cover/...`.
+    // Treat those as network URLs and include JWT headers.
+    if (_isNetworkImagePath(t)) {
+      final resolvedUrl = ApiConstants.resolvePublicUrl(t);
+      Logger.debug('Release image resolved URL: $resolvedUrl');
+      return FutureBuilder<String?>(
+        future: LocalStorageService.getAccessToken(),
+        builder: (context, snapshot) {
+          final token = snapshot.data?.trim() ?? '';
+          Logger.debug('Release image auth token present: ${token.isNotEmpty}');
+          final headers = token.isEmpty
+              ? const <String, String>{}
+              : {ApiConstants.authorization: '${ApiConstants.bearer} $token'};
+
+          return CachedNetworkImage(
+            imageUrl: resolvedUrl,
+            fit: BoxFit.cover,
+            httpHeaders: headers,
+            placeholder: (context, url) => Container(
+              color: AppColors.text.withValues(alpha: 0.1),
+              child: const Center(
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            ),
+            errorWidget: (context, url, error) => Container(
+              color: AppColors.text.withValues(alpha: 0.1),
+              child: const Icon(Icons.error),
+            ),
+          );
+        },
+      );
+    }
+
     final lower = t.toLowerCase();
     if (lower.startsWith('http://') || lower.startsWith('https://')) {
+      Logger.debug('Release image absolute URL: ${ApiConstants.resolvePublicUrl(t)}');
       return CachedNetworkImage(
         imageUrl: ApiConstants.resolvePublicUrl(t),
         fit: BoxFit.cover,
@@ -44,6 +85,7 @@ class ReleaseCardWidget extends StatelessWidget {
         ),
       );
     }
+    Logger.debug('Release image treated as local asset: $t');
     return Image.asset(
       t,
       fit: BoxFit.cover,
@@ -52,6 +94,13 @@ class ReleaseCardWidget extends StatelessWidget {
         child: const Icon(Icons.broken_image),
       ),
     );
+  }
+
+  bool _isNetworkImagePath(String value) {
+    final lower = value.toLowerCase();
+    return lower.startsWith('http://') ||
+        lower.startsWith('https://') ||
+        value.startsWith('/api/');
   }
 
   @override
@@ -75,9 +124,7 @@ class ReleaseCardWidget extends StatelessWidget {
                 children: [
                   ClipRRect(
                     borderRadius: BorderRadius.circular(12.radius),
-                    child: SizedBox.expand(
-                      child: _buildCoverImage(),
-                    ),
+                    child: SizedBox.expand(child: _buildCoverImage()),
                   ),
                   // Button Overlay - Different buttons based on unlock status
                   Positioned(
@@ -91,7 +138,7 @@ class ReleaseCardWidget extends StatelessWidget {
                             iconWidth: 15.icon,
                             onTap: () {
                               HapticFeedback.lightImpact();
-                              // Handle play action
+                              onTap?.call();
                             },
                           )
                         : UnlockButton(

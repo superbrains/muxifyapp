@@ -70,4 +70,3 @@ class MusicProgressBar extends StatelessWidget {
     return '${minutes.toString().padLeft(1, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
   }
 }
-
