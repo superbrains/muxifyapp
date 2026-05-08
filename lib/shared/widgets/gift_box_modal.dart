@@ -14,6 +14,12 @@ class GiftBoxModal extends StatelessWidget {
   final VoidCallback? onClose;
   final Function(GiftItem)? onGiftSelected;
 
+  /// When provided, the inner SendGiftBottomSheet's primary CTA in demo mode
+  /// becomes "Send Gift" and invokes this callback with the selected gift.
+  /// Wire this from screens that have a real artist context (e.g. artist
+  /// profile) so the gift is actually sent to the backend.
+  final Function(GiftItem)? onSendGift;
+
   const GiftBoxModal({
     super.key,
     this.headerText,
@@ -21,6 +27,7 @@ class GiftBoxModal extends StatelessWidget {
     required this.giftItems,
     this.onClose,
     this.onGiftSelected,
+    this.onSendGift,
   });
 
   @override
@@ -141,8 +148,10 @@ class GiftBoxModal extends StatelessWidget {
           },
           onGetCoins: () {
             Navigator.of(context).pop();
-            
           },
+          onSendGift: onSendGift == null
+              ? null
+              : () => onSendGift!(giftItem),
         );
       },
     );

@@ -1,22 +1,29 @@
+import 'package:muxify/features/home/data/feed_dtos.dart';
+
 class FollowedItem {
   final String id;
   final String title;
   final String artist;
   final String? imageUrl;
+  final bool isUnlocked;
 
   FollowedItem({
     required this.id,
     required this.title,
     required this.artist,
     this.imageUrl,
+    this.isUnlocked = false,
   });
 
-  factory FollowedItem.fromJson(Map<String, dynamic> json) {
+  /// `id` is the track id — used to resolve a stream URL when the user taps
+  /// the card.
+  factory FollowedItem.fromFeedTrack(FeedTrackDto dto) {
     return FollowedItem(
-      id: json['id'] as String,
-      title: json['title'] as String,
-      artist: json['artist'] as String,
-      imageUrl: json['imageUrl'] as String?,
+      id: dto.id,
+      title: dto.title,
+      artist: dto.artistName,
+      imageUrl: dto.coverArtUrl,
+      isUnlocked: dto.isUnlocked,
     );
   }
 }

@@ -1,10 +1,13 @@
 import 'package:muxify/core/constants/api_constants.dart';
 import 'package:muxify/core/models/artists/artist_follow_response.dart';
+import 'package:muxify/core/models/gifts/send_gift_response.dart';
 import 'package:muxify/core/network/api_requester.dart';
 import 'package:muxify/core/utils/logger.dart';
 import 'package:muxify/features/artist_profile/models/artist_albums_response.dart';
 import 'package:muxify/features/artist_profile/models/artist_new_releases_response.dart';
+import 'package:muxify/features/artist_profile/models/artist_public_profile.dart';
 import 'package:muxify/features/artist_profile/models/artist_tracks_response.dart';
+import 'package:muxify/features/artist_profile/models/artist_videos_response.dart';
 import 'package:muxify/features/statistics/models/gift_item.dart';
 
 class ArtistsRepository {
@@ -12,6 +15,30 @@ class ArtistsRepository {
     : _requester = requester ?? ApiRequester();
 
   final ApiRequester _requester;
+
+  Future<ArtistPublicProfile> getArtistProfile(String artistId) {
+    return _requester.getJson(
+      ApiConstants.artistProfilePath(artistId),
+      ArtistPublicProfile.fromJson,
+      authenticate: true,
+    );
+  }
+
+  Future<ArtistVideosResponse> getArtistVideos(
+    String artistId, {
+    int page = 1,
+    int pageSize = 20,
+  }) {
+    return _requester.getJson(
+      ApiConstants.artistVideosPath(artistId),
+      ArtistVideosResponse.fromJson,
+      queryParameters: {
+        'page': page.toString(),
+        'pageSize': pageSize.toString(),
+      },
+      authenticate: true,
+    );
+  }
 
   Future<ArtistFollowResponse> followArtist(String artistId) {
     return _requester.postJson(
@@ -119,6 +146,39 @@ class ArtistsRepository {
       null,
       successStatus: ApiConstants.statusOk,
       alsoAcceptStatuses: const [ApiConstants.statusNoContent],
+      authenticate: true,
+    );
+  }
+
+  Future<void> unlockVideo(String videoId) {
+    return _requester.postNoContent(
+      ApiConstants.videoUnlockPath(videoId),
+      null,
+      successStatus: ApiConstants.statusOk,
+      alsoAcceptStatuses: const [ApiConstants.statusNoContent],
+      authenticate: true,
+    );
+  }
+
+  Future<SendGiftResponse> sendGift({
+    required String artistId,
+    required String giftType,
+    String? trackId,
+    String? videoId,
+    String? message,
+  }) {
+    final body = <String, dynamic>{
+      'artistId': artistId,
+      'giftType': giftType,
+    };
+    if (trackId != null && trackId.isNotEmpty) body['trackId'] = trackId;
+    if (videoId != null && videoId.isNotEmpty) body['videoId'] = videoId;
+    if (message != null && message.isNotEmpty) body['message'] = message;
+
+    return _requester.postJson(
+      ApiConstants.giftSendPath,
+      body,
+      SendGiftResponse.fromJson,
       authenticate: true,
     );
   }

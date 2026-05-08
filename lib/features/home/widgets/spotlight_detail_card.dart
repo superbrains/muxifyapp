@@ -1,6 +1,8 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'package:muxify/core/constants/api_constants.dart';
 import 'package:muxify/core/constants/app_colors.dart';
 import 'package:muxify/core/constants/app_sizes.dart';
 import 'package:muxify/core/constants/app_text_styles.dart';
@@ -39,12 +41,7 @@ class SpotlightDetailCard extends StatelessWidget {
                 width: 241.maxWidth,
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(12.radius),
-                  child: Image.asset(
-                    item.imageUrl ?? 'assets/pngs/spotlight_placeholder.png',
-                    fit: BoxFit.cover,
-                    height:
-                        double.infinity, // Takes full height of parent SizedBox
-                  ),
+                  child: _buildCover(),
                 ),
               ),
             ),
@@ -77,30 +74,55 @@ class SpotlightDetailCard extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                12.column,
-                // Play Count
-                Text(
-                  item.playCount,
-                  style: AppTextStyles.bodySmall.copyWith(
-                    fontSize: 12.font,
-                    fontWeight: FontWeight.w400,
-                    color: AppColors.text.withValues(alpha: 0.6),
+                if (item.playCount.isNotEmpty) ...[
+                  12.column,
+                  // Play Count / metric
+                  Text(
+                    item.playCount,
+                    style: AppTextStyles.bodySmall.copyWith(
+                      fontSize: 12.font,
+                      fontWeight: FontWeight.w400,
+                      color: AppColors.text.withValues(alpha: 0.6),
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                16.column,
-                // Unlock Button
-                UnlockButton(
-                  text: 'Unlock',
-                  iconPath: 'assets/pngs/Bitcoin_musixfy.png',
-                  onTap: onUnlockTap,
-                ),
+                ],
+                if (!item.isUnlocked) ...[
+                  16.column,
+                  UnlockButton(
+                    text: 'Unlock',
+                    iconPath: 'assets/pngs/Bitcoin_musixfy.png',
+                    onTap: onUnlockTap,
+                  ),
+                ],
               ],
             ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildCover() {
+    final url = item.imageUrl?.trim() ?? '';
+    if (url.isEmpty) return _placeholderCover();
+    return CachedNetworkImage(
+      imageUrl: ApiConstants.resolvePublicUrl(url),
+      fit: BoxFit.cover,
+      height: double.infinity,
+      width: double.infinity,
+      placeholder: (_, __) => _placeholderCover(),
+      errorWidget: (_, __, ___) => _placeholderCover(),
+    );
+  }
+
+  Widget _placeholderCover() {
+    return Image.asset(
+      'assets/pngs/spotlight_placeholder.png',
+      fit: BoxFit.cover,
+      height: double.infinity,
+      width: double.infinity,
     );
   }
 }

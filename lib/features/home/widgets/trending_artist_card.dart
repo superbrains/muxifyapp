@@ -1,11 +1,10 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:muxify/core/constants/api_constants.dart';
 import 'package:muxify/core/constants/app_colors.dart';
 import 'package:muxify/core/constants/app_sizes.dart';
 import 'package:muxify/core/constants/app_text_styles.dart';
 import 'package:muxify/features/home/models/trending_artist.dart';
+import 'package:muxify/shared/widgets/auth_network_image.dart';
 
 class TrendingArtistCard extends StatelessWidget {
   final TrendingArtist artist;
@@ -52,13 +51,13 @@ class TrendingArtistCard extends StatelessWidget {
                   ),
                   child: ClipOval(
                     child: hasImage
-                        ? CachedNetworkImage(
-                            imageUrl: ApiConstants.resolvePublicUrl(imageUrl),
+                        ? AuthNetworkImage(
+                            path: imageUrl,
                             fit: BoxFit.cover,
                             width: 64.buttonHeight,
                             height: 64.buttonHeight,
-                            placeholder: (context, _) => _avatarFallback(),
-                            errorWidget: (context, _, __) => _avatarFallback(),
+                            placeholder: _avatarFallback(),
+                            errorWidget: _avatarFallback(),
                           )
                         : _avatarFallback(),
                   ),

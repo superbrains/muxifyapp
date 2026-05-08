@@ -1,3 +1,5 @@
+import 'package:muxify/features/home/data/feed_dtos.dart';
+
 class NewReleaseItem {
   final String id;
   final String albumName;
@@ -11,12 +13,15 @@ class NewReleaseItem {
     this.imageUrl,
   });
 
-  factory NewReleaseItem.fromJson(Map<String, dynamic> json) {
+  /// Maps the backend `FeedTrackDto`. The home "Popular New Releases" section
+  /// shows tracks (not albums); we display the track title in the album slot
+  /// because the card layout has only two text rows.
+  factory NewReleaseItem.fromFeedTrack(FeedTrackDto dto) {
     return NewReleaseItem(
-      id: json['id'] as String,
-      albumName: json['albumName'] as String,
-      artistName: json['artistName'] as String,
-      imageUrl: json['imageUrl'] as String?,
+      id: dto.id,
+      albumName: dto.title,
+      artistName: dto.artistName,
+      imageUrl: dto.coverArtUrl,
     );
   }
 }

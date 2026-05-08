@@ -1,8 +1,12 @@
 import 'package:flutter/foundation.dart';
 import 'package:muxify/core/models/artists/artist_follow_response.dart';
+import 'package:muxify/core/models/gifts/send_gift_response.dart';
 import 'package:muxify/core/network/api_exceptions.dart';
 import 'package:muxify/features/artist_profile/data/artists_repository.dart';
+import 'package:muxify/features/artist_profile/models/artist_public_profile.dart';
 import 'package:muxify/features/artist_profile/models/new_release_item.dart';
+import 'package:muxify/features/home/models/trending_artist.dart';
+import 'package:muxify/features/home/providers/home_provider.dart';
 import 'package:muxify/features/statistics/models/gift_item.dart';
 
 class ArtistProfileProvider extends ChangeNotifier {
@@ -10,6 +14,14 @@ class ArtistProfileProvider extends ChangeNotifier {
     : _repository = repository ?? ArtistsRepository();
 
   final ArtistsRepository _repository;
+
+  ArtistPublicProfile? _artistProfile;
+  bool _isLoadingProfile = false;
+  String? _profileError;
+
+  ArtistPublicProfile? get artistProfile => _artistProfile;
+  bool get isLoadingProfile => _isLoadingProfile;
+  String? get profileError => _profileError;
 
   bool _isLoadingReleases = false;
   List<NewReleaseItem> _releases = [];
@@ -35,6 +47,22 @@ class ArtistProfileProvider extends ChangeNotifier {
   List<NewReleaseItem> get albums => _albums;
   String? get albumsError => _albumsError;
 
+  bool _isLoadingVideos = false;
+  List<NewReleaseItem> _videos = [];
+  String? _videosError;
+
+  bool get isLoadingVideos => _isLoadingVideos;
+  List<NewReleaseItem> get videos => _videos;
+  String? get videosError => _videosError;
+
+  bool _isLoadingSimilarArtists = false;
+  List<TrendingArtist> _similarArtists = const [];
+  String? _similarArtistsError;
+
+  bool get isLoadingSimilarArtists => _isLoadingSimilarArtists;
+  List<TrendingArtist> get similarArtists => _similarArtists;
+  String? get similarArtistsError => _similarArtistsError;
+
   bool _isLoadingGifts = false;
   List<GiftItem> _gifts = [];
   String? _giftsError;
@@ -48,8 +76,37 @@ class ArtistProfileProvider extends ChangeNotifier {
   bool _isPlaybackActionInFlight = false;
   bool get isPlaybackActionInFlight => _isPlaybackActionInFlight;
 
-  Future<void> loadArtistNewReleases(String artistId, String artistName) async {
-    if (_isLoadingReleases) return;
+  Future<void> loadArtistProfile(
+    String artistId, {
+    bool forceRefresh = false,
+  }) async {
+    if (_isLoadingProfile) return;
+    if (!forceRefresh && _artistProfile != null && _artistProfile!.id == artistId) {
+      return;
+    }
+
+    _isLoadingProfile = true;
+    _profileError = null;
+    notifyListeners();
+
+    try {
+      _artistProfile = await _repository.getArtistProfile(artistId);
+    } on ApiRequestException catch (e) {
+      _profileError = e.message;
+    } catch (_) {
+      _profileError = 'An unexpected error occurred';
+    } finally {
+      _isLoadingProfile = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> loadArtistNewReleases(
+    String artistId,
+    String artistName, {
+    bool forceRefresh = false,
+  }) async {
+    if (_isLoadingReleases && !forceRefresh) return;
 
     _isLoadingReleases = true;
     _releasesError = null;
@@ -64,7 +121,7 @@ class ArtistProfileProvider extends ChangeNotifier {
           .toList();
     } on ApiRequestException catch (e) {
       _releasesError = e.message;
-    } catch (e) {
+    } catch (_) {
       _releasesError = 'An unexpected error occurred';
     } finally {
       _isLoadingReleases = false;
@@ -72,8 +129,12 @@ class ArtistProfileProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> loadArtistTracks(String artistId, String artistName) async {
-    if (_isLoadingTracks) return;
+  Future<void> loadArtistTracks(
+    String artistId,
+    String artistName, {
+    bool forceRefresh = false,
+  }) async {
+    if (_isLoadingTracks && !forceRefresh) return;
 
     _isLoadingTracks = true;
     _tracksError = null;
@@ -86,7 +147,7 @@ class ArtistProfileProvider extends ChangeNotifier {
           .toList();
     } on ApiRequestException catch (e) {
       _tracksError = e.message;
-    } catch (e) {
+    } catch (_) {
       _tracksError = 'An unexpected error occurred';
     } finally {
       _isLoadingTracks = false;
@@ -94,8 +155,12 @@ class ArtistProfileProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> loadArtistAlbums(String artistId, String artistName) async {
-    if (_isLoadingAlbums) return;
+  Future<void> loadArtistAlbums(
+    String artistId,
+    String artistName, {
+    bool forceRefresh = false,
+  }) async {
+    if (_isLoadingAlbums && !forceRefresh) return;
 
     _isLoadingAlbums = true;
     _albumsError = null;
@@ -108,10 +173,63 @@ class ArtistProfileProvider extends ChangeNotifier {
           .toList();
     } on ApiRequestException catch (e) {
       _albumsError = e.message;
-    } catch (e) {
+    } catch (_) {
       _albumsError = 'An unexpected error occurred';
     } finally {
       _isLoadingAlbums = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> loadArtistVideos(
+    String artistId,
+    String artistName, {
+    bool forceRefresh = false,
+  }) async {
+    if (_isLoadingVideos && !forceRefresh) return;
+
+    _isLoadingVideos = true;
+    _videosError = null;
+    notifyListeners();
+
+    try {
+      final response = await _repository.getArtistVideos(artistId);
+      _videos = response.items
+          .map((item) => NewReleaseItem.fromArtistVideoItem(item, artistName))
+          .toList();
+    } on ApiRequestException catch (e) {
+      _videosError = e.message;
+    } catch (_) {
+      _videosError = 'An unexpected error occurred';
+    } finally {
+      _isLoadingVideos = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> loadSimilarArtists({
+    required String excludeId,
+    required HomeProvider homeProvider,
+    bool forceRefresh = false,
+  }) async {
+    if (_isLoadingSimilarArtists) return;
+
+    _isLoadingSimilarArtists = true;
+    _similarArtistsError = null;
+    notifyListeners();
+
+    try {
+      await homeProvider.loadTrendingArtists(forceRefresh: forceRefresh);
+      _similarArtists = homeProvider.trendingArtists
+          .where((a) => a.id != excludeId)
+          .take(12)
+          .toList();
+    } on ApiRequestException catch (e) {
+      _similarArtistsError = e.message;
+    } catch (_) {
+      _similarArtistsError = 'An unexpected error occurred';
+    } finally {
+      _isLoadingSimilarArtists = false;
       notifyListeners();
     }
   }
@@ -127,7 +245,7 @@ class ArtistProfileProvider extends ChangeNotifier {
       _gifts = await _repository.getGiftTypes();
     } on ApiRequestException catch (e) {
       _giftsError = e.message;
-    } catch (e) {
+    } catch (_) {
       _giftsError = 'An unexpected error occurred';
     } finally {
       _isLoadingGifts = false;
@@ -143,8 +261,9 @@ class ArtistProfileProvider extends ChangeNotifier {
 
     try {
       final response = await _repository.followArtist(artistId);
+      _applyFollowResponse(response);
       return response;
-    } catch (e) {
+    } catch (_) {
       return null;
     } finally {
       _isActionInFlight = false;
@@ -160,13 +279,23 @@ class ArtistProfileProvider extends ChangeNotifier {
 
     try {
       final response = await _repository.unfollowArtist(artistId);
+      _applyFollowResponse(response);
       return response;
-    } catch (e) {
+    } catch (_) {
       return null;
     } finally {
       _isActionInFlight = false;
       notifyListeners();
     }
+  }
+
+  void _applyFollowResponse(ArtistFollowResponse response) {
+    final current = _artistProfile;
+    if (current == null) return;
+    _artistProfile = current.copyWith(
+      isFollowing: response.isFollowing,
+      followerCount: response.artistFollowerCount,
+    );
   }
 
   Future<String> getTrackStreamUrl(String trackId) async {
@@ -185,9 +314,46 @@ class ArtistProfileProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> unlockVideo(String videoId) async {
+    if (_isPlaybackActionInFlight) return;
+    _isPlaybackActionInFlight = true;
+    notifyListeners();
+    try {
+      await _repository.unlockVideo(videoId);
+    } finally {
+      _isPlaybackActionInFlight = false;
+      notifyListeners();
+    }
+  }
+
+  Future<SendGiftResponse?> sendGift({
+    required String artistId,
+    required String giftType,
+    String? trackId,
+    String? videoId,
+    String? message,
+  }) async {
+    if (_isActionInFlight) return null;
+    _isActionInFlight = true;
+    notifyListeners();
+    try {
+      return await _repository.sendGift(
+        artistId: artistId,
+        giftType: giftType,
+        trackId: trackId,
+        videoId: videoId,
+        message: message,
+      );
+    } finally {
+      _isActionInFlight = false;
+      notifyListeners();
+    }
+  }
+
   void markTrackUnlocked(String trackId) {
-    final updatedTracks = <NewReleaseItem>[];
     var changed = false;
+
+    final updatedTracks = <NewReleaseItem>[];
     for (final track in _tracks) {
       if (track.id == trackId && !track.isUnlocked) {
         changed = true;
@@ -197,8 +363,19 @@ class ArtistProfileProvider extends ChangeNotifier {
       }
     }
 
+    final updatedVideos = <NewReleaseItem>[];
+    for (final video in _videos) {
+      if (video.id == trackId && !video.isUnlocked) {
+        changed = true;
+        updatedVideos.add(video.copyWith(isUnlocked: true, unlockCostCoins: 0));
+      } else {
+        updatedVideos.add(video);
+      }
+    }
+
     if (!changed) return;
     _tracks = updatedTracks;
+    _videos = updatedVideos;
     notifyListeners();
   }
 }

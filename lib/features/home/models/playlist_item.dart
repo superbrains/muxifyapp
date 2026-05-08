@@ -1,3 +1,4 @@
+import 'package:muxify/features/home/data/feed_dtos.dart';
 import 'package:muxify/features/home/models/track_item.dart';
 
 class PlaylistItem {
@@ -17,16 +18,45 @@ class PlaylistItem {
     required this.tracks,
   });
 
-  factory PlaylistItem.fromJson(Map<String, dynamic> json) {
+  /// Builds a `PlaylistItem` from a backend featured playlist. Track previews
+  /// are loaded lazily (`tracks` empty) — the carousel card shows the cover
+  /// + title + count and a "See All" affordance.
+  factory PlaylistItem.fromFeedPlaylist(FeedPlaylistDto dto) {
     return PlaylistItem(
-      id: json['id'] as String,
-      title: json['title'] as String,
-      songCount: json['songCount'] as String,
-      imageUrl: json['imageUrl'] as String?,
-      isFavorite: json['isFavorite'] as bool? ?? false,
-      tracks: (json['tracks'] as List<dynamic>)
-          .map((track) => TrackItem.fromJson(track as Map<String, dynamic>))
-          .toList(),
+      id: dto.id,
+      title: dto.name,
+      songCount: '${dto.trackCount} songs',
+      imageUrl: dto.coverArtUrl,
+      tracks: const [],
+    );
+  }
+
+  /// Synthesises a category playlist from a list of tracks (used for the
+  /// home Music tab category tabs: Trending / Hot Release / Top Chart /
+  /// New Release). The `id` is a synthetic key; tracks are mapped from
+  /// `FeedTrackDto`s so the inline list shows real titles + artists.
+  factory PlaylistItem.fromCategory({
+    required String id,
+    required String title,
+    required List<FeedTrackDto> sourceTracks,
+    String? coverUrl,
+  }) {
+    final tracks = sourceTracks
+        .map(
+          (t) => TrackItem(
+            id: t.id,
+            title: t.title,
+            artist: t.artistName,
+            imageUrl: t.coverArtUrl,
+          ),
+        )
+        .toList();
+    return PlaylistItem(
+      id: id,
+      title: title,
+      songCount: '${tracks.length} songs',
+      imageUrl: coverUrl ?? sourceTracks.firstOrNull?.coverArtUrl,
+      tracks: tracks,
     );
   }
 }

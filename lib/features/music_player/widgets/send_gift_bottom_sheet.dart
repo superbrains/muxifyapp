@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:muxify/core/constants/api_constants.dart';
 import 'package:muxify/core/constants/app_colors.dart';
 import 'package:muxify/core/constants/app_sizes.dart';
 import 'package:muxify/core/constants/app_text_styles.dart';
@@ -13,15 +14,23 @@ class SendGiftBottomSheet extends StatelessWidget {
   final VoidCallback onClose;
   final VoidCallback onGetCoins;
 
+  /// When provided (and `ApiConstants.demoMode` is true), the primary CTA
+  /// becomes "Send Gift" and invokes this callback instead of routing to the
+  /// Get Coins screen. Wire this up in demo mode so fans can gift without a
+  /// funded wallet — the backend records the gift normally.
+  final VoidCallback? onSendGift;
+
   const SendGiftBottomSheet({
     super.key,
     required this.giftItem,
     required this.onClose,
     required this.onGetCoins,
+    this.onSendGift,
   });
 
   @override
   Widget build(BuildContext context) {
+    final isDemo = ApiConstants.demoMode;
     return Container(
       height: 536.maxHeight,
       decoration: BoxDecoration(
@@ -39,15 +48,15 @@ class SendGiftBottomSheet extends StatelessWidget {
           // Gift Item Display
           _buildGiftItemDisplay(),
           30.column,
-          // Error Message
-          _buildErrorMessage(),
+          // Error Message — hidden in demo mode (wallet bypassed server-side)
+          if (!isDemo) _buildErrorMessage(),
           const Spacer(),
 
           // Terms of Gifting
           _buildTermsSection(),
           25.column,
-          // Get Coins Button
-          _buildGetCoinsButton(context),
+          // Primary CTA — Send Gift in demo mode, Get Coins otherwise
+          _buildPrimaryButton(context, isDemo: isDemo),
 
           // Bottom padding
           SizedBox(height: MediaQuery.of(context).padding.bottom + 20.padding),
@@ -237,7 +246,8 @@ class SendGiftBottomSheet extends StatelessWidget {
     );
   }
 
-  Widget _buildGetCoinsButton(BuildContext context) {
+  Widget _buildPrimaryButton(BuildContext context, {required bool isDemo}) {
+    final showSendGift = isDemo && onSendGift != null;
     return Container(
       margin: EdgeInsets.symmetric(horizontal: 25.padding),
 
@@ -246,12 +256,19 @@ class SendGiftBottomSheet extends StatelessWidget {
       child: ElevatedButton(
         onPressed: () {
           HapticFeedback.lightImpact();
+          if (showSendGift) {
+            onClose();
+            onSendGift!();
+            return;
+          }
           onClose(); // Close the bottom sheet first
           context.push(AppRouter.getCoins); // Navigate to get coins screen
         },
         style: ElevatedButton.styleFrom(
           padding: EdgeInsets.symmetric(horizontal: 13.padding),
-          backgroundColor: AppColors.greyButtonColor, // Dark gray
+          backgroundColor: showSendGift
+              ? AppColors.buttonColor
+              : AppColors.greyButtonColor,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(25.radius),
           ),
@@ -306,7 +323,7 @@ class SendGiftBottomSheet extends StatelessWidget {
             70.row,
 
             Text(
-              'Get Coins',
+              showSendGift ? 'Send Gift' : 'Get Coins',
               style: AppTextStyles.bodyLarge.copyWith(
                 color: AppColors.text,
                 fontSize: 18.font,

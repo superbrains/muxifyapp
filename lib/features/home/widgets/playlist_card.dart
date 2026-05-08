@@ -1,5 +1,7 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:muxify/core/constants/api_constants.dart';
 import 'package:muxify/core/constants/app_colors.dart';
 import 'package:muxify/core/constants/app_sizes.dart';
 import 'package:muxify/core/constants/app_text_styles.dart';
@@ -86,19 +88,7 @@ class PlaylistCard extends StatelessWidget {
                     ),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(12.radius),
-
-                      // color: AppColors.glassyDark,
-                      // Image.network(playlist.imageUrl, fit: BoxFit.cover),
-                      child: Center(
-                        child: Text(
-                          'AFROBEAT',
-                          style: AppTextStyles.bodySmall.copyWith(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 10.font,
-                            color: AppColors.text,
-                          ),
-                        ),
-                      ),
+                      child: _buildCover(),
                     ),
                   ),
                   16.row,
@@ -195,35 +185,33 @@ class PlaylistCard extends StatelessWidget {
                 ],
               ),
             ),
-            // Track List
+            // Track List (only when we have inline track data)
             Column(
               children: [
-                // 16.column,
-                // Track Items with ListView.separated
-                ListView.separated(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  padding: EdgeInsets.only(
-                    left: 16.padding,
-                    right: 16.padding,
-                    top: 16.padding,
-                    bottom: 8.padding,
-                  ),
-                  scrollDirection: Axis.vertical,
-
-                  itemCount: playlist.tracks.take(4).length,
-                  separatorBuilder: (context, index) => 16.column,
-                  itemBuilder: (context, index) {
-                    final track = playlist.tracks[index];
-                    return PlaylistTrackItem(
-                      track: track,
-                      onTap: () {},
-                      onMenuTap: () {},
-                    );
-                  },
-                ),
-                // 16.column,
-                // See All Button
+                if (playlist.tracks.isNotEmpty)
+                  ListView.separated(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    padding: EdgeInsets.only(
+                      left: 16.padding,
+                      right: 16.padding,
+                      top: 16.padding,
+                      bottom: 8.padding,
+                    ),
+                    scrollDirection: Axis.vertical,
+                    itemCount: playlist.tracks.take(4).length,
+                    separatorBuilder: (context, index) => 16.column,
+                    itemBuilder: (context, index) {
+                      final track = playlist.tracks[index];
+                      return PlaylistTrackItem(
+                        track: track,
+                        onTap: () {},
+                        onMenuTap: () {},
+                      );
+                    },
+                  )
+                else
+                  16.column,
                 Align(
                   alignment: Alignment.bottomRight,
                   child: SeeAllButton(onTap: onSeeAllTap),
@@ -233,6 +221,35 @@ class PlaylistCard extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildCover() {
+    final url = playlist.imageUrl?.trim() ?? '';
+    if (url.isEmpty) return _placeholderCover();
+    return CachedNetworkImage(
+      imageUrl: ApiConstants.resolvePublicUrl(url),
+      fit: BoxFit.cover,
+      width: double.infinity,
+      height: double.infinity,
+      placeholder: (_, __) => _placeholderCover(),
+      errorWidget: (_, __, ___) => _placeholderCover(),
+    );
+  }
+
+  Widget _placeholderCover() {
+    return Center(
+      child: Text(
+        playlist.title.isEmpty ? '♪' : playlist.title.toUpperCase(),
+        textAlign: TextAlign.center,
+        style: AppTextStyles.bodySmall.copyWith(
+          fontWeight: FontWeight.bold,
+          fontSize: 10.font,
+          color: AppColors.text,
+        ),
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
       ),
     );
   }

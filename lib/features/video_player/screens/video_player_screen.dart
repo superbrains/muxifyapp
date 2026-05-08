@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:muxify/core/constants/api_constants.dart';
 import 'package:muxify/core/constants/app_colors.dart';
 import 'package:muxify/core/constants/app_sizes.dart';
 import 'package:muxify/core/constants/app_text_styles.dart';
@@ -476,6 +477,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20.radius)),
       ),
       builder: (context) {
+        final isDemo = ApiConstants.demoMode;
         return UnlockConfirmBottomSheet(
           title: 'With You ft. Omah Lay',
           subtitle: 'Davido',
@@ -484,7 +486,9 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
           isPremiumMode: true,
           unlockTitle: 'Unlock Song',
           // coinCost: '100,250',
-          showInsufficientCoinsError: true,
+          // In demo mode the wallet check is bypassed server-side, so the UI
+          // never shows the insufficient-coins error or the Get Coins CTA.
+          showInsufficientCoinsError: !isDemo,
           onClose: () => Navigator.of(context).pop(),
           onConfirm: () {
             // This will only be called if user has enough coins
@@ -494,10 +498,12 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
             });
             _showSuccessDialog();
           },
-          onGetCoins: () {
-            Navigator.of(context).pop();
-            context.push(AppRouter.getCoins);
-          },
+          onGetCoins: isDemo
+              ? null
+              : () {
+                  Navigator.of(context).pop();
+                  context.push(AppRouter.getCoins);
+                },
         );
       },
     );

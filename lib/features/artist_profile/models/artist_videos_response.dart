@@ -1,13 +1,13 @@
-class ArtistAlbumsResponse {
+class ArtistVideosResponse {
   final String artistId;
   final String artistName;
-  final List<ArtistAlbumItem> items;
+  final List<ArtistVideoItem> items;
   final int totalCount;
   final int page;
   final int pageSize;
   final int totalPages;
 
-  ArtistAlbumsResponse({
+  ArtistVideosResponse({
     required this.artistId,
     required this.artistName,
     required this.items,
@@ -17,16 +17,16 @@ class ArtistAlbumsResponse {
     required this.totalPages,
   });
 
-  factory ArtistAlbumsResponse.fromJson(Map<String, dynamic> json) {
+  factory ArtistVideosResponse.fromJson(Map<String, dynamic> json) {
     final itemsJson = json['items'];
     final parsedItems = itemsJson is List
         ? itemsJson
               .whereType<Map<String, dynamic>>()
-              .map(ArtistAlbumItem.fromJson)
+              .map(ArtistVideoItem.fromJson)
               .toList()
-        : const <ArtistAlbumItem>[];
+        : const <ArtistVideoItem>[];
 
-    return ArtistAlbumsResponse(
+    return ArtistVideosResponse(
       artistId: (json['artistId'] as String?) ?? '',
       artistName: (json['artistName'] as String?) ?? 'Artist',
       items: parsedItems,
@@ -48,37 +48,43 @@ class ArtistAlbumsResponse {
   }
 }
 
-class ArtistAlbumItem {
+class ArtistVideoItem {
   final String id;
   final String title;
-  final String coverArtUrl;
-  final String releaseType;
-  final DateTime releaseDate;
-  final int trackCount;
-  final int playCount;
+  final String thumbnailUrl;
+  final String videoType;
+  final int durationSeconds;
+  final int viewCount;
+  final int likeCount;
   final DateTime createdAt;
+  final bool isUnlocked;
+  final int unlockCostCoins;
 
-  ArtistAlbumItem({
+  ArtistVideoItem({
     required this.id,
     required this.title,
-    required this.coverArtUrl,
-    required this.releaseType,
-    required this.releaseDate,
-    required this.trackCount,
-    required this.playCount,
+    required this.thumbnailUrl,
+    required this.videoType,
+    required this.durationSeconds,
+    required this.viewCount,
+    required this.likeCount,
     required this.createdAt,
+    required this.isUnlocked,
+    required this.unlockCostCoins,
   });
 
-  factory ArtistAlbumItem.fromJson(Map<String, dynamic> json) {
-    return ArtistAlbumItem(
+  factory ArtistVideoItem.fromJson(Map<String, dynamic> json) {
+    return ArtistVideoItem(
       id: (json['id'] as String?) ?? '',
       title: (json['title'] as String?) ?? 'Untitled',
-      coverArtUrl: (json['coverArtUrl'] as String?) ?? '',
-      releaseType: (json['releaseType'] as String?) ?? '',
-      releaseDate: _asDateTime(json['releaseDate']),
-      trackCount: _asInt(json['trackCount']),
-      playCount: _asInt(json['playCount']),
+      thumbnailUrl: (json['thumbnailUrl'] as String?) ?? '',
+      videoType: (json['videoType'] as String?) ?? '',
+      durationSeconds: _asInt(json['durationSeconds']),
+      viewCount: _asInt(json['viewCount']),
+      likeCount: _asInt(json['likeCount']),
       createdAt: _asDateTime(json['createdAt']),
+      isUnlocked: (json['isUnlocked'] as bool?) ?? false,
+      unlockCostCoins: _asInt(json['unlockCostCoins']),
     );
   }
 

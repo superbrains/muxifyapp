@@ -3,35 +3,35 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:muxify/core/constants/app_colors.dart';
 import 'package:muxify/core/constants/app_sizes.dart';
+import 'package:muxify/core/router/app_router.dart';
+import 'package:muxify/features/home/models/category_tab.dart';
+import 'package:muxify/features/home/models/followed_item.dart';
+import 'package:muxify/features/home/models/new_release_item.dart';
+import 'package:muxify/features/home/models/now_playing_item.dart';
+import 'package:muxify/features/home/models/playlist_item.dart';
+import 'package:muxify/features/home/models/recently_played_item.dart';
+import 'package:muxify/features/home/models/spotlight_item.dart';
+import 'package:muxify/features/home/models/spotlight_tab.dart';
 import 'package:muxify/features/home/models/tab_option.dart';
 import 'package:muxify/features/home/models/trending_artist.dart';
-import 'package:muxify/features/home/models/track_item.dart';
-import 'package:muxify/features/home/models/category_tab.dart';
-import 'package:muxify/features/home/models/playlist_item.dart';
-import 'package:muxify/features/home/models/new_release_item.dart';
-import 'package:muxify/features/home/models/spotlight_tab.dart';
-import 'package:muxify/features/home/models/spotlight_item.dart';
-import 'package:muxify/features/home/models/followed_item.dart';
-import 'package:muxify/features/home/models/now_playing_item.dart';
 import 'package:muxify/features/home/models/video_item.dart';
-import 'package:muxify/features/home/widgets/home_header.dart';
-import 'package:muxify/features/home/widgets/home_menu_drawer.dart';
-import 'package:muxify/features/home/widgets/recently_played_section.dart';
-import 'package:muxify/features/home/widgets/trending_artists_section.dart';
+import 'package:muxify/features/home/providers/home_provider.dart';
 import 'package:muxify/features/home/widgets/category_tabs_section.dart';
 import 'package:muxify/features/home/widgets/featured_playlist_section.dart';
-import 'package:muxify/features/home/widgets/popular_releases_section.dart';
-import 'package:muxify/features/home/widgets/spotlight_section.dart';
 import 'package:muxify/features/home/widgets/followed_section.dart';
+import 'package:muxify/features/home/widgets/home_header.dart';
+import 'package:muxify/features/home/widgets/home_menu_drawer.dart';
 import 'package:muxify/features/home/widgets/now_playing_bar.dart';
-import 'package:muxify/features/home/widgets/video_tabs_section.dart';
+import 'package:muxify/features/home/widgets/popular_releases_section.dart';
+import 'package:muxify/features/home/widgets/recently_played_section.dart';
 import 'package:muxify/features/home/widgets/recently_played_videos_section.dart';
-import 'package:muxify/features/home/widgets/video_popular_new_releases_section.dart';
+import 'package:muxify/features/home/widgets/spotlight_section.dart';
+import 'package:muxify/features/home/widgets/trending_artists_section.dart';
 import 'package:muxify/features/home/widgets/trending_videos_section.dart';
-import 'package:muxify/features/home/widgets/video_spotlight_section.dart';
 import 'package:muxify/features/home/widgets/video_followed_section.dart';
-import 'package:muxify/features/home/providers/home_provider.dart';
-import 'package:muxify/core/router/app_router.dart';
+import 'package:muxify/features/home/widgets/video_popular_new_releases_section.dart';
+import 'package:muxify/features/home/widgets/video_spotlight_section.dart';
+import 'package:muxify/features/home/widgets/video_tabs_section.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -46,6 +46,7 @@ class _HomeScreenState extends State<HomeScreen> {
   String _selectedSpotlightTabId = 'spotlight';
   String _selectedVideoTabId = 'content_videos';
   String _selectedVideoSpotlightTabId = 'spotlight';
+  NowPlayingItem? _currentTrack;
 
   final List<TabOption> _toggleOptions = [
     TabOption(title: 'Music', icon: Icons.music_note),
@@ -65,66 +66,6 @@ class _HomeScreenState extends State<HomeScreen> {
     CategoryTab(id: 'new_release', title: 'New Release', icon: Icons.fiber_new),
   ];
 
-  // Featured playlists data - replace with backend data
-  final List<PlaylistItem> _featuredPlaylists = [
-    PlaylistItem(
-      id: '1',
-      title: 'Afrobeats',
-      songCount: '54 songs',
-      isFavorite: false,
-      tracks: [
-        TrackItem(id: '1', title: 'With You ft. Omah Lay', artist: 'Davido'),
-        TrackItem(id: '2', title: 'Bad Girl', artist: 'Wizkid'),
-        TrackItem(id: '3', title: 'Skelebu', artist: 'Rema'),
-        TrackItem(id: '4', title: 'Bundle', artist: 'Burna Boy'),
-        TrackItem(id: '5', title: 'On The', artist: 'Tiwa Sa'),
-        TrackItem(id: '6', title: 'Street C', artist: 'Olamide'),
-        TrackItem(id: '7', title: 'Dangba', artist: 'Bella Sh'),
-        TrackItem(id: '8', title: 'Lost', artist: 'Fola'),
-      ],
-    ),
-    PlaylistItem(
-      id: '1',
-      title: 'Afrobeats',
-      songCount: '54 songs',
-      isFavorite: false,
-      tracks: [
-        TrackItem(id: '1', title: 'With You ft. Omah Lay', artist: 'Davido'),
-        TrackItem(id: '2', title: 'Bad Girl', artist: 'Wizkid'),
-        TrackItem(id: '3', title: 'Skelebu', artist: 'Rema'),
-        TrackItem(id: '4', title: 'Bundle', artist: 'Burna Boy'),
-        TrackItem(id: '5', title: 'On The', artist: 'Tiwa Sa'),
-        TrackItem(id: '6', title: 'Street C', artist: 'Olamide'),
-        TrackItem(id: '7', title: 'Dangba', artist: 'Bella Sh'),
-        TrackItem(id: '8', title: 'Lost', artist: 'Fola'),
-      ],
-    ),
-    PlaylistItem(
-      id: '1',
-      title: 'Afrobeats',
-      songCount: '54 songs',
-      isFavorite: false,
-      tracks: [
-        TrackItem(id: '1', title: 'With You ft. Omah Lay', artist: 'Davido'),
-        TrackItem(id: '2', title: 'Bad Girl', artist: 'Wizkid'),
-        TrackItem(id: '3', title: 'Skelebu', artist: 'Rema'),
-        TrackItem(id: '4', title: 'Bundle', artist: 'Burna Boy'),
-        TrackItem(id: '5', title: 'On The', artist: 'Tiwa Sa'),
-        TrackItem(id: '6', title: 'Street C', artist: 'Olamide'),
-        TrackItem(id: '7', title: 'Dangba', artist: 'Bella Sh'),
-        TrackItem(id: '8', title: 'Lost', artist: 'Fola'),
-      ],
-    ),
-  ];
-
-  // Popular new releases data - replace with backend data
-  final List<NewReleaseItem> _popularReleases = [
-    NewReleaseItem(id: '1', albumName: 'Laho', artistName: 'Shallipopi'),
-    NewReleaseItem(id: '2', albumName: 'One Condition', artistName: 'DJ Tunez'),
-    NewReleaseItem(id: '3', albumName: 'I Told Them', artistName: 'Young John'),
-  ];
-
-  // Spotlight tabs data
   final List<SpotlightTab> _spotlightTabs = [
     SpotlightTab(id: 'spotlight', title: 'Spotlight', icon: Icons.wb_sunny),
     SpotlightTab(
@@ -136,18 +77,7 @@ class _HomeScreenState extends State<HomeScreen> {
     SpotlightTab(id: 'most_giver', title: 'Most Giver', icon: Icons.people),
   ];
 
-  // Spotlight items data - replace with backend data
-  final List<SpotlightItem> _spotlightItems = [
-    SpotlightItem(
-      id: '1',
-      title: 'I Told Them',
-      artist: 'Burna Boy',
-      playCount: '23,210,000 Plays',
-      isUnlocked: false,
-    ),
-  ];
-
-  // Recently played videos data
+  // Videos tab still uses mock content (out of scope for the Music tab wiring).
   final List<VideoItem> _recentlyPlayedVideos = [
     VideoItem(
       id: '1',
@@ -191,7 +121,6 @@ class _HomeScreenState extends State<HomeScreen> {
     ),
   ];
 
-  // Trending videos data
   final List<VideoItem> _trendingVideos = [
     VideoItem(
       id: '1',
@@ -227,7 +156,6 @@ class _HomeScreenState extends State<HomeScreen> {
     ),
   ];
 
-  // Video followed items data
   final List<VideoItem> _videoFollowedItems = [
     VideoItem(
       id: '1',
@@ -279,7 +207,6 @@ class _HomeScreenState extends State<HomeScreen> {
     ),
   ];
 
-  // Video spotlight items data
   final List<SpotlightItem> _videoSpotlightItems = [
     SpotlightItem(
       id: '1',
@@ -291,27 +218,6 @@ class _HomeScreenState extends State<HomeScreen> {
     ),
   ];
 
-  // Followed items data - replace with backend data
-  final List<FollowedItem> _followedItems = [
-    FollowedItem(id: '1', title: 'In His Will', artist: 'Mercy Chinwo'),
-    FollowedItem(id: '2', title: 'Lovin\'', artist: 'Simi'),
-    FollowedItem(id: '3', title: 'Desire', artist: 'Uriel'),
-    FollowedItem(id: '4', title: 'Twice As Tall', artist: 'Burna Boy'),
-    FollowedItem(id: '5', title: 'I Told Them', artist: 'Burna Boy'),
-    FollowedItem(id: '6', title: 'Fall', artist: 'Davido'),
-    FollowedItem(id: '7', title: 'Impersonation', artist: 'Davido ft. Jeage'),
-    FollowedItem(id: '8', title: 'Dada', artist: 'Young John'),
-  ];
-
-  // Currently playing track - replace with backend data
-  NowPlayingItem? _currentTrack = NowPlayingItem(
-    id: '1',
-    title: 'Boy Alone',
-    artist: 'Omah Lay',
-    isPlaying: true,
-    isUnlocked: false,
-  );
-
   @override
   void initState() {
     super.initState();
@@ -320,8 +226,17 @@ class _HomeScreenState extends State<HomeScreen> {
       final home = context.read<HomeProvider>();
       home.loadRecentlyPlayed();
       home.loadTrendingArtists();
+      home.loadFeaturedPlaylists();
+      home.loadPopularNewReleases();
+      home.loadFollowed();
+      home.loadCategoryTab(_selectedCategoryId);
+      home.loadSpotlightTab(_selectedSpotlightTabId);
     });
   }
+
+  // ---------------------------------------------------------------------------
+  // Navigation helpers
+  // ---------------------------------------------------------------------------
 
   void _pushArtistProfile(
     BuildContext context,
@@ -346,6 +261,102 @@ class _HomeScreenState extends State<HomeScreen> {
     context.push(uri.toString());
   }
 
+  void _openPlayer({
+    required String trackId,
+    required String title,
+    required String artistName,
+    String? coverUrl,
+    bool isUnlocked = true,
+  }) {
+    final id = trackId.trim();
+    if (id.isEmpty) return;
+    final cover = coverUrl?.trim();
+    final uri = Uri(
+      path: AppRouter.musicPlayer,
+      queryParameters: {
+        'trackId': id,
+        'title': title,
+        'artistName': artistName,
+        if (cover != null && cover.isNotEmpty) 'backgroundImageUrl': cover,
+        'isUnlocked': '$isUnlocked',
+      },
+    );
+    setState(() {
+      _currentTrack = NowPlayingItem(
+        id: id,
+        title: title,
+        artist: artistName,
+        albumArtUrl: cover,
+        isPlaying: true,
+        isUnlocked: isUnlocked,
+      );
+    });
+    context.push(uri.toString());
+  }
+
+  void _openRecentlyPlayed(RecentlyPlayedItem item) {
+    if (item.id.isEmpty) return;
+    _openPlayer(
+      trackId: item.id,
+      title: item.title,
+      artistName: item.artist ?? '',
+      coverUrl: item.imageUrl,
+    );
+  }
+
+  void _openFollowed(FollowedItem item) {
+    _openPlayer(
+      trackId: item.id,
+      title: item.title,
+      artistName: item.artist,
+      coverUrl: item.imageUrl,
+      isUnlocked: item.isUnlocked,
+    );
+  }
+
+  void _openNewRelease(NewReleaseItem item) {
+    _openPlayer(
+      trackId: item.id,
+      title: item.albumName,
+      artistName: item.artistName,
+      coverUrl: item.imageUrl,
+    );
+  }
+
+  void _openSpotlight(SpotlightItem item) {
+    if (!item.isPlayable) return;
+    _openPlayer(
+      trackId: item.id,
+      title: item.title,
+      artistName: item.artist,
+      coverUrl: item.imageUrl,
+      isUnlocked: item.isUnlocked,
+    );
+  }
+
+  void _openCategoryPlaylist(PlaylistItem playlist) {
+    final firstTrack = playlist.tracks.isNotEmpty ? playlist.tracks.first : null;
+    if (firstTrack != null) {
+      _openPlayer(
+        trackId: firstTrack.id,
+        title: firstTrack.title,
+        artistName: firstTrack.artist,
+        coverUrl: firstTrack.imageUrl ?? playlist.imageUrl,
+      );
+      return;
+    }
+    // Fallback: deep link into the FeaturedPlaylistScreen for this category.
+    final uri = Uri(
+      path: AppRouter.trending,
+      queryParameters: {'tabId': _selectedCategoryId},
+    );
+    context.push(uri.toString());
+  }
+
+  // ---------------------------------------------------------------------------
+  // Tab content
+  // ---------------------------------------------------------------------------
+
   Widget _buildTabContent(HomeProvider homeProvider) {
     switch (_selectedTab) {
       case 'Music':
@@ -362,15 +373,33 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildMusicContent(HomeProvider homeProvider) {
-    final showRecentlyPlayedSection =
-        homeProvider.isLoadingRecentlyPlayed ||
+    final showRecentlyPlayed = homeProvider.isLoadingRecentlyPlayed ||
         (homeProvider.hasLoadedRecentlyPlayed &&
             homeProvider.recentlyPlayed.isNotEmpty);
 
-    final showTrendingArtistsSection =
-        homeProvider.isLoadingTrendingArtists ||
+    final showTrendingArtists = homeProvider.isLoadingTrendingArtists ||
         (homeProvider.hasLoadedTrendingArtists &&
             homeProvider.trendingArtists.isNotEmpty);
+
+    final categoryCards = homeProvider.categoryCards(_selectedCategoryId);
+    final categoryLoading = homeProvider.isLoadingCategory(_selectedCategoryId);
+    final showCategorySection = categoryLoading || categoryCards.isNotEmpty;
+
+    final featuredLoading = homeProvider.isLoadingFeaturedPlaylists;
+    final featured = homeProvider.featuredPlaylists;
+    final showFeaturedSection = featuredLoading || featured.isNotEmpty;
+
+    final popular = homeProvider.popularNewReleases;
+    final popularLoading = homeProvider.isLoadingPopularNewReleases;
+    final showPopular = popularLoading || popular.isNotEmpty;
+
+    final spotlightItems = homeProvider.spotlightForTab(_selectedSpotlightTabId);
+    final spotlightLoading =
+        homeProvider.isLoadingSpotlightTab(_selectedSpotlightTabId);
+
+    final followed = homeProvider.followed;
+    final followedLoading = homeProvider.isLoadingFollowed;
+    final showFollowed = followedLoading || followed.isNotEmpty;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -380,9 +409,12 @@ class _HomeScreenState extends State<HomeScreen> {
           RecentlyPlayedSection(items: const [], isLoading: true)
         else if (homeProvider.hasLoadedRecentlyPlayed &&
             homeProvider.recentlyPlayed.isNotEmpty)
-          RecentlyPlayedSection(items: homeProvider.recentlyPlayed),
-        if (showRecentlyPlayedSection) 30.column,
-        if (showTrendingArtistsSection)
+          RecentlyPlayedSection(
+            items: homeProvider.recentlyPlayed,
+            onItemTap: _openRecentlyPlayed,
+          ),
+        if (showRecentlyPlayed) 30.column,
+        if (showTrendingArtists)
           TrendingArtistsSection(
             artists: homeProvider.trendingArtists,
             title: 'Trending artists',
@@ -390,47 +422,82 @@ class _HomeScreenState extends State<HomeScreen> {
             isLoading: homeProvider.isLoadingTrendingArtists,
             onArtistTap: (artist) => _pushArtistProfile(context, artist),
           ),
-        if (showTrendingArtistsSection) 30.column,
-        // Category Tabs Section
+        if (showTrendingArtists) 30.column,
+
+        // Category tabs that drive the section directly below.
         CategoryTabsSection(
           categories: _categoryTabs,
           selectedCategoryId: _selectedCategoryId,
           onCategoryChanged: (categoryId) {
-            setState(() {
-              _selectedCategoryId = categoryId;
-            });
+            setState(() => _selectedCategoryId = categoryId);
+            context.read<HomeProvider>().loadCategoryTab(categoryId);
           },
         ),
         24.column,
-        // Featured Playlist Section
-        FeaturedPlaylistSection(
-          playlists: _featuredPlaylists,
-          onSeeAll: () {
-            context.push(AppRouter.trending);
-          },
-        ),
-        20.column,
-        // Popular New Releases Section
-        PopularReleasesSection(
-          title: 'Popular New Releases',
-          releases: _popularReleases,
-        ),
-        32.column,
-        // Spotlight Section
+
+        if (showCategorySection)
+          FeaturedPlaylistSection(
+            playlists: categoryCards,
+            isLoading: categoryLoading,
+            onPlaylistTap: _openCategoryPlaylist,
+            onSeeAll: () {
+              final uri = Uri(
+                path: AppRouter.trending,
+                queryParameters: {'tabId': _selectedCategoryId},
+              );
+              context.push(uri.toString());
+            },
+          ),
+        if (showCategorySection) 20.column,
+
+        // Curated featured playlists (always-on, below the category-driven cards).
+        if (showFeaturedSection) ...[
+          FeaturedPlaylistSection(
+            playlists: featured,
+            isLoading: featuredLoading,
+            onPlaylistTap: _openCategoryPlaylist,
+            onSeeAll: () {
+              final uri = Uri(
+                path: AppRouter.trending,
+                queryParameters: {'tabId': _selectedCategoryId},
+              );
+              context.push(uri.toString());
+            },
+          ),
+          20.column,
+        ],
+
+        if (showPopular)
+          PopularReleasesSection(
+            title: 'Popular New Releases',
+            releases: popular,
+            isLoading: popularLoading,
+            onItemTap: _openNewRelease,
+          ),
+        if (showPopular) 32.column,
+
         SpotlightSection(
           tabs: _spotlightTabs,
           selectedTabId: _selectedSpotlightTabId,
           onTabChanged: (tabId) {
-            setState(() {
-              _selectedSpotlightTabId = tabId;
-            });
+            setState(() => _selectedSpotlightTabId = tabId);
+            context.read<HomeProvider>().loadSpotlightTab(tabId);
           },
-          items: _spotlightItems,
+          items: spotlightItems,
+          isLoading: spotlightLoading,
+          onItemTap: _openSpotlight,
+          onUnlockTap: _openSpotlight,
         ),
         32.column,
-        // From Those You Follow Section
-        FollowedSection(title: 'From those you follow', items: _followedItems),
-        32.column,
+
+        if (showFollowed)
+          FollowedSection(
+            title: 'From those you follow',
+            items: followed,
+            isLoading: followedLoading,
+            onItemTap: _openFollowed,
+          ),
+        if (showFollowed) 32.column,
       ],
     );
   }
@@ -438,8 +505,8 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildVideosContent(HomeProvider homeProvider) {
     final showTrendingArtistsSection =
         homeProvider.isLoadingTrendingArtists ||
-        (homeProvider.hasLoadedTrendingArtists &&
-            homeProvider.trendingArtists.isNotEmpty);
+            (homeProvider.hasLoadedTrendingArtists &&
+                homeProvider.trendingArtists.isNotEmpty);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -528,9 +595,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 selectedTab: _selectedTab,
                 toggleOptions: _toggleOptions,
                 onTabChanged: (tab) {
-                  setState(() {
-                    _selectedTab = tab;
-                  });
+                  setState(() => _selectedTab = tab);
                 },
               ),
               Expanded(
@@ -540,28 +605,34 @@ class _HomeScreenState extends State<HomeScreen> {
                     physics: const AlwaysScrollableScrollPhysics(),
                     padding: EdgeInsets.only(left: 24.padding),
                     child: _buildTabContent(homeProvider),
-                    // Column(
-                    //   crossAxisAlignment: CrossAxisAlignment.start,
-                    //   children: [30.column, _buildTabContent()],
-                    // ),
                   ),
                 ),
               ),
             ],
           ),
-          // Now Playing Bar - Fixed at bottom
-          NowPlayingBar(
-            currentTrack: _currentTrack,
-            onTap: () {},
-            onPlayPauseTap: () {
-              setState(() {
-                _currentTrack = _currentTrack?.copyWith(
-                  isPlaying: !(_currentTrack?.isPlaying ?? false),
+          if (_currentTrack != null)
+            NowPlayingBar(
+              currentTrack: _currentTrack,
+              onTap: () {
+                final t = _currentTrack;
+                if (t == null) return;
+                _openPlayer(
+                  trackId: t.id,
+                  title: t.title,
+                  artistName: t.artist,
+                  coverUrl: t.albumArtUrl,
+                  isUnlocked: t.isUnlocked,
                 );
-              });
-            },
-            onUnlockTap: () {},
-          ),
+              },
+              onPlayPauseTap: () {
+                setState(() {
+                  _currentTrack = _currentTrack?.copyWith(
+                    isPlaying: !(_currentTrack?.isPlaying ?? false),
+                  );
+                });
+              },
+              onUnlockTap: () {},
+            ),
         ],
       ),
     );

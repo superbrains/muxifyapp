@@ -1,3 +1,5 @@
+import 'package:muxify/features/home/data/feed_dtos.dart';
+
 class SpotlightItem {
   final String id;
   final String title;
@@ -5,6 +7,7 @@ class SpotlightItem {
   final String playCount;
   final String? imageUrl;
   final bool isUnlocked;
+  final bool isPlayable;
 
   SpotlightItem({
     required this.id,
@@ -13,16 +16,66 @@ class SpotlightItem {
     required this.playCount,
     this.imageUrl,
     this.isUnlocked = false,
+    this.isPlayable = false,
   });
 
-  factory SpotlightItem.fromJson(Map<String, dynamic> json) {
+  factory SpotlightItem.fromSpotlightDto(SpotlightDto dto) {
     return SpotlightItem(
-      id: json['id'] as String,
-      title: json['title'] as String,
-      artist: json['artist'] as String,
-      playCount: json['playCount'] as String,
-      imageUrl: json['imageUrl'] as String?,
-      isUnlocked: json['isUnlocked'] as bool? ?? false,
+      id: dto.contentId ?? dto.id,
+      title: dto.title,
+      artist: dto.subtitle ?? '',
+      playCount: '',
+      imageUrl: dto.imageUrl.isEmpty ? null : dto.imageUrl,
+      isUnlocked: true,
+      isPlayable: dto.type == 'track',
     );
+  }
+
+  factory SpotlightItem.fromMostGiftedDto(MostGiftedTrackDto dto) {
+    return SpotlightItem(
+      id: dto.id,
+      title: dto.title,
+      artist: dto.artistName,
+      playCount: _formatGifts(dto.totalGiftsReceived),
+      imageUrl: dto.coverArtUrl,
+      isUnlocked: true,
+      isPlayable: true,
+    );
+  }
+
+  factory SpotlightItem.fromTopGiverDto(TopGiverDto dto) {
+    final name = (dto.displayName ?? dto.username ?? 'Fan').trim();
+    final medal = dto.medal.trim();
+    return SpotlightItem(
+      id: dto.id,
+      title: name.isEmpty ? 'Fan' : name,
+      artist: medal.isEmpty ? 'Top Giver' : medal,
+      playCount: _formatCoins(dto.totalGiftValue),
+      imageUrl: dto.avatarUrl,
+      isUnlocked: true,
+      isPlayable: false,
+    );
+  }
+
+  static String _formatGifts(int count) {
+    if (count <= 0) return '';
+    final formatted = _formatThousands(count);
+    return '$formatted gifts';
+  }
+
+  static String _formatCoins(int value) {
+    if (value <= 0) return '';
+    return '${_formatThousands(value)} coins sent';
+  }
+
+  static String _formatThousands(int value) {
+    final s = value.toString();
+    final buffer = StringBuffer();
+    for (var i = 0; i < s.length; i++) {
+      final remaining = s.length - i;
+      buffer.write(s[i]);
+      if (remaining > 1 && remaining % 3 == 1) buffer.write(',');
+    }
+    return buffer.toString();
   }
 }

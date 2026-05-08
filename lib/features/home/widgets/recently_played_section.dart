@@ -11,11 +11,13 @@ import 'package:shimmer/shimmer.dart';
 class RecentlyPlayedSection extends StatelessWidget {
   final List<RecentlyPlayedItem> items;
   final bool isLoading;
+  final void Function(RecentlyPlayedItem item)? onItemTap;
 
   const RecentlyPlayedSection({
     super.key,
     required this.items,
     this.isLoading = false,
+    this.onItemTap,
   });
 
   @override
@@ -45,7 +47,10 @@ class RecentlyPlayedSection extends StatelessWidget {
                   separatorBuilder: (context, index) => 12.row,
                   itemBuilder: (context, index) {
                     final item = items[index];
-                    return RecentlyPlayedCard(item: item, onTap: () {});
+                    return RecentlyPlayedCard(
+                      item: item,
+                      onTap: () => onItemTap?.call(item),
+                    );
                   },
                 ),
         ),

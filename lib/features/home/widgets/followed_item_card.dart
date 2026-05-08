@@ -1,5 +1,7 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:muxify/core/constants/api_constants.dart';
 import 'package:muxify/core/constants/app_colors.dart';
 import 'package:muxify/core/constants/app_sizes.dart';
 import 'package:muxify/core/constants/app_text_styles.dart';
@@ -30,12 +32,7 @@ class FollowedItemCard extends StatelessWidget {
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(8.radius),
-              child: Image.asset(
-                'assets/pngs/follows.png',
-                fit: BoxFit.cover,
-                width: double.infinity,
-                height: double.infinity,
-              ),
+              child: _buildCover(),
             ),
           ),
           8.column,
@@ -64,6 +61,28 @@ class FollowedItemCard extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildCover() {
+    final url = item.imageUrl?.trim() ?? '';
+    if (url.isEmpty) return _placeholderCover();
+    return CachedNetworkImage(
+      imageUrl: ApiConstants.resolvePublicUrl(url),
+      fit: BoxFit.cover,
+      width: double.infinity,
+      height: double.infinity,
+      placeholder: (_, __) => _placeholderCover(),
+      errorWidget: (_, __, ___) => _placeholderCover(),
+    );
+  }
+
+  Widget _placeholderCover() {
+    return Image.asset(
+      'assets/pngs/follows.png',
+      fit: BoxFit.cover,
+      width: double.infinity,
+      height: double.infinity,
     );
   }
 }

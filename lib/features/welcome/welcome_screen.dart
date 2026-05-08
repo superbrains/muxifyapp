@@ -88,7 +88,7 @@ class WelcomeScreen extends StatelessWidget {
 
   Widget _buildDescription() {
     return Text(
-      'Lorem ipsum dolor sit amet consectetur.\nFaucibus tellus vel vulputate tortor.',
+      'Fresh drops, real artists, real support.\nStream, gift, and ride with Africa\'s next big names.',
       textAlign: TextAlign.center,
       style: AppTextStyles.bodyLarge.copyWith(),
     );

@@ -4,6 +4,7 @@ import 'package:muxify/core/constants/app_colors.dart';
 import 'package:muxify/core/constants/app_sizes.dart';
 import 'package:muxify/core/constants/app_text_styles.dart';
 import 'package:muxify/features/home/models/album_item.dart';
+import 'package:muxify/shared/widgets/auth_network_image.dart';
 import 'package:muxify/shared/widgets/gift_worth_widget.dart';
 
 class AlbumItemWidget extends StatelessWidget {
@@ -33,12 +34,7 @@ class AlbumItemWidget extends StatelessWidget {
             height: 61.maxHeight,
             child: ClipRRect(
               borderRadius: BorderRadius.circular(6.radius),
-              child: Image.asset(
-                item.albumArtUrl ?? 'assets/pngs/follows.png',
-                fit: BoxFit.cover,
-                width: double.infinity,
-                height: double.infinity,
-              ),
+              child: _buildAlbumArt(item.albumArtUrl),
             ),
           ),
           11.row,
@@ -88,6 +84,44 @@ class AlbumItemWidget extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildAlbumArt(String? url) {
+    final value = (url ?? '').trim();
+    if (value.isEmpty) {
+      return Image.asset(
+        'assets/pngs/follows.png',
+        fit: BoxFit.cover,
+        width: double.infinity,
+        height: double.infinity,
+      );
+    }
+    if (value.startsWith('assets/')) {
+      return Image.asset(
+        value,
+        fit: BoxFit.cover,
+        width: double.infinity,
+        height: double.infinity,
+      );
+    }
+    return AuthNetworkImage(
+      path: value,
+      fit: BoxFit.cover,
+      width: double.infinity,
+      height: double.infinity,
+      placeholder: Image.asset(
+        'assets/pngs/follows.png',
+        fit: BoxFit.cover,
+        width: double.infinity,
+        height: double.infinity,
+      ),
+      errorWidget: Image.asset(
+        'assets/pngs/follows.png',
+        fit: BoxFit.cover,
+        width: double.infinity,
+        height: double.infinity,
       ),
     );
   }

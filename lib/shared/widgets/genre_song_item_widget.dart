@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:muxify/core/constants/app_colors.dart';
 import 'package:muxify/core/constants/app_sizes.dart';
 import 'package:muxify/core/constants/app_text_styles.dart';
+import 'package:muxify/shared/widgets/auth_network_image.dart';
 import 'package:muxify/shared/widgets/unlock_button.dart';
 import 'package:muxify/features/featured_playlist/models/genre_song_item.dart';
 
@@ -40,12 +41,7 @@ class GenreSongItemWidget extends StatelessWidget {
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(6.radius),
-              child: Image.asset(
-                item.albumArtUrl,
-                fit: BoxFit.cover,
-                width: double.infinity,
-                height: double.infinity,
-              ),
+              child: _buildAlbumArt(item.albumArtUrl),
             ),
           ),
           16.row,
@@ -97,6 +93,44 @@ class GenreSongItemWidget extends StatelessWidget {
               ),
             ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildAlbumArt(String url) {
+    final value = url.trim();
+    if (value.isEmpty) {
+      return Image.asset(
+        'assets/pngs/follows.png',
+        fit: BoxFit.cover,
+        width: double.infinity,
+        height: double.infinity,
+      );
+    }
+    if (value.startsWith('assets/')) {
+      return Image.asset(
+        value,
+        fit: BoxFit.cover,
+        width: double.infinity,
+        height: double.infinity,
+      );
+    }
+    return AuthNetworkImage(
+      path: value,
+      fit: BoxFit.cover,
+      width: double.infinity,
+      height: double.infinity,
+      placeholder: Image.asset(
+        'assets/pngs/follows.png',
+        fit: BoxFit.cover,
+        width: double.infinity,
+        height: double.infinity,
+      ),
+      errorWidget: Image.asset(
+        'assets/pngs/follows.png',
+        fit: BoxFit.cover,
+        width: double.infinity,
+        height: double.infinity,
       ),
     );
   }

@@ -4,25 +4,35 @@ import 'package:muxify/core/constants/app_colors.dart';
 import 'package:muxify/core/constants/app_sizes.dart';
 import 'package:muxify/core/router/app_router.dart';
 import 'package:muxify/features/featured_playlist/models/genre_song_item.dart';
-import 'package:muxify/shared/widgets/genre_song_item_widget.dart';
-import 'package:muxify/shared/widgets/content_header.dart';
-import 'package:muxify/shared/widgets/gradient_header_with_tabs.dart';
-import 'package:muxify/shared/widgets/unlock_button.dart';
-import 'package:muxify/shared/widgets/unlock_all_songs_modal.dart';
+import 'package:muxify/features/home/data/feed_dtos.dart';
+import 'package:muxify/features/home/data/music_feed_repository.dart';
 import 'package:muxify/features/home/models/category_tab.dart';
+import 'package:muxify/shared/widgets/content_header.dart';
+import 'package:muxify/shared/widgets/genre_song_item_widget.dart';
+import 'package:muxify/shared/widgets/gradient_header_with_tabs.dart';
+import 'package:muxify/shared/widgets/unlock_all_songs_modal.dart';
+import 'package:muxify/shared/widgets/unlock_button.dart';
 
 class FeaturedPlaylistScreen extends StatefulWidget {
-  const FeaturedPlaylistScreen({super.key});
+  final String? initialTabId;
+
+  const FeaturedPlaylistScreen({super.key, this.initialTabId});
 
   @override
   State<FeaturedPlaylistScreen> createState() => _FeaturedPlaylistScreenState();
 }
 
 class _FeaturedPlaylistScreenState extends State<FeaturedPlaylistScreen> {
-  String _selectedTab = 'trending';
+  late String _selectedTab;
   String _selectedMediaType = 'Music';
 
-  // Navigation tabs
+  final MusicFeedRepository _feed = MusicFeedRepository();
+
+  // Per-tab cache so flipping tabs is instant after first load.
+  final Map<String, List<GenreSongItem>> _songsByTab = {};
+  final Set<String> _loading = {};
+  Object? _error;
+
   final List<CategoryTab> _tabs = [
     CategoryTab(id: 'trending', title: 'Trending', icon: Icons.trending_up),
     CategoryTab(
@@ -34,60 +44,94 @@ class _FeaturedPlaylistScreenState extends State<FeaturedPlaylistScreen> {
     CategoryTab(id: 'new_release', title: 'New Release', icon: Icons.fiber_new),
   ];
 
-  // Sample data
-  final List<GenreSongItem> _genreSongs = [
-    GenreSongItem(
-      id: '1',
-      title: 'With You ft. Omah Lay',
-      artist: 'Davido',
-      albumArtUrl: 'assets/pngs/follows.png',
-      isUnlocked: false,
-    ),
-    GenreSongItem(
-      id: '2',
-      title: 'Bad Girl',
-      artist: 'Wizkid',
-      albumArtUrl: 'assets/pngs/follows.png',
-      isUnlocked: true,
-    ),
-    GenreSongItem(
-      id: '3',
-      title: 'Skelebu',
-      artist: 'Rema',
-      albumArtUrl: 'assets/pngs/follows.png',
-      isUnlocked: false,
-    ),
-    GenreSongItem(
-      id: '4',
-      title: 'Bundle',
-      artist: 'Burna Boy',
-      albumArtUrl: 'assets/pngs/follows.png',
-      isUnlocked: false,
-    ),
-    GenreSongItem(
-      id: '5',
-      title: 'Lost',
-      artist: 'Fola',
-      albumArtUrl: 'assets/pngs/follows.png',
-      isUnlocked: true,
-    ),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    final initial = widget.initialTabId;
+    _selectedTab =
+        (initial != null && _tabs.any((t) => t.id == initial)) ? initial : 'trending';
+    _loadTab(_selectedTab);
+  }
+
+  Future<void> _loadTab(String tabId) async {
+    if (_loading.contains(tabId)) return;
+    if (_songsByTab.containsKey(tabId)) return;
+
+    setState(() {
+      _loading.add(tabId);
+      _error = null;
+    });
+
+    try {
+      final dtos = await _fetchForTab(tabId);
+      if (!mounted) return;
+      _songsByTab[tabId] = dtos
+          .map(
+            (t) => GenreSongItem(
+              id: t.id,
+              title: t.title,
+              artist: t.artistName,
+              albumArtUrl: t.coverArtUrl ?? '',
+              isUnlocked: t.isUnlocked,
+            ),
+          )
+          .toList(growable: false);
+    } catch (e) {
+      if (!mounted) return;
+      _error = e;
+      _songsByTab[tabId] = const [];
+    } finally {
+      if (mounted) {
+        setState(() {
+          _loading.remove(tabId);
+        });
+      }
+    }
+  }
+
+  Future<List<FeedTrackDto>> _fetchForTab(String tabId) {
+    switch (tabId) {
+      case 'trending':
+        return _feed.getTrendingTracks(period: 'week', pageSize: 30);
+      case 'hot_release':
+        return _feed.getHotReleases(days: 14, pageSize: 30);
+      case 'top_chart':
+        return _feed.getTopCharts(period: 'all', pageSize: 30);
+      case 'new_release':
+        return _feed.getNewReleases(days: 30, pageSize: 30);
+      default:
+        return _feed.getTrendingTracks(period: 'week', pageSize: 30);
+    }
+  }
+
+  void _openPlayer(GenreSongItem song) {
+    context.push(
+      Uri(
+        path: AppRouter.musicPlayer,
+        queryParameters: {
+          'trackId': song.id,
+          'title': song.title,
+          'artistName': song.artist,
+          if (song.albumArtUrl.isNotEmpty) 'backgroundImageUrl': song.albumArtUrl,
+          'isUnlocked': '${song.isUnlocked}',
+        },
+      ).toString(),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
+    final isLoading = _loading.contains(_selectedTab);
+    final songs = _songsByTab[_selectedTab] ?? const [];
     return Scaffold(
       backgroundColor: AppColors.background,
       body: Column(
         children: [
-          // Header with Navigation Tabs
           GradientHeaderWithTabs(
-            // title: 'Featured Playlist',
             gradientColor: AppColors.statisticsHeaderGradient,
             selectedMediaType: _selectedMediaType,
             onMediaTypeChanged: (mediaType) {
-              setState(() {
-                _selectedMediaType = mediaType;
-              });
+              setState(() => _selectedMediaType = mediaType);
             },
             onBackTap: () {
               Navigator.of(context).pop();
@@ -95,13 +139,11 @@ class _FeaturedPlaylistScreenState extends State<FeaturedPlaylistScreen> {
             tabs: _tabs,
             selectedTabId: _selectedTab,
             onTabChanged: (categoryId) {
-              setState(() {
-                _selectedTab = categoryId;
-              });
+              setState(() => _selectedTab = categoryId);
+              _loadTab(categoryId);
             },
           ),
           36.column,
-          // Content Header (Fixed)
           Padding(
             padding: EdgeInsets.only(
               left: 25.padding,
@@ -110,7 +152,7 @@ class _FeaturedPlaylistScreenState extends State<FeaturedPlaylistScreen> {
             ),
             child: ContentHeader(
               title: _getSectionTitle(),
-              subtitle: 'Today, 3 September',
+              subtitle: _formattedToday(),
               filterText: 'Today, Latest',
               onFilterTap: () {},
             ),
@@ -119,9 +161,7 @@ class _FeaturedPlaylistScreenState extends State<FeaturedPlaylistScreen> {
           UnlockButton(
             width: 104.maxWidth,
             height: 42.buttonHeight,
-            onTap: () {
-              _showUnlockAllSongsModal();
-            },
+            onTap: songs.isEmpty ? null : _showUnlockAllSongsModal,
             text: 'Play All',
             iconPath: 'assets/pngs/shuffle.png',
             backgroundColor: AppColors.toggleSelected,
@@ -134,12 +174,17 @@ class _FeaturedPlaylistScreenState extends State<FeaturedPlaylistScreen> {
             ),
             borderRadius: 25.radius,
           ),
-          // 30.column,
-          // Scrollable Content
           Expanded(
-            child: SingleChildScrollView(
-              padding: EdgeInsets.symmetric(horizontal: 27.padding),
-              child: _buildSongsList(),
+            child: RefreshIndicator(
+              onRefresh: () async {
+                _songsByTab.remove(_selectedTab);
+                await _loadTab(_selectedTab);
+              },
+              child: SingleChildScrollView(
+                padding: EdgeInsets.symmetric(horizontal: 27.padding),
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: _buildBody(isLoading: isLoading, songs: songs),
+              ),
             ),
           ),
         ],
@@ -147,27 +192,40 @@ class _FeaturedPlaylistScreenState extends State<FeaturedPlaylistScreen> {
     );
   }
 
-  Widget _buildSongsList() {
+  Widget _buildBody({required bool isLoading, required List<GenreSongItem> songs}) {
+    if (isLoading && songs.isEmpty) {
+      return Padding(
+        padding: EdgeInsets.only(top: 80.padding),
+        child: const Center(child: CircularProgressIndicator()),
+      );
+    }
+    if (!isLoading && songs.isEmpty) {
+      return Padding(
+        padding: EdgeInsets.only(top: 80.padding),
+        child: Center(
+          child: Text(
+            _error == null ? 'Nothing here yet.' : 'Failed to load. Pull to retry.',
+            style: TextStyle(color: AppColors.text.withValues(alpha: 0.6)),
+          ),
+        ),
+      );
+    }
     return ListView.separated(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      itemCount: _genreSongs.length,
+      itemCount: songs.length,
       padding: EdgeInsets.only(top: 35.padding),
       separatorBuilder: (context, index) => 16.column,
       itemBuilder: (context, index) {
+        final song = songs[index];
         return GenreSongItemWidget(
-          item: _genreSongs[index],
-          onTap: () {
-            // Navigate to music player when song is tapped
-            context.push(AppRouter.musicPlayer);
-          },
+          item: song,
+          onTap: () => _openPlayer(song),
           onPlayUnlockTap: () {
-            if (_genreSongs[index].isUnlocked) {
-              // If unlocked, navigate to music player
-              context.push(AppRouter.musicPlayer);
+            if (song.isUnlocked) {
+              _openPlayer(song);
             } else {
-              // If locked, show unlock modal
-              _showUnlockModal(_genreSongs[index]);
+              _showUnlockModal(song);
             }
           },
         );
@@ -190,23 +248,24 @@ class _FeaturedPlaylistScreenState extends State<FeaturedPlaylistScreen> {
     }
   }
 
+  String _formattedToday() {
+    const months = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December',
+    ];
+    final now = DateTime.now();
+    return 'Today, ${now.day} ${months[now.month - 1]}';
+  }
+
   void _showUnlockAllSongsModal() {
     showDialog(
       context: context,
       barrierDismissible: true,
       builder: (BuildContext context) {
         return UnlockAllSongsModal(
-          onClose: () {
-            Navigator.of(context).pop();
-          },
-          onUnlockPremium: () {
-            Navigator.of(context).pop();
-            // Handle premium unlock
-          },
-          onUnlockFree: () {
-            Navigator.of(context).pop();
-            // Handle free unlock
-          },
+          onClose: () => Navigator.of(context).pop(),
+          onUnlockPremium: () => Navigator.of(context).pop(),
+          onUnlockFree: () => Navigator.of(context).pop(),
         );
       },
     );
@@ -218,33 +277,31 @@ class _FeaturedPlaylistScreenState extends State<FeaturedPlaylistScreen> {
       barrierDismissible: true,
       builder: (BuildContext context) {
         return UnlockAllSongsModal(
-          onClose: () {
-            Navigator.of(context).pop();
-          },
+          onClose: () => Navigator.of(context).pop(),
           onUnlockPremium: () {
             Navigator.of(context).pop();
-            setState(() {
-              final index = _genreSongs.indexOf(song);
-              if (index != -1) {
-                _genreSongs[index] = _genreSongs[index].copyWith(
-                  isUnlocked: true,
-                );
-              }
-            });
+            _markSongUnlocked(song);
           },
           onUnlockFree: () {
             Navigator.of(context).pop();
-            setState(() {
-              final index = _genreSongs.indexOf(song);
-              if (index != -1) {
-                _genreSongs[index] = _genreSongs[index].copyWith(
-                  isUnlocked: true,
-                );
-              }
-            });
+            _markSongUnlocked(song);
           },
         );
       },
     );
+  }
+
+  void _markSongUnlocked(GenreSongItem song) {
+    final list = _songsByTab[_selectedTab];
+    if (list == null) return;
+    final index = list.indexWhere((s) => s.id == song.id);
+    if (index < 0) return;
+    setState(() {
+      _songsByTab[_selectedTab] = [
+        ...list.take(index),
+        list[index].copyWith(isUnlocked: true),
+        ...list.skip(index + 1),
+      ];
+    });
   }
 }

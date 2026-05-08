@@ -19,13 +19,22 @@ class GiftItem {
 
   factory GiftItem.fromJson(Map<String, dynamic> json) {
     return GiftItem(
-      id: json['id'] as String? ?? '',
+      // Backend GiftTypeDto returns the enum name as `type` (e.g. "Heart"),
+      // which is the value the SendGift endpoint expects back as `giftType`.
+      id: (json['type'] as String?) ?? (json['id'] as String?) ?? '',
       name: json['name'] as String? ?? '',
-      backgroundImage: json['backgroundImage'] as String? ?? 'assets/pngs/gift_bg_1.png',
-      emojiImage: json['imageUrl'] as String? ?? json['emojiImage'] as String? ?? '',
+      backgroundImage:
+          json['backgroundImage'] as String? ?? 'assets/pngs/gift_bg_1.png',
+      emojiImage:
+          (json['icon'] as String?) ??
+          (json['imageUrl'] as String?) ??
+          (json['emojiImage'] as String?) ??
+          '',
       stickerText: json['stickerText'] as String? ?? 'GIFT',
       count: json['count'] as int? ?? 0,
-      amount: (json['amount'] as num?)?.toDouble() ?? (json['price'] as num?)?.toDouble(),
+      amount: (json['coinCost'] as num?)?.toDouble() ??
+          (json['amount'] as num?)?.toDouble() ??
+          (json['price'] as num?)?.toDouble(),
     );
   }
 

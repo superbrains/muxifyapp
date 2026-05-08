@@ -6,36 +6,48 @@ import 'package:muxify/features/home/widgets/playlist_card.dart';
 class FeaturedPlaylistSection extends StatelessWidget {
   final List<PlaylistItem> playlists;
   final VoidCallback? onSeeAll;
+  final void Function(PlaylistItem playlist)? onPlaylistTap;
+  final bool isLoading;
 
   const FeaturedPlaylistSection({
     super.key,
-
     required this.playlists,
     this.onSeeAll,
+    this.onPlaylistTap,
+    this.isLoading = false,
   });
 
   @override
   Widget build(BuildContext context) {
+    if (!isLoading && playlists.isEmpty) return const SizedBox.shrink();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SizedBox(
-          height: 408.buttonHeight, // Adjust based on content
+          height: 408.buttonHeight,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             shrinkWrap: true,
-            // physics: const NeverScrollableScrollPhysics(),
             padding: EdgeInsets.zero,
-            itemCount: playlists.length,
+            itemCount: isLoading ? 3 : playlists.length,
             separatorBuilder: (context, index) => 18.row,
             itemBuilder: (context, index) {
+              if (isLoading) {
+                return Container(
+                  width: 288.maxWidth,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF2A2A2A),
+                    borderRadius: BorderRadius.circular(16.radius),
+                  ),
+                );
+              }
               final playlist = playlists[index];
               return SizedBox(
-                width: 288.maxWidth, // Fixed width for each card
+                width: 288.maxWidth,
                 child: PlaylistCard(
                   playlist: playlist,
-                  onTap: () {},
-                  onPlayTap: () {},
+                  onTap: () => onPlaylistTap?.call(playlist),
+                  onPlayTap: () => onPlaylistTap?.call(playlist),
                   onFavoriteTap: () {},
                   onMenuTap: () {},
                   onSeeAllTap: onSeeAll,

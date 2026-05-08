@@ -12,6 +12,9 @@ class SpotlightSection extends StatelessWidget {
   final Function(String) onTabChanged;
   final List<SpotlightItem> items;
   final VoidCallback? onSeeAll;
+  final void Function(SpotlightItem item)? onItemTap;
+  final void Function(SpotlightItem item)? onUnlockTap;
+  final bool isLoading;
 
   const SpotlightSection({
     super.key,
@@ -20,6 +23,9 @@ class SpotlightSection extends StatelessWidget {
     required this.onTabChanged,
     required this.items,
     this.onSeeAll,
+    this.onItemTap,
+    this.onUnlockTap,
+    this.isLoading = false,
   });
 
   @override
@@ -27,7 +33,6 @@ class SpotlightSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Navigation Tabs
         CategoryTabsSection(
           categories: tabs
               .map(
@@ -36,21 +41,26 @@ class SpotlightSection extends StatelessWidget {
               )
               .toList(),
           selectedCategoryId: selectedTabId,
-          onCategoryChanged: (categoryId) {
-            onTabChanged(categoryId);
-          },
+          onCategoryChanged: onTabChanged,
         ),
         24.column,
-        // Spotlight Detail Cards
-        ...items.map(
-          (item) => SpotlightDetailCard(
-            item: item,
-            onTap: () {
-            },
-            onUnlockTap: () {
-            },
+        if (isLoading)
+          Container(
+            height: 200,
+            margin: EdgeInsets.only(right: 16.padding),
+            decoration: BoxDecoration(
+              color: const Color(0xFF2A2A2A),
+              borderRadius: BorderRadius.circular(12.radius),
+            ),
+          )
+        else
+          ...items.map(
+            (item) => SpotlightDetailCard(
+              item: item,
+              onTap: () => onItemTap?.call(item),
+              onUnlockTap: () => onUnlockTap?.call(item),
+            ),
           ),
-        ),
       ],
     );
   }

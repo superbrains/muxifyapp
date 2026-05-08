@@ -8,39 +8,49 @@ class FollowedSection extends StatelessWidget {
   final String title;
   final List<FollowedItem> items;
   final VoidCallback? onSeeAll;
+  final void Function(FollowedItem item)? onItemTap;
+  final bool isLoading;
 
   const FollowedSection({
     super.key,
     required this.title,
     required this.items,
     this.onSeeAll,
+    this.onItemTap,
+    this.isLoading = false,
   });
 
   @override
   Widget build(BuildContext context) {
+    if (!isLoading && items.isEmpty) return const SizedBox.shrink();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Section Header
         SectionHeader(title: title, onSeeAll: onSeeAll),
-
         GridView.builder(
           shrinkWrap: true,
           padding: EdgeInsets.symmetric(vertical: 24),
-          // physics: const NeverScrollableScrollPhysics(),
+          physics: const NeverScrollableScrollPhysics(),
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 4, // 4 columns
+            crossAxisCount: 4,
             crossAxisSpacing: 12.padding,
             mainAxisSpacing: 24.padding,
-            childAspectRatio: 0.55, // More height for image + text content
+            childAspectRatio: 0.55,
           ),
-          itemCount: items.length,
+          itemCount: isLoading ? 8 : items.length,
           itemBuilder: (context, index) {
+            if (isLoading) {
+              return Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xFF2A2A2A),
+                  borderRadius: BorderRadius.circular(8.radius),
+                ),
+              );
+            }
             final item = items[index];
             return FollowedItemCard(
               item: item,
-              onTap: () {
-              },
+              onTap: () => onItemTap?.call(item),
             );
           },
         ),

@@ -11,6 +11,17 @@ class ApiConstants {
     return baseUrl;
   }
 
+  /// On by default while payment integration is pending. When true, the
+  /// unlock & gift confirm UIs hide the "insufficient coins" error and
+  /// "Get Coins" CTA, and call the unlock/gift endpoints directly. The
+  /// backend must also have `Features:DemoMode=true` for these calls to
+  /// succeed (also defaulted to true). Override via
+  /// `--dart-define=DEMO_MODE=false` once real payments ship.
+  static const bool demoMode = bool.fromEnvironment(
+    'DEMO_MODE',
+    defaultValue: true,
+  );
+
   static String resolvePublicUrl(String pathOrUrl) {
     final t = pathOrUrl.trim();
     if (t.isEmpty) return t;
@@ -78,6 +89,9 @@ class ApiConstants {
   static const String followArtistsPath = '$onboardingPrefix/follow-artists';
   static const String completeOnboardingPath = '$onboardingPrefix/complete';
 
+  static String artistProfilePath(String artistId) =>
+      '$apiV1Prefix/artists/${Uri.encodeComponent(artistId.trim())}';
+
   static String artistFollowPath(String artistId) =>
       '$apiV1Prefix/artists/${Uri.encodeComponent(artistId.trim())}/follow';
 
@@ -90,13 +104,37 @@ class ApiConstants {
   static String artistAlbumsPath(String artistId) =>
       '$apiV1Prefix/artists/${Uri.encodeComponent(artistId.trim())}/albums';
 
+  static String artistVideosPath(String artistId) =>
+      '$apiV1Prefix/artists/${Uri.encodeComponent(artistId.trim())}/videos';
+
+  static const String trendingArtistsPath =
+      '$apiV1Prefix/discover/trending/artists';
+
+  // Home Music tab feed endpoints (all require auth).
+  static const String feedHomePath = '$apiV1Prefix/feed/home';
+  static const String feedRecentlyPlayedPath = '$apiV1Prefix/feed/recently-played';
+  static const String feedTrendingTracksPath = '$apiV1Prefix/feed/trending-tracks';
+  static const String feedHotReleasesPath = '$apiV1Prefix/feed/hot-releases';
+  static const String feedTopChartsPath = '$apiV1Prefix/feed/top-charts';
+  static const String feedNewReleasesPath = '$apiV1Prefix/feed/new-releases';
+  static const String feedFeaturedPlaylistsPath =
+      '$apiV1Prefix/feed/playlists/featured';
+  static const String feedFromFollowingPath = '$apiV1Prefix/feed/from-following';
+  static const String feedSpotlightPath = '$apiV1Prefix/feed/spotlight';
+  static const String feedMostGiftedPath = '$apiV1Prefix/feed/most-gifted';
+  static const String feedTopGiversPath = '$apiV1Prefix/feed/top-givers';
+
   static String trackStreamPath(String trackId) =>
       '$apiV1Prefix/content/tracks/${Uri.encodeComponent(trackId.trim())}/stream';
 
   static String trackUnlockPath(String trackId) =>
       '$apiV1Prefix/content/tracks/${Uri.encodeComponent(trackId.trim())}/unlock';
 
+  static String videoUnlockPath(String videoId) =>
+      '$apiV1Prefix/content/videos/${Uri.encodeComponent(videoId.trim())}/unlock';
+
   static const String giftTypesPath = '$apiV1Prefix/gifts/types';
+  static const String giftSendPath = '$apiV1Prefix/gifts/send';
 
   static const Duration connectTimeout = Duration(seconds: 30);
   static const Duration receiveTimeout = Duration(seconds: 30);

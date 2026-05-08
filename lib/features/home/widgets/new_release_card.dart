@@ -1,5 +1,7 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:muxify/core/constants/api_constants.dart';
 import 'package:muxify/core/constants/app_colors.dart';
 import 'package:muxify/core/constants/app_sizes.dart';
 import 'package:muxify/core/constants/app_text_styles.dart';
@@ -38,11 +40,7 @@ class NewReleaseCard extends StatelessWidget {
               SizedBox(
                 width: double.infinity,
                 height: double.infinity,
-
-                child: Image.asset(
-                  "assets/pngs/release_placeholder.png",
-                  fit: BoxFit.cover,
-                ),
+                child: _buildCover(),
               ),
               // Strong Gradient Overlay - Creates dark bottom area
               Container(
@@ -146,6 +144,24 @@ class NewReleaseCard extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildCover() {
+    final url = release.imageUrl?.trim() ?? '';
+    if (url.isEmpty) return _placeholderCover();
+    return CachedNetworkImage(
+      imageUrl: ApiConstants.resolvePublicUrl(url),
+      fit: BoxFit.cover,
+      placeholder: (_, __) => _placeholderCover(),
+      errorWidget: (_, __, ___) => _placeholderCover(),
+    );
+  }
+
+  Widget _placeholderCover() {
+    return Image.asset(
+      'assets/pngs/release_placeholder.png',
+      fit: BoxFit.cover,
     );
   }
 }

@@ -187,10 +187,13 @@ class AppRouter {
       GoRoute(
         path: trending,
         name: 'trending',
-        pageBuilder: (context, state) => MaterialPage(
-          key: state.pageKey,
-          child: const FeaturedPlaylistScreen(),
-        ),
+        pageBuilder: (context, state) {
+          final initialTabId = state.uri.queryParameters['tabId'];
+          return MaterialPage(
+            key: state.pageKey,
+            child: FeaturedPlaylistScreen(initialTabId: initialTabId),
+          );
+        },
       ),
       GoRoute(
         path: trendingVideos,
