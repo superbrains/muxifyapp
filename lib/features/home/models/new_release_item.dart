@@ -4,12 +4,14 @@ class NewReleaseItem {
   final String id;
   final String albumName;
   final String artistName;
+  final String? artistId;
   final String? imageUrl;
 
   NewReleaseItem({
     required this.id,
     required this.albumName,
     required this.artistName,
+    this.artistId,
     this.imageUrl,
   });
 
@@ -21,6 +23,7 @@ class NewReleaseItem {
       id: dto.id,
       albumName: dto.title,
       artistName: dto.artistName,
+      artistId: dto.artistId,
       imageUrl: dto.coverArtUrl,
     );
   }

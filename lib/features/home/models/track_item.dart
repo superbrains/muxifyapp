@@ -3,6 +3,7 @@ class TrackItem {
   final String id;
   final String title;
   final String artist;
+  final String? artistId;
   final String? imageUrl;
   final String? duration;
 
@@ -10,6 +11,7 @@ class TrackItem {
     required this.id,
     required this.title,
     required this.artist,
+    this.artistId,
     this.imageUrl,
     this.duration,
   });
@@ -20,6 +22,7 @@ class TrackItem {
       id: json['id'] as String,
       title: json['title'] as String,
       artist: json['artist'] as String,
+      artistId: json['artistId'] as String?,
       imageUrl: json['imageUrl'] as String?,
       duration: json['duration'] as String?,
     );

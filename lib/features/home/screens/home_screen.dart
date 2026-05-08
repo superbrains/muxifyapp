@@ -7,12 +7,12 @@ import 'package:muxify/core/router/app_router.dart';
 import 'package:muxify/features/home/models/category_tab.dart';
 import 'package:muxify/features/home/models/followed_item.dart';
 import 'package:muxify/features/home/models/new_release_item.dart';
-import 'package:muxify/features/home/models/now_playing_item.dart';
 import 'package:muxify/features/home/models/playlist_item.dart';
 import 'package:muxify/features/home/models/recently_played_item.dart';
 import 'package:muxify/features/home/models/spotlight_item.dart';
 import 'package:muxify/features/home/models/spotlight_tab.dart';
 import 'package:muxify/features/home/models/tab_option.dart';
+import 'package:muxify/features/home/models/track_item.dart';
 import 'package:muxify/features/home/models/trending_artist.dart';
 import 'package:muxify/features/home/models/video_item.dart';
 import 'package:muxify/features/home/providers/home_provider.dart';
@@ -21,7 +21,6 @@ import 'package:muxify/features/home/widgets/featured_playlist_section.dart';
 import 'package:muxify/features/home/widgets/followed_section.dart';
 import 'package:muxify/features/home/widgets/home_header.dart';
 import 'package:muxify/features/home/widgets/home_menu_drawer.dart';
-import 'package:muxify/features/home/widgets/now_playing_bar.dart';
 import 'package:muxify/features/home/widgets/popular_releases_section.dart';
 import 'package:muxify/features/home/widgets/recently_played_section.dart';
 import 'package:muxify/features/home/widgets/recently_played_videos_section.dart';
@@ -46,7 +45,6 @@ class _HomeScreenState extends State<HomeScreen> {
   String _selectedSpotlightTabId = 'spotlight';
   String _selectedVideoTabId = 'content_videos';
   String _selectedVideoSpotlightTabId = 'spotlight';
-  NowPlayingItem? _currentTrack;
 
   final List<TabOption> _toggleOptions = [
     TabOption(title: 'Music', icon: Icons.music_note),
@@ -77,147 +75,6 @@ class _HomeScreenState extends State<HomeScreen> {
     SpotlightTab(id: 'most_giver', title: 'Most Giver', icon: Icons.people),
   ];
 
-  // Videos tab still uses mock content (out of scope for the Music tab wiring).
-  final List<VideoItem> _recentlyPlayedVideos = [
-    VideoItem(
-      id: '1',
-      title: 'Mr Funny - Sabinus',
-      imageUrl: 'assets/pngs/sabinus.png',
-      creator: 'Mr Funny',
-      creatorImageUrl: 'assets/pngs/profile_placeholder.png',
-      views: '250k',
-    ),
-    VideoItem(
-      id: '2',
-      title: 'Speed Darling...',
-      imageUrl: 'assets/pngs/latest_release.png',
-      creator: 'Creator',
-      creatorImageUrl: 'assets/pngs/profile_placeholder.png',
-      views: '250k',
-    ),
-    VideoItem(
-      id: '3',
-      title: 'Nasboi - When y...',
-      imageUrl: 'assets/pngs/new_release.png',
-      creator: 'Nasboi',
-      creatorImageUrl: 'assets/pngs/profile_placeholder.png',
-      views: '250k',
-    ),
-    VideoItem(
-      id: '4',
-      title: 'Sey',
-      imageUrl: 'assets/pngs/spotlight_placeholder.png',
-      creator: 'Creator',
-      creatorImageUrl: 'assets/pngs/profile_placeholder.png',
-      views: '250k',
-    ),
-    VideoItem(
-      id: '5',
-      title: 'Artist Profile',
-      imageUrl: 'assets/pngs/artist_profile.png',
-      creator: 'Creator',
-      creatorImageUrl: 'assets/pngs/profile_placeholder.png',
-      views: '250k',
-    ),
-  ];
-
-  final List<VideoItem> _trendingVideos = [
-    VideoItem(
-      id: '1',
-      title: 'Oga Sabinus and Food',
-      imageUrl: 'assets/pngs/sabinus.png',
-      creator: 'Mr Funny',
-      creatorImageUrl: 'assets/pngs/profile_placeholder.png',
-      views: '250k',
-    ),
-    VideoItem(
-      id: '2',
-      title: 'Food and Karate',
-      imageUrl: 'assets/pngs/latest_release.png',
-      creator: 'KieKie',
-      creatorImageUrl: 'assets/pngs/profile_placeholder.png',
-      views: '250k',
-    ),
-    VideoItem(
-      id: '3',
-      title: 'Billionaire Club ft. Olamide',
-      imageUrl: 'assets/pngs/release_placeholder.png',
-      creator: 'Wizkid',
-      creatorImageUrl: 'assets/pngs/profile_placeholder.png',
-      views: '250k',
-    ),
-    VideoItem(
-      id: '4',
-      title: 'My crazy chef',
-      imageUrl: 'assets/pngs/kiki.png',
-      creator: 'Nasboi',
-      creatorImageUrl: 'assets/pngs/profile_placeholder.png',
-      views: '250k',
-    ),
-  ];
-
-  final List<VideoItem> _videoFollowedItems = [
-    VideoItem(
-      id: '1',
-      title: 'Oga Sabinus and Food',
-      imageUrl: 'assets/pngs/sabinus.png',
-      creator: 'Mr Funny',
-      creatorImageUrl: 'assets/pngs/profile_placeholder.png',
-      views: '250k',
-    ),
-    VideoItem(
-      id: '2',
-      title: 'Food and Karate',
-      imageUrl: 'assets/pngs/latest_release.png',
-      creator: 'KieKie',
-      creatorImageUrl: 'assets/pngs/kiki.png',
-      views: '250k',
-    ),
-    VideoItem(
-      id: '3',
-      title: 'Good Life (Official)',
-      imageUrl: 'assets/pngs/kiki.png',
-      creator: 'Nasboi',
-      creatorImageUrl: 'assets/pngs/profile_placeholder.png',
-      views: '250k',
-    ),
-    VideoItem(
-      id: '4',
-      title: 'Oga Sabinus and Food',
-      imageUrl: 'assets/pngs/sabinus.png',
-      creator: 'Mr Funny',
-      creatorImageUrl: 'assets/pngs/profile_placeholder.png',
-      views: '250k',
-    ),
-    VideoItem(
-      id: '5',
-      title: 'Food and Karate',
-      imageUrl: 'assets/pngs/latest_release.png',
-      creator: 'KieKie',
-      creatorImageUrl: 'assets/pngs/kiki.png',
-      views: '250k',
-    ),
-    VideoItem(
-      id: '6',
-      title: 'Good Life (Official)',
-      imageUrl: 'assets/pngs/kiki.png',
-      creator: 'Nasboi',
-      creatorImageUrl: 'assets/pngs/profile_placeholder.png',
-      views: '250k',
-    ),
-  ];
-
-  final List<SpotlightItem> _videoSpotlightItems = [
-    SpotlightItem(
-      id: '1',
-      title: 'Small Money',
-      artist: 'Sabinus',
-      playCount: '25,210,000',
-      imageUrl: 'assets/pngs/video_spotlight.png',
-      isUnlocked: false,
-    ),
-  ];
-
   @override
   void initState() {
     super.initState();
@@ -231,6 +88,12 @@ class _HomeScreenState extends State<HomeScreen> {
       home.loadFollowed();
       home.loadCategoryTab(_selectedCategoryId);
       home.loadSpotlightTab(_selectedSpotlightTabId);
+      // Video-tab feeds — kicked off on first frame so the tab is ready
+      // when the user switches over.
+      home.loadVideoCategoryTab(_selectedCategoryId);
+      home.loadPopularReleaseVideos();
+      home.loadFollowedVideos();
+      home.loadVideoSpotlightTab(_selectedVideoSpotlightTabId);
     });
   }
 
@@ -265,32 +128,25 @@ class _HomeScreenState extends State<HomeScreen> {
     required String trackId,
     required String title,
     required String artistName,
+    String? artistId,
     String? coverUrl,
     bool isUnlocked = true,
   }) {
     final id = trackId.trim();
     if (id.isEmpty) return;
     final cover = coverUrl?.trim();
+    final artist = artistId?.trim();
     final uri = Uri(
       path: AppRouter.musicPlayer,
       queryParameters: {
         'trackId': id,
         'title': title,
         'artistName': artistName,
+        if (artist != null && artist.isNotEmpty) 'artistId': artist,
         if (cover != null && cover.isNotEmpty) 'backgroundImageUrl': cover,
         'isUnlocked': '$isUnlocked',
       },
     );
-    setState(() {
-      _currentTrack = NowPlayingItem(
-        id: id,
-        title: title,
-        artist: artistName,
-        albumArtUrl: cover,
-        isPlaying: true,
-        isUnlocked: isUnlocked,
-      );
-    });
     context.push(uri.toString());
   }
 
@@ -309,6 +165,7 @@ class _HomeScreenState extends State<HomeScreen> {
       trackId: item.id,
       title: item.title,
       artistName: item.artist,
+      artistId: item.artistId,
       coverUrl: item.imageUrl,
       isUnlocked: item.isUnlocked,
     );
@@ -319,6 +176,7 @@ class _HomeScreenState extends State<HomeScreen> {
       trackId: item.id,
       title: item.albumName,
       artistName: item.artistName,
+      artistId: item.artistId,
       coverUrl: item.imageUrl,
     );
   }
@@ -329,7 +187,78 @@ class _HomeScreenState extends State<HomeScreen> {
       trackId: item.id,
       title: item.title,
       artistName: item.artist,
+      artistId: item.artistId,
       coverUrl: item.imageUrl,
+      isUnlocked: item.isUnlocked,
+    );
+  }
+
+  void _openPlaylistTrack(TrackItem track) {
+    _openPlayer(
+      trackId: track.id,
+      title: track.title,
+      artistName: track.artist,
+      artistId: track.artistId,
+      coverUrl: track.imageUrl,
+    );
+  }
+
+  void _openVideoPlayer({
+    required String videoId,
+    required String title,
+    required String artistName,
+    String? artistId,
+    String? thumbnailUrl,
+    bool isUnlocked = true,
+  }) {
+    final id = videoId.trim();
+    if (id.isEmpty) return;
+    final thumb = thumbnailUrl?.trim();
+    final artist = artistId?.trim();
+    final uri = Uri(
+      path: AppRouter.videoPlayer,
+      queryParameters: {
+        'videoId': id,
+        'title': title,
+        'artistName': artistName,
+        if (artist != null && artist.isNotEmpty) 'artistId': artist,
+        if (thumb != null && thumb.isNotEmpty) 'thumbnailUrl': thumb,
+        'isUnlocked': '$isUnlocked',
+      },
+    );
+    context.push(uri.toString());
+  }
+
+  void _openVideoItem(VideoItem item) {
+    _openVideoPlayer(
+      videoId: item.id,
+      title: item.title,
+      artistName: item.creator,
+      artistId: item.creatorId,
+      thumbnailUrl: item.imageUrl,
+      isUnlocked: item.isUnlocked,
+    );
+  }
+
+  void _openRecentlyPlayedVideo(RecentlyPlayedItem item) {
+    if (item.id.isEmpty || item.type != 'video') return;
+    _openVideoPlayer(
+      videoId: item.id,
+      title: item.title,
+      artistName: item.artist ?? '',
+      artistId: item.artistId,
+      thumbnailUrl: item.imageUrl,
+    );
+  }
+
+  void _openVideoSpotlight(SpotlightItem item) {
+    if (!item.isPlayable) return;
+    _openVideoPlayer(
+      videoId: item.id,
+      title: item.title,
+      artistName: item.artist,
+      artistId: item.artistId,
+      thumbnailUrl: item.imageUrl,
       isUnlocked: item.isUnlocked,
     );
   }
@@ -341,6 +270,7 @@ class _HomeScreenState extends State<HomeScreen> {
         trackId: firstTrack.id,
         title: firstTrack.title,
         artistName: firstTrack.artist,
+        artistId: firstTrack.artistId,
         coverUrl: firstTrack.imageUrl ?? playlist.imageUrl,
       );
       return;
@@ -440,6 +370,7 @@ class _HomeScreenState extends State<HomeScreen> {
             playlists: categoryCards,
             isLoading: categoryLoading,
             onPlaylistTap: _openCategoryPlaylist,
+            onTrackTap: _openPlaylistTrack,
             onSeeAll: () {
               final uri = Uri(
                 path: AppRouter.trending,
@@ -456,6 +387,7 @@ class _HomeScreenState extends State<HomeScreen> {
             playlists: featured,
             isLoading: featuredLoading,
             onPlaylistTap: _openCategoryPlaylist,
+            onTrackTap: _openPlaylistTrack,
             onSeeAll: () {
               final uri = Uri(
                 path: AppRouter.trending,
@@ -508,6 +440,32 @@ class _HomeScreenState extends State<HomeScreen> {
             (homeProvider.hasLoadedTrendingArtists &&
                 homeProvider.trendingArtists.isNotEmpty);
 
+    final recentVideos = homeProvider.recentlyPlayedVideos;
+    final showRecentVideos = homeProvider.isLoadingRecentlyPlayed ||
+        (homeProvider.hasLoadedRecentlyPlayed && recentVideos.isNotEmpty);
+
+    final categoryVideos = homeProvider.videosForCategory(_selectedCategoryId);
+    final categoryVideosLoading =
+        homeProvider.isLoadingVideoCategory(_selectedCategoryId);
+    final showCategoryVideos =
+        categoryVideosLoading || categoryVideos.isNotEmpty;
+
+    final popularVideos = homeProvider.popularReleaseVideos;
+    final popularVideosLoading = homeProvider.isLoadingPopularReleaseVideos;
+    final showPopularVideos = popularVideosLoading || popularVideos.isNotEmpty;
+
+    final spotlightVideoItems =
+        homeProvider.videoSpotlightForTab(_selectedVideoSpotlightTabId);
+    final spotlightVideosLoading =
+        homeProvider.isLoadingVideoSpotlightTab(_selectedVideoSpotlightTabId);
+    final showSpotlightVideos =
+        spotlightVideosLoading || spotlightVideoItems.isNotEmpty;
+
+    final followedVideos = homeProvider.followedVideos;
+    final followedVideosLoading = homeProvider.isLoadingFollowedVideos;
+    final showFollowedVideos =
+        followedVideosLoading || followedVideos.isNotEmpty;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -517,15 +475,36 @@ class _HomeScreenState extends State<HomeScreen> {
           child: VideoTabsSection(
             selectedTabId: _selectedVideoTabId,
             onTabChanged: (tabId) {
-              setState(() {
-                _selectedVideoTabId = tabId;
-              });
+              setState(() => _selectedVideoTabId = tabId);
+              final filter = tabId == 'music_videos' ? 'music' : 'content';
+              final home = context.read<HomeProvider>();
+              home.setVideoFilter(filter);
+              // Re-fetch the main category section under the new filter.
+              home.loadVideoCategoryTab(_selectedCategoryId);
+              home.loadPopularReleaseVideos();
+              home.loadFollowedVideos();
             },
           ),
         ),
         30.column,
-        RecentlyPlayedVideosSection(items: _recentlyPlayedVideos),
-        30.column,
+        if (showRecentVideos)
+          RecentlyPlayedVideosSection(
+            items: recentVideos
+                .map((rp) => VideoItem(
+                      id: rp.id,
+                      title: rp.title,
+                      imageUrl: (rp.imageUrl == null || rp.imageUrl!.isEmpty)
+                          ? 'assets/pngs/release_placeholder.png'
+                          : rp.imageUrl!,
+                      creator: rp.artist ?? '',
+                      creatorImageUrl: '',
+                    ))
+                .toList(growable: false),
+            onItemTap: (vi) => _openRecentlyPlayedVideo(
+              recentVideos.firstWhere((r) => r.id == vi.id),
+            ),
+          ),
+        if (showRecentVideos) 30.column,
         if (showTrendingArtistsSection)
           TrendingArtistsSection(
             artists: homeProvider.trendingArtists,
@@ -541,31 +520,42 @@ class _HomeScreenState extends State<HomeScreen> {
           categories: _categoryTabs,
           selectedCategoryId: _selectedCategoryId,
           onCategoryChanged: (categoryId) {
-            setState(() {
-              _selectedCategoryId = categoryId;
-            });
+            setState(() => _selectedCategoryId = categoryId);
+            context.read<HomeProvider>().loadVideoCategoryTab(categoryId);
           },
         ),
         24.column,
-        TrendingVideosSection(items: _trendingVideos),
-        30.column,
-        VideoPopularNewReleasesSection(items: _trendingVideos),
-        30.column,
-        VideoSpotlightSection(
-          tabs: _spotlightTabs,
-          selectedTabId: _selectedVideoSpotlightTabId,
-          onTabChanged: (tabId) {
-            setState(() {
-              _selectedVideoSpotlightTabId = tabId;
-            });
-          },
-          items: _videoSpotlightItems,
-        ),
-        30.column,
-        VideoFollowedSection(
-          title: 'From those you follow',
-          items: _videoFollowedItems,
-        ),
+        if (showCategoryVideos)
+          TrendingVideosSection(
+            items: categoryVideos,
+            onItemTap: _openVideoItem,
+          ),
+        if (showCategoryVideos) 30.column,
+        if (showPopularVideos)
+          VideoPopularNewReleasesSection(
+            items: popularVideos,
+            onItemTap: _openVideoItem,
+          ),
+        if (showPopularVideos) 30.column,
+        if (showSpotlightVideos)
+          VideoSpotlightSection(
+            tabs: _spotlightTabs,
+            selectedTabId: _selectedVideoSpotlightTabId,
+            onTabChanged: (tabId) {
+              setState(() => _selectedVideoSpotlightTabId = tabId);
+              context.read<HomeProvider>().loadVideoSpotlightTab(tabId);
+            },
+            items: spotlightVideoItems,
+            onItemTap: _openVideoSpotlight,
+            onUnlockTap: _openVideoSpotlight,
+          ),
+        if (showSpotlightVideos) 30.column,
+        if (showFollowedVideos)
+          VideoFollowedSection(
+            title: 'From those you follow',
+            items: followedVideos,
+            onItemTap: _openVideoItem,
+          ),
         100.column,
       ],
     );
@@ -587,52 +577,25 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       endDrawer: isPhoneLayout ? const HomeMenuDrawer() : null,
-      body: Stack(
+      body: Column(
         children: [
-          Column(
-            children: [
-              HomeHeader(
-                selectedTab: _selectedTab,
-                toggleOptions: _toggleOptions,
-                onTabChanged: (tab) {
-                  setState(() => _selectedTab = tab);
-                },
-              ),
-              Expanded(
-                child: RefreshIndicator(
-                  onRefresh: () => context.read<HomeProvider>().refreshHome(),
-                  child: SingleChildScrollView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: EdgeInsets.only(left: 24.padding),
-                    child: _buildTabContent(homeProvider),
-                  ),
-                ),
-              ),
-            ],
+          HomeHeader(
+            selectedTab: _selectedTab,
+            toggleOptions: _toggleOptions,
+            onTabChanged: (tab) {
+              setState(() => _selectedTab = tab);
+            },
           ),
-          if (_currentTrack != null)
-            NowPlayingBar(
-              currentTrack: _currentTrack,
-              onTap: () {
-                final t = _currentTrack;
-                if (t == null) return;
-                _openPlayer(
-                  trackId: t.id,
-                  title: t.title,
-                  artistName: t.artist,
-                  coverUrl: t.albumArtUrl,
-                  isUnlocked: t.isUnlocked,
-                );
-              },
-              onPlayPauseTap: () {
-                setState(() {
-                  _currentTrack = _currentTrack?.copyWith(
-                    isPlaying: !(_currentTrack?.isPlaying ?? false),
-                  );
-                });
-              },
-              onUnlockTap: () {},
+          Expanded(
+            child: RefreshIndicator(
+              onRefresh: () => context.read<HomeProvider>().refreshHome(),
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: EdgeInsets.only(left: 24.padding),
+                child: _buildTabContent(homeProvider),
+              ),
             ),
+          ),
         ],
       ),
     );

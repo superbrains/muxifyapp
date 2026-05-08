@@ -9,9 +9,11 @@ import 'package:muxify/features/home/widgets/spotlight_detail_card.dart';
 class VideoSpotlightSection extends StatelessWidget {
   final List<SpotlightTab> tabs;
   final String selectedTabId;
-  final Function(String affective) onTabChanged;
+  final Function(String tabId) onTabChanged;
   final List<SpotlightItem> items;
   final VoidCallback? onSeeAll;
+  final void Function(SpotlightItem item)? onItemTap;
+  final void Function(SpotlightItem item)? onUnlockTap;
 
   const VideoSpotlightSection({
     super.key,
@@ -20,6 +22,8 @@ class VideoSpotlightSection extends StatelessWidget {
     required this.onTabChanged,
     required this.items,
     this.onSeeAll,
+    this.onItemTap,
+    this.onUnlockTap,
   });
 
   @override
@@ -36,15 +40,17 @@ class VideoSpotlightSection extends StatelessWidget {
               )
               .toList(),
           selectedCategoryId: selectedTabId,
-          onCategoryChanged: (categoryId) {
-            onTabChanged(categoryId);
-          },
+          onCategoryChanged: onTabChanged,
         ),
         24.column,
         // Spotlight Detail Cards
         ...items.map(
-          (item) =>
-              SpotlightDetailCard(item: item, onTap: () {}, onUnlockTap: () {}),
+          (item) => SpotlightDetailCard(
+            item: item,
+            onTap: onItemTap == null ? () {} : () => onItemTap!(item),
+            onUnlockTap:
+                onUnlockTap == null ? () {} : () => onUnlockTap!(item),
+          ),
         ),
       ],
     );

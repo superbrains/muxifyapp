@@ -49,5 +49,9 @@
 	<string>Pick a photo to use as your profile avatar.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Take a photo to use as your profile avatar.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>audio</string>
+	</array>
 </dict>
 </plist>

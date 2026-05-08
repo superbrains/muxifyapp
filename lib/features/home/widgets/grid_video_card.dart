@@ -4,6 +4,35 @@ import 'package:muxify/core/constants/app_colors.dart';
 import 'package:muxify/core/constants/app_sizes.dart';
 import 'package:muxify/core/constants/app_text_styles.dart';
 import 'package:muxify/features/home/models/video_item.dart';
+import 'package:muxify/features/home/widgets/video_cover_image.dart';
+
+class _CreatorAvatar extends StatelessWidget {
+  final String url;
+  final double radius;
+  const _CreatorAvatar({required this.url, required this.radius});
+
+  @override
+  Widget build(BuildContext context) {
+    final t = url.trim();
+    if (t.isEmpty) {
+      return CircleAvatar(
+        radius: radius,
+        backgroundColor: AppColors.text.withValues(alpha: 0.15),
+        child: Icon(
+          Icons.person,
+          size: radius * 1.2,
+          color: AppColors.text.withValues(alpha: 0.45),
+        ),
+      );
+    }
+    final isNetwork = t.startsWith('http://') || t.startsWith('https://');
+    return CircleAvatar(
+      radius: radius,
+      backgroundColor: AppColors.text.withValues(alpha: 0.15),
+      backgroundImage: isNetwork ? NetworkImage(t) : AssetImage(t) as ImageProvider,
+    );
+  }
+}
 
 class GridVideoCard extends StatelessWidget {
   final VideoItem item;
@@ -24,11 +53,10 @@ class GridVideoCard extends StatelessWidget {
         children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(12.radius),
-            child: Image.asset(
-              item.imageUrl,
+            child: VideoCoverImage(
+              imageUrl: item.imageUrl,
               width: double.infinity,
               height: 113.maxHeight,
-              fit: BoxFit.cover,
             ),
           ),
           5.column,
@@ -50,10 +78,7 @@ class GridVideoCard extends StatelessWidget {
                 flex: 3,
                 child: Row(
                   children: [
-                    CircleAvatar(
-                      radius: 8.radius,
-                      backgroundImage: AssetImage(item.creatorImageUrl),
-                    ),
+                    _CreatorAvatar(url: item.creatorImageUrl, radius: 8.radius),
                     8.row,
                     Text(
                       item.creator,

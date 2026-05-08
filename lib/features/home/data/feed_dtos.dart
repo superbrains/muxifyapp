@@ -68,6 +68,85 @@ class FeedTrackDto {
   }
 }
 
+class FeedVideoDto {
+  final String id;
+  final String title;
+  final String artistName;
+  final String? artistId;
+  final String? thumbnailUrl;
+  final int durationSeconds;
+  final int viewCount;
+  final int likeCount;
+  final DateTime? createdAt;
+  final bool isUnlocked;
+  final int unlockCostCoins;
+
+  FeedVideoDto({
+    required this.id,
+    required this.title,
+    required this.artistName,
+    this.artistId,
+    this.thumbnailUrl,
+    this.durationSeconds = 0,
+    this.viewCount = 0,
+    this.likeCount = 0,
+    this.createdAt,
+    this.isUnlocked = false,
+    this.unlockCostCoins = 0,
+  });
+
+  factory FeedVideoDto.fromJson(Map<String, dynamic> json) {
+    return FeedVideoDto(
+      id: (json['id'] ?? '').toString(),
+      title: (json['title'] ?? '').toString(),
+      artistName: (json['artistName'] ?? '').toString(),
+      artistId: json['artistId']?.toString(),
+      thumbnailUrl: json['thumbnailUrl'] as String?,
+      durationSeconds: _parseInt(json['durationSeconds']),
+      viewCount: _parseInt(json['viewCount']),
+      likeCount: _parseInt(json['likeCount']),
+      createdAt: _parseDate(json['createdAt']),
+      isUnlocked: json['isUnlocked'] as bool? ?? false,
+      unlockCostCoins: _parseInt(json['unlockCostCoins']),
+    );
+  }
+}
+
+class MostGiftedVideoDto {
+  final String id;
+  final String title;
+  final String artistName;
+  final String? artistId;
+  final String? thumbnailUrl;
+  final int totalGiftsReceived;
+  final int totalGiftValue;
+  final int rank;
+
+  MostGiftedVideoDto({
+    required this.id,
+    required this.title,
+    required this.artistName,
+    this.artistId,
+    this.thumbnailUrl,
+    this.totalGiftsReceived = 0,
+    this.totalGiftValue = 0,
+    this.rank = 0,
+  });
+
+  factory MostGiftedVideoDto.fromJson(Map<String, dynamic> json) {
+    return MostGiftedVideoDto(
+      id: (json['id'] ?? '').toString(),
+      title: (json['title'] ?? '').toString(),
+      artistName: (json['artistName'] ?? '').toString(),
+      artistId: json['artistId']?.toString(),
+      thumbnailUrl: json['thumbnailUrl'] as String?,
+      totalGiftsReceived: _parseInt(json['totalGiftsReceived']),
+      totalGiftValue: _parseInt(json['totalGiftValue']),
+      rank: _parseInt(json['rank']),
+    );
+  }
+}
+
 class FeedPlaylistDto {
   final String id;
   final String name;

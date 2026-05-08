@@ -1,18 +1,20 @@
-import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:just_audio/just_audio.dart';
+import 'package:provider/provider.dart';
 import 'package:muxify/core/constants/api_constants.dart';
 import 'package:muxify/core/constants/app_colors.dart';
 import 'package:muxify/core/constants/app_sizes.dart';
-import 'package:muxify/core/utils/app_toast.dart';
 import 'package:muxify/core/utils/logger.dart';
+import 'package:muxify/features/artist_profile/providers/artist_profile_provider.dart';
+import 'package:muxify/features/audio_playback/models/track.dart';
+import 'package:muxify/features/audio_playback/providers/audio_provider.dart';
 import 'package:muxify/shared/widgets/gift_box_modal.dart';
 import 'package:muxify/features/music_player/widgets/lyrics_modal.dart';
 import 'package:muxify/features/music_player/widgets/music_player_top_bar.dart';
 import 'package:muxify/features/music_player/widgets/lyrics_button_widget.dart';
 import 'package:muxify/features/music_player/widgets/locked_song_image_list.dart';
+import 'package:muxify/features/music_player/widgets/muxify_branded_background.dart';
 import 'package:muxify/features/music_player/widgets/song_info_overlay.dart';
 import 'package:muxify/features/music_player/widgets/music_progress_bar.dart';
 import 'package:muxify/features/music_player/widgets/playback_controls.dart';
@@ -23,6 +25,7 @@ class MusicPlayerScreen extends StatefulWidget {
   final String? trackId;
   final String? title;
   final String? artistName;
+  final String? artistId;
   final String? albumName;
   final String? backgroundImageUrl;
   final String? audioUrl;
@@ -33,6 +36,7 @@ class MusicPlayerScreen extends StatefulWidget {
     this.trackId,
     this.title,
     this.artistName,
+    this.artistId,
     this.albumName,
     this.backgroundImageUrl,
     this.audioUrl,
@@ -44,22 +48,13 @@ class MusicPlayerScreen extends StatefulWidget {
 }
 
 class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
-  // Player state
-  bool _isPlaying = false;
-  bool _isShuffled = false;
-  bool _isRepeating = false;
   bool _isLiked = false;
   bool _isAdded = false;
   bool _isUnlocked = true;
 
-  // Progress state
-  double _currentPosition = 0;
-  double _totalDuration = 0;
-
-  final AudioPlayer _audioPlayer = AudioPlayer();
-  StreamSubscription<Duration>? _positionSubscription;
-  StreamSubscription<PlayerState>? _playerStateSubscription;
-  StreamSubscription<Duration?>? _durationSubscription;
+  // Resolved artist avatar (image fallback chain step 2). Populated lazily
+  // when the track has no cover but we have an artistId.
+  String? _resolvedArtistAvatar;
 
   // Mock images for locked song horizontal list
   final List<String> _lockedSongImages = [
@@ -223,81 +218,73 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
     super.initState();
     // TEMP: lock feature disabled for now.
     _isUnlocked = true;
-    _setupAudio();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _hydrateAudio();
+    });
+    _resolveBackgroundFallbacks();
   }
 
-  Future<void> _setupAudio() async {
+  /// Image fallback chain step 2: when the route didn't carry a track cover
+  /// but did carry an artistId, fetch the artist's avatar URL once and
+  /// re-render the background. If this fails we silently fall through to
+  /// the [MuxifyBrandedBackground] step.
+  Future<void> _resolveBackgroundFallbacks() async {
+    final cover = (widget.backgroundImageUrl ?? '').trim();
+    final artistId = (widget.artistId ?? '').trim();
+    if (cover.isNotEmpty || artistId.isEmpty) return;
     try {
-      _durationSubscription = _audioPlayer.durationStream.listen((duration) {
-        if (!mounted) return;
-        setState(() {
-          _totalDuration = (duration ?? Duration.zero).inMilliseconds / 1000;
-        });
-      });
-
-      _positionSubscription = _audioPlayer.positionStream.listen((position) {
-        if (!mounted) return;
-        final seconds = position.inMilliseconds / 1000;
-        setState(() {
-          _currentPosition = seconds.clamp(
-            0,
-            _totalDuration > 0 ? _totalDuration : seconds,
-          );
-        });
-      });
-
-      _playerStateSubscription = _audioPlayer.playerStateStream.listen((state) {
-        if (!mounted) return;
-        setState(() {
-          _isPlaying = state.playing;
-        });
-
-        if (state.processingState == ProcessingState.completed) {
-          _audioPlayer.seek(Duration.zero);
-          _audioPlayer.pause();
-        }
-      });
-
-      final requestedAudioUrl = widget.audioUrl?.trim() ?? '';
-      if (requestedAudioUrl.isEmpty) {
-        Logger.warning('Music player missing stream URL; skipping playback');
-        if (mounted) {
-          await AppToast.showError('Missing stream URL for this track.');
-        }
-        return;
-      }
-
-      Logger.debug('Music player setUrl: $requestedAudioUrl');
-      await _audioPlayer.setUrl(requestedAudioUrl);
-      await _audioPlayer.play();
+      final profile = await context
+          .read<ArtistProfileProvider>()
+          .getArtistPublicProfile(artistId);
+      if (!mounted) return;
+      final avatar = (profile.avatarUrl ?? '').trim();
+      if (avatar.isEmpty) return;
+      setState(() => _resolvedArtistAvatar = avatar);
     } catch (e, st) {
-      Logger.error('Music player audio setup failed', e, st);
-      // Keep UI responsive even if audio initialization fails.
+      Logger.warning('Music player artist avatar fallback failed: $e');
+      Logger.debug(st.toString());
     }
   }
 
-  @override
-  void dispose() {
-    _positionSubscription?.cancel();
-    _playerStateSubscription?.cancel();
-    _durationSubscription?.cancel();
-    _audioPlayer.dispose();
-    super.dispose();
+  /// If the route was opened with a different track than the one currently
+  /// loaded in the global [AudioProvider], replace the queue and start
+  /// playback. If we land here from the mini-player tap (same trackId), the
+  /// existing playback continues untouched.
+  Future<void> _hydrateAudio() async {
+    final audio = context.read<AudioProvider>();
+    final trackId = (widget.trackId ?? '').trim();
+    if (trackId.isEmpty) return;
+    if (audio.isCurrent(trackId)) return;
+
+    final track = Track(
+      id: trackId,
+      title: widget.title ?? '',
+      artist: widget.artistName ?? '',
+      artistId: widget.artistId,
+      albumName: widget.albumName,
+      artworkUrl: widget.backgroundImageUrl,
+      audioUrl: widget.audioUrl,
+      isUnlocked: widget.isUnlocked ?? true,
+    );
+    await audio.playSingle(track);
   }
 
   @override
   Widget build(BuildContext context) {
-    final background = (widget.backgroundImageUrl ?? '').trim();
+    final audio = context.watch<AudioProvider>();
+    final position = audio.position.inMilliseconds / 1000;
+    final duration = audio.duration.inMilliseconds / 1000;
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: Stack(
         children: [
-          // Background Image
-          Positioned.fill(
-            child: background.isEmpty
-                ? Image.asset('assets/pngs/music_player.png', fit: BoxFit.cover)
-                : _buildBackgroundImage(background),
-          ),
+          // Background Image — fallback chain:
+          //   1. track cover (widget.backgroundImageUrl)
+          //   2. artist avatar (resolved on init via artistId)
+          //   3. branded Muxify background widget
+          Positioned.fill(child: _buildPlayerBackground()),
 
           // Dark overlay for unlocked songs only
           if (_isUnlocked)
@@ -404,15 +391,17 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
                         30.column,
                         // Progress Bar
                         MusicProgressBar(
-                          currentPosition: _currentPosition,
-                          totalDuration: _totalDuration <= 0 ? 1 : _totalDuration,
+                          currentPosition: position.clamp(
+                            0,
+                            duration > 0 ? duration : position,
+                          ),
+                          totalDuration: duration <= 0 ? 1 : duration,
                           onChanged: (value) {
-                            setState(() {
-                              _currentPosition = value;
-                            });
+                            // Slider is fed by the provider; live drag preview
+                            // is handled by onChangeEnd seeking the player.
                           },
                           onChangeEnd: (value) {
-                            _audioPlayer.seek(
+                            audio.seek(
                               Duration(milliseconds: (value * 1000).toInt()),
                             );
                           },
@@ -420,34 +409,20 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
                         20.column,
                         // Playback Controls
                         PlaybackControls(
-                          isPlaying: _isPlaying,
-                          isRepeating: _isRepeating,
-                          isShuffled: _isShuffled,
-                          onTogglePlay: () {
-                            if (_isPlaying) {
-                              _audioPlayer.pause();
-                            } else {
-                              _audioPlayer.play();
-                            }
-                          },
+                          isPlaying: audio.isPlaying,
+                          isRepeating: audio.isRepeating,
+                          isShuffled: audio.isShuffled,
+                          onTogglePlay: audio.togglePlayPause,
                           onPrevious: () {
                             HapticFeedback.lightImpact();
-                            _audioPlayer.seek(Duration.zero);
+                            audio.previous();
                           },
                           onNext: () {
                             HapticFeedback.lightImpact();
-                            _audioPlayer.seek(Duration.zero);
+                            audio.next();
                           },
-                          onToggleRepeat: () {
-                            setState(() {
-                              _isRepeating = !_isRepeating;
-                            });
-                          },
-                          onToggleShuffle: () {
-                            setState(() {
-                              _isShuffled = !_isShuffled;
-                            });
-                          },
+                          onToggleRepeat: audio.toggleRepeat,
+                          onToggleShuffle: audio.toggleShuffle,
                         ),
                         54.column,
                         // Send Gifts Button
@@ -493,24 +468,44 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
     );
   }
 
-  Widget _buildBackgroundImage(String source) {
+  /// Returns the background image with fallbacks. The track cover wins; if it
+  /// fails or is empty we try the resolved artist avatar; otherwise we render
+  /// the branded Muxify background.
+  Widget _buildPlayerBackground() {
+    final cover = (widget.backgroundImageUrl ?? '').trim();
+    if (cover.isNotEmpty) {
+      return _networkOrAsset(cover, onError: _avatarOrBranded);
+    }
+    return _avatarOrBranded();
+  }
+
+  Widget _avatarOrBranded() {
+    final avatar = (_resolvedArtistAvatar ?? '').trim();
+    if (avatar.isNotEmpty) {
+      return _networkOrAsset(
+        avatar,
+        onError: () => const MuxifyBrandedBackground(),
+      );
+    }
+    return const MuxifyBrandedBackground();
+  }
+
+  Widget _networkOrAsset(String source, {required Widget Function() onError}) {
     final lower = source.toLowerCase();
-    if (lower.startsWith('http://') ||
+    final isRemote = lower.startsWith('http://') ||
         lower.startsWith('https://') ||
-        source.startsWith('/')) {
+        source.startsWith('/');
+    if (isRemote) {
       return Image.network(
         ApiConstants.resolvePublicUrl(source),
         fit: BoxFit.cover,
-        errorBuilder: (_, _, _) =>
-            Image.asset('assets/pngs/music_player.png', fit: BoxFit.cover),
+        errorBuilder: (_, _, _) => onError(),
       );
     }
-
     return Image.asset(
       source,
       fit: BoxFit.cover,
-      errorBuilder: (_, _, _) =>
-          Image.asset('assets/pngs/music_player.png', fit: BoxFit.cover),
+      errorBuilder: (_, _, _) => onError(),
     );
   }
 }

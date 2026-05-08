@@ -4,6 +4,7 @@ class FollowedItem {
   final String id;
   final String title;
   final String artist;
+  final String? artistId;
   final String? imageUrl;
   final bool isUnlocked;
 
@@ -11,6 +12,7 @@ class FollowedItem {
     required this.id,
     required this.title,
     required this.artist,
+    this.artistId,
     this.imageUrl,
     this.isUnlocked = false,
   });
@@ -22,6 +24,7 @@ class FollowedItem {
       id: dto.id,
       title: dto.title,
       artist: dto.artistName,
+      artistId: dto.artistId,
       imageUrl: dto.coverArtUrl,
       isUnlocked: dto.isUnlocked,
     );

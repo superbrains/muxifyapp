@@ -4,6 +4,7 @@ import 'package:muxify/core/constants/app_colors.dart';
 import 'package:muxify/core/constants/app_sizes.dart';
 import 'package:muxify/core/constants/app_text_styles.dart';
 import 'package:muxify/features/home/models/video_item.dart';
+import 'package:muxify/features/home/widgets/video_cover_image.dart';
 
 class VideoThumbnailCard extends StatelessWidget {
   final VideoItem item;
@@ -27,11 +28,10 @@ class VideoThumbnailCard extends StatelessWidget {
             child: Stack(
               alignment: Alignment.bottomCenter,
               children: [
-                Image.asset(
-                  item.imageUrl,
+                VideoCoverImage(
+                  imageUrl: item.imageUrl,
                   width: 110.maxWidth,
                   height: 80.buttonHeight,
-                  fit: BoxFit.cover,
                 ),
                 Container(
                   width: 110.maxWidth,

@@ -1,20 +1,52 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:muxify/core/constants/app_colors.dart';
 import 'package:muxify/core/constants/app_sizes.dart';
 import 'package:muxify/core/constants/app_text_styles.dart';
 import 'package:muxify/features/home/models/video_item.dart';
 import 'package:muxify/features/home/widgets/section_header.dart';
+import 'package:muxify/features/home/widgets/video_cover_image.dart';
+
+class _CreatorAvatar extends StatelessWidget {
+  final String url;
+  final double radius;
+  const _CreatorAvatar({required this.url, required this.radius});
+
+  @override
+  Widget build(BuildContext context) {
+    final t = url.trim();
+    if (t.isEmpty) {
+      return CircleAvatar(
+        radius: radius,
+        backgroundColor: AppColors.text.withValues(alpha: 0.15),
+        child: Icon(
+          Icons.person,
+          size: radius * 1.2,
+          color: AppColors.text.withValues(alpha: 0.45),
+        ),
+      );
+    }
+    final isNetwork = t.startsWith('http://') || t.startsWith('https://');
+    return CircleAvatar(
+      radius: radius,
+      backgroundColor: AppColors.text.withValues(alpha: 0.15),
+      backgroundImage: isNetwork ? NetworkImage(t) : AssetImage(t) as ImageProvider,
+    );
+  }
+}
 
 class VideoFollowedSection extends StatelessWidget {
   final String title;
   final List<VideoItem> items;
   final VoidCallback? onSeeAll;
+  final void Function(VideoItem item)? onItemTap;
 
   const VideoFollowedSection({
     super.key,
     required this.title,
     required this.items,
     this.onSeeAll,
+    this.onItemTap,
   });
 
   @override
@@ -39,7 +71,10 @@ class VideoFollowedSection extends StatelessWidget {
             itemCount: items.length,
             itemBuilder: (context, index) {
               final item = items[index];
-              return _VideoFollowedCard(item: item);
+              return _VideoFollowedCard(
+                item: item,
+                onTap: onItemTap == null ? null : () => onItemTap!(item),
+              );
             },
           ),
         ),
@@ -50,23 +85,28 @@ class VideoFollowedSection extends StatelessWidget {
 
 class _VideoFollowedCard extends StatelessWidget {
   final VideoItem item;
+  final VoidCallback? onTap;
 
-  const _VideoFollowedCard({required this.item});
+  const _VideoFollowedCard({required this.item, this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
+    return GestureDetector(
+      onTap: () {
+        if (onTap == null) return;
+        HapticFeedback.lightImpact();
+        onTap!();
+      },
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(12.radius),
-            child: Image.asset(
-              item.imageUrl,
+            child: VideoCoverImage(
+              imageUrl: item.imageUrl,
               width: double.infinity,
               height: 113.maxHeight,
-              fit: BoxFit.cover,
             ),
           ),
           5.column,
@@ -83,10 +123,7 @@ class _VideoFollowedCard extends StatelessWidget {
           2.column,
           Row(
             children: [
-              CircleAvatar(
-                radius: 8.radius,
-                backgroundImage: AssetImage(item.creatorImageUrl),
-              ),
+              _CreatorAvatar(url: item.creatorImageUrl, radius: 8.radius),
               8.row,
               Expanded(
                 child: Text(

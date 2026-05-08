@@ -5,22 +5,28 @@ import 'package:muxify/core/services/local_storage_service.dart';
 import 'package:muxify/core/utils/logger.dart';
 import 'package:muxify/features/home/data/feed_dtos.dart';
 import 'package:muxify/features/home/data/music_feed_repository.dart';
+import 'package:muxify/features/home/data/video_feed_repository.dart';
 import 'package:muxify/features/home/models/followed_item.dart';
 import 'package:muxify/features/home/models/new_release_item.dart';
 import 'package:muxify/features/home/models/playlist_item.dart';
 import 'package:muxify/features/home/models/recently_played_item.dart';
 import 'package:muxify/features/home/models/spotlight_item.dart';
 import 'package:muxify/features/home/models/trending_artist.dart';
+import 'package:muxify/features/home/models/video_item.dart';
 
 class HomeProvider extends ChangeNotifier {
   HomeProvider({
     ApiRequester? requester,
     MusicFeedRepository? feedRepository,
+    VideoFeedRepository? videoFeedRepository,
   })  : _requester = requester ?? ApiRequester(),
-        _feed = feedRepository ?? MusicFeedRepository(requester: requester);
+        _feed = feedRepository ?? MusicFeedRepository(requester: requester),
+        _videoFeed =
+            videoFeedRepository ?? VideoFeedRepository(requester: requester);
 
   final ApiRequester _requester;
   final MusicFeedRepository _feed;
+  final VideoFeedRepository _videoFeed;
 
   // ---- Recently Played ------------------------------------------------------
   List<RecentlyPlayedItem> _recentlyPlayed = const [];
@@ -82,6 +88,62 @@ class HomeProvider extends ChangeNotifier {
   List<FollowedItem> get followed => _followed;
   bool get isLoadingFollowed => _isLoadingFollowed;
   bool get hasLoadedFollowed => _hasLoadedFollowed;
+
+  // ===========================================================================
+  // VIDEO TAB STATE
+  // ===========================================================================
+
+  /// Mobile-side filter applied to all video feeds.
+  /// "music"  -> MusicVideo + LyricVideo + Visualizer
+  /// "content"-> BehindTheScenes + LivePerformance + Interview + Other
+  String _videoFilter = 'content';
+  String get videoFilter => _videoFilter;
+
+  /// Recently-played videos are derived locally from [recentlyPlayed]
+  /// (the /feed/recently-played endpoint returns both tracks and videos
+  /// with a `type` discriminator).
+  List<RecentlyPlayedItem> get recentlyPlayedVideos =>
+      _recentlyPlayed.where((it) => it.type == 'video').toList(growable: false);
+
+  // Per-section state — modeled exactly on the music sections above.
+  // Keyed by "$_videoFilter::$_categoryId" for the category-driven section
+  // (Trending / Hot Release / Top Chart / New Release).
+  final Map<String, List<VideoItem>> _videosByCategoryTab = {};
+  final Set<String> _loadingVideoCategoryTabs = {};
+  bool isLoadingVideoCategory(String tabId) =>
+      _loadingVideoCategoryTabs.contains(_videoCategoryKey(tabId));
+  List<VideoItem> videosForCategory(String tabId) =>
+      _videosByCategoryTab[_videoCategoryKey(tabId)] ?? const [];
+  bool hasLoadedVideoCategory(String tabId) =>
+      _videosByCategoryTab.containsKey(_videoCategoryKey(tabId));
+
+  // Popular New Release videos (always 'new-releases' bucket, regardless of selected tab)
+  List<VideoItem> _popularReleaseVideos = const [];
+  bool _isLoadingPopularReleaseVideos = false;
+  bool _hasLoadedPopularReleaseVideos = false;
+  List<VideoItem> get popularReleaseVideos => _popularReleaseVideos;
+  bool get isLoadingPopularReleaseVideos => _isLoadingPopularReleaseVideos;
+  bool get hasLoadedPopularReleaseVideos => _hasLoadedPopularReleaseVideos;
+
+  // Videos from artists the user follows
+  List<VideoItem> _followedVideos = const [];
+  bool _isLoadingFollowedVideos = false;
+  bool _hasLoadedFollowedVideos = false;
+  List<VideoItem> get followedVideos => _followedVideos;
+  bool get isLoadingFollowedVideos => _isLoadingFollowedVideos;
+  bool get hasLoadedFollowedVideos => _hasLoadedFollowedVideos;
+
+  // Video spotlight (4 sub-tabs reuse the music spotlight tab list, but
+  // tab id "spotlight" hits /feed/videos/spotlight; "most_gifted" hits
+  // /feed/videos/most-gifted; the giver tabs reuse the global top-givers).
+  final Map<String, List<SpotlightItem>> _videoSpotlightByTab = {};
+  final Set<String> _loadingVideoSpotlightTabs = {};
+  bool isLoadingVideoSpotlightTab(String tabId) =>
+      _loadingVideoSpotlightTabs.contains(tabId);
+  List<SpotlightItem> videoSpotlightForTab(String tabId) =>
+      _videoSpotlightByTab[tabId] ?? const [];
+
+  String _videoCategoryKey(String tabId) => '$_videoFilter::$tabId';
 
   // ===========================================================================
   // Loaders
@@ -299,7 +361,207 @@ class HomeProvider extends ChangeNotifier {
       loadFollowed(forceRefresh: true),
       loadCategoryTab(_activeCategoryId, forceRefresh: true),
       loadSpotlightTab(_activeSpotlightId, forceRefresh: true),
+      loadVideoCategoryTab(_activeCategoryId, forceRefresh: true),
+      loadPopularReleaseVideos(forceRefresh: true),
+      loadFollowedVideos(forceRefresh: true),
+      loadVideoSpotlightTab(_activeSpotlightId, forceRefresh: true),
     ]);
+  }
+
+  // ===========================================================================
+  // VIDEO LOADERS
+  // ===========================================================================
+
+  /// Switches the global Music/Content filter and clears cached video lists
+  /// so they re-fetch with the new filter on next access.
+  void setVideoFilter(String filter) {
+    final next = filter.trim().toLowerCase();
+    if (next != 'music' && next != 'content') return;
+    if (next == _videoFilter) return;
+    _videoFilter = next;
+    // Per-category-tab caches are filter-scoped via _videoCategoryKey, so
+    // they don't need clearing. The non-keyed caches do.
+    _popularReleaseVideos = const [];
+    _hasLoadedPopularReleaseVideos = false;
+    _followedVideos = const [];
+    _hasLoadedFollowedVideos = false;
+    notifyListeners();
+  }
+
+  Future<void> loadVideoCategoryTab(String tabId,
+      {bool forceRefresh = false}) async {
+    final key = _videoCategoryKey(tabId);
+    if (_loadingVideoCategoryTabs.contains(key)) {
+      notifyListeners();
+      return;
+    }
+    if (!forceRefresh && _videosByCategoryTab.containsKey(key)) {
+      notifyListeners();
+      return;
+    }
+
+    _loadingVideoCategoryTabs.add(key);
+    notifyListeners();
+
+    try {
+      final dtos = await _fetchVideosForCategory(tabId);
+      _videosByCategoryTab[key] =
+          dtos.map(VideoItem.fromFeedVideo).toList(growable: false);
+    } catch (e, st) {
+      Logger.error('loadVideoCategoryTab($tabId, $_videoFilter) failed', e, st);
+      _videosByCategoryTab[key] = const [];
+    } finally {
+      _loadingVideoCategoryTabs.remove(key);
+      notifyListeners();
+    }
+  }
+
+  Future<void> loadPopularReleaseVideos({bool forceRefresh = false}) async {
+    if (_isLoadingPopularReleaseVideos) return;
+    if (!forceRefresh && _hasLoadedPopularReleaseVideos) return;
+
+    _isLoadingPopularReleaseVideos = true;
+    notifyListeners();
+
+    try {
+      final dtos = await _videoFeed.getNewReleaseVideos(
+        videoType: _videoFilter,
+        days: 30,
+        pageSize: 10,
+      );
+      _popularReleaseVideos =
+          dtos.map(VideoItem.fromFeedVideo).toList(growable: false);
+      _hasLoadedPopularReleaseVideos = true;
+    } catch (e, st) {
+      Logger.error('loadPopularReleaseVideos failed', e, st);
+      _popularReleaseVideos = const [];
+      _hasLoadedPopularReleaseVideos = true;
+    } finally {
+      _isLoadingPopularReleaseVideos = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> loadFollowedVideos({bool forceRefresh = false}) async {
+    if (_isLoadingFollowedVideos) return;
+    if (!forceRefresh && _hasLoadedFollowedVideos) return;
+
+    _isLoadingFollowedVideos = true;
+    notifyListeners();
+
+    try {
+      final dtos = await _videoFeed.getVideosFromFollowing(
+        videoType: _videoFilter,
+        pageSize: 12,
+      );
+      _followedVideos =
+          dtos.map(VideoItem.fromFeedVideo).toList(growable: false);
+      _hasLoadedFollowedVideos = true;
+    } catch (e, st) {
+      Logger.error('loadFollowedVideos failed', e, st);
+      _followedVideos = const [];
+      _hasLoadedFollowedVideos = true;
+    } finally {
+      _isLoadingFollowedVideos = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> loadVideoSpotlightTab(String tabId,
+      {bool forceRefresh = false}) async {
+    if (_loadingVideoSpotlightTabs.contains(tabId)) {
+      notifyListeners();
+      return;
+    }
+    if (!forceRefresh && _videoSpotlightByTab.containsKey(tabId)) {
+      notifyListeners();
+      return;
+    }
+
+    _loadingVideoSpotlightTabs.add(tabId);
+    notifyListeners();
+
+    try {
+      final items = await _fetchVideoSpotlightItems(tabId);
+      _videoSpotlightByTab[tabId] = items;
+    } catch (e, st) {
+      Logger.error('loadVideoSpotlightTab($tabId) failed', e, st);
+      _videoSpotlightByTab[tabId] = const [];
+    } finally {
+      _loadingVideoSpotlightTabs.remove(tabId);
+      notifyListeners();
+    }
+  }
+
+  Future<List<FeedVideoDto>> _fetchVideosForCategory(String tabId) async {
+    switch (tabId) {
+      case 'trending':
+        return _videoFeed.getTrendingVideos(
+          videoType: _videoFilter,
+          period: 'week',
+          pageSize: 24,
+        );
+      case 'hot_release':
+        return _videoFeed.getHotReleaseVideos(
+          videoType: _videoFilter,
+          days: 14,
+          pageSize: 24,
+        );
+      case 'top_chart':
+        return _videoFeed.getTopChartVideos(
+          videoType: _videoFilter,
+          period: 'all',
+          pageSize: 24,
+        );
+      case 'new_release':
+        return _videoFeed.getNewReleaseVideos(
+          videoType: _videoFilter,
+          days: 30,
+          pageSize: 24,
+        );
+      default:
+        return _videoFeed.getTrendingVideos(
+          videoType: _videoFilter,
+          period: 'week',
+          pageSize: 24,
+        );
+    }
+  }
+
+  Future<List<SpotlightItem>> _fetchVideoSpotlightItems(String tabId) async {
+    switch (tabId) {
+      case 'spotlight':
+        final items = await _videoFeed.getVideoSpotlight(take: 5);
+        return items
+            .map(SpotlightItem.fromSpotlightDto)
+            .toList(growable: false);
+      case 'most_gifted':
+        final items = await _videoFeed.getMostGiftedVideos(
+          period: 'week',
+          pageSize: 10,
+        );
+        return items.map((dto) {
+          final mapped = VideoItem.fromMostGiftedVideo(dto);
+          return SpotlightItem(
+            id: mapped.id,
+            title: mapped.title,
+            artist: mapped.creator,
+            artistId: dto.artistId,
+            playCount: mapped.views ?? '',
+            imageUrl: mapped.imageUrl,
+            isUnlocked: true,
+          );
+        }).toList(growable: false);
+      case 'top_giver':
+      case 'most_giver':
+        // No video-specific top-giver leaderboard yet — reuse the global one.
+        final items = await _feed.getTopGivers(period: 'week', pageSize: 10);
+        return items
+            .map(SpotlightItem.fromTopGiverDto)
+            .toList(growable: false);
+      default:
+        return const [];
+    }
   }
 
   // ===========================================================================

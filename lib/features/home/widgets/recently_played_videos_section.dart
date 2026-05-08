@@ -9,8 +9,13 @@ import 'package:muxify/features/home/widgets/video_thumbnail_card.dart';
 
 class RecentlyPlayedVideosSection extends StatelessWidget {
   final List<VideoItem> items;
+  final void Function(VideoItem item)? onItemTap;
 
-  const RecentlyPlayedVideosSection({super.key, required this.items});
+  const RecentlyPlayedVideosSection({
+    super.key,
+    required this.items,
+    this.onItemTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -33,7 +38,10 @@ class RecentlyPlayedVideosSection extends StatelessWidget {
             separatorBuilder: (context, index) => 15.row,
             itemBuilder: (context, index) {
               final item = items[index];
-              return VideoThumbnailCard(item: item, onTap: () {});
+              return VideoThumbnailCard(
+                item: item,
+                onTap: onItemTap == null ? null : () => onItemTap!(item),
+              );
             },
           ),
         ),

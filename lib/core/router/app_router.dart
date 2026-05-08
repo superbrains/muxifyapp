@@ -206,8 +206,20 @@ class AppRouter {
       GoRoute(
         path: videoPlayer,
         name: 'video-player',
-        pageBuilder: (context, state) =>
-            MaterialPage(key: state.pageKey, child: const VideoPlayerScreen()),
+        pageBuilder: (context, state) {
+          final q = state.uri.queryParameters;
+          return MaterialPage(
+            key: state.pageKey,
+            child: VideoPlayerScreen(
+              videoId: q['videoId'] ?? '',
+              title: q['title'] ?? '',
+              artistName: q['artistName'] ?? '',
+              artistId: q['artistId'],
+              thumbnailUrl: q['thumbnailUrl'],
+              isUnlocked: q['isUnlocked'] != 'false',
+            ),
+          );
+        },
       ),
       GoRoute(
         path: artistProfile,
@@ -300,6 +312,7 @@ class AppRouter {
               trackId: q['trackId'],
               title: q['title'],
               artistName: q['artistName'],
+              artistId: q['artistId'],
               albumName: q['albumName'],
               backgroundImageUrl: q['backgroundImageUrl'],
               audioUrl: q['audioUrl'],

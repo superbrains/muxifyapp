@@ -1,33 +1,61 @@
+import 'package:chewie/chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
 import 'package:muxify/core/constants/api_constants.dart';
 import 'package:muxify/core/constants/app_colors.dart';
 import 'package:muxify/core/constants/app_sizes.dart';
 import 'package:muxify/core/constants/app_text_styles.dart';
-import 'package:muxify/shared/widgets/circular_icon_button.dart';
-import 'package:muxify/shared/widgets/glass_button_widget.dart';
-import 'package:muxify/shared/widgets/unlock_all_songs_modal.dart';
-import 'package:go_router/go_router.dart';
+import 'package:muxify/core/network/api_requester.dart';
 import 'package:muxify/core/router/app_router.dart';
+import 'package:muxify/core/utils/logger.dart';
+import 'package:muxify/features/home/widgets/video_cover_image.dart';
+import 'package:muxify/features/statistics/models/gift_item.dart';
+import 'package:muxify/shared/widgets/circular_icon_button.dart';
+import 'package:muxify/shared/widgets/gift_box_modal.dart';
+import 'package:muxify/shared/widgets/glass_button_widget.dart';
+import 'package:muxify/shared/widgets/menu_bottom_sheet.dart';
+import 'package:muxify/shared/widgets/menu_item_model.dart';
+import 'package:muxify/shared/widgets/unlock_all_songs_modal.dart';
 import 'package:muxify/shared/widgets/unlock_button.dart';
 import 'package:muxify/shared/widgets/unlock_confirm_bottom_sheet.dart';
 import 'package:muxify/shared/widgets/unlock_success_dialog.dart';
-import 'package:muxify/shared/widgets/gift_box_modal.dart';
-import 'package:muxify/features/statistics/models/gift_item.dart';
-import 'package:muxify/shared/widgets/menu_bottom_sheet.dart';
-import 'package:muxify/shared/widgets/menu_item_model.dart';
+import 'package:video_player/video_player.dart';
 
 class VideoPlayerScreen extends StatefulWidget {
-  const VideoPlayerScreen({super.key});
+  final String videoId;
+  final String title;
+  final String artistName;
+  final String? artistId;
+  final String? thumbnailUrl;
+  final bool isUnlocked;
+
+  const VideoPlayerScreen({
+    super.key,
+    required this.videoId,
+    required this.title,
+    required this.artistName,
+    this.artistId,
+    this.thumbnailUrl,
+    this.isUnlocked = true,
+  });
 
   @override
   State<VideoPlayerScreen> createState() => _VideoPlayerScreenState();
 }
 
 class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
-  bool _isUnlocked = false;
+  late bool _isUnlocked;
+  final ApiRequester _api = ApiRequester();
 
-  // Mock gift items for the gift box modal
+  VideoPlayerController? _videoController;
+  ChewieController? _chewieController;
+  bool _isLoadingStream = false;
+  String? _streamError;
+  bool _playRecorded = false;
+
+  // Mock gift items for the gift box modal — replaced with real data
+  // when the gifts feature ships its own provider.
   final List<GiftItem> _giftItems = [
     GiftItem(
       id: '1',
@@ -64,129 +92,130 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
       stickerText: 'X20',
       count: 20,
     ),
-    GiftItem(
-      id: '5',
-      name: 'Big Box',
-      backgroundImage: 'assets/pngs/gift_bg1.png',
-      emojiImage: 'assets/pngs/emoj7.png',
-      stickerText: 'X20',
-      count: 20,
-      amount: 100250,
-    ),
-    GiftItem(
-      id: '6',
-      name: 'Big Box',
-      backgroundImage: 'assets/pngs/gift_bg2.png',
-      emojiImage: 'assets/pngs/emoj6.png',
-      stickerText: 'X20',
-      count: 20,
-      amount: 100250,
-    ),
-    GiftItem(
-      id: '7',
-      name: 'Big Box',
-      backgroundImage: 'assets/pngs/gift_bg3.png',
-      emojiImage: 'assets/pngs/emoj1.png',
-      stickerText: 'X20',
-      count: 20,
-      amount: 100250,
-    ),
-    GiftItem(
-      id: '8',
-      name: 'Big Box',
-      backgroundImage: 'assets/pngs/gift_bg4.png',
-      emojiImage: 'assets/pngs/emoj7.png',
-      stickerText: 'X20',
-      count: 20,
-      amount: 100250,
-    ),
-    GiftItem(
-      id: '9',
-      name: 'Big Box',
-      backgroundImage: 'assets/pngs/gift_bg1.png',
-      emojiImage: 'assets/pngs/emoj7.png',
-      stickerText: 'X20',
-      count: 20,
-      amount: 100250,
-    ),
-    GiftItem(
-      id: '10',
-      name: 'Big Box',
-      backgroundImage: 'assets/pngs/gift_bg4.png',
-      emojiImage: 'assets/pngs/emoj6.png',
-      stickerText: 'X20',
-      count: 20,
-    ),
-    GiftItem(
-      id: '11',
-      name: 'Big Box',
-      backgroundImage: 'assets/pngs/gift_bg4.png',
-      emojiImage: 'assets/pngs/emoj7.png',
-      stickerText: 'X20',
-      count: 20,
-      amount: 100250,
-    ),
-    GiftItem(
-      id: '12',
-      name: 'Big Box',
-      backgroundImage: 'assets/pngs/gift_bg2.png',
-      emojiImage: 'assets/pngs/emoj6.png',
-      stickerText: 'X20',
-      count: 20,
-      amount: 100250,
-    ),
-    GiftItem(
-      id: '13',
-      name: 'Big Box',
-      backgroundImage: 'assets/pngs/gift_bg4.png',
-      emojiImage: 'assets/pngs/emoj6.png',
-      stickerText: 'X20',
-      count: 20,
-    ),
-    GiftItem(
-      id: '14',
-      name: 'Big Box',
-      backgroundImage: 'assets/pngs/gift_bg4.png',
-      emojiImage: 'assets/pngs/emoj7.png',
-      stickerText: 'X20',
-      count: 20,
-      amount: 100250,
-    ),
-    GiftItem(
-      id: '15',
-      name: 'Big Box',
-      backgroundImage: 'assets/pngs/gift_bg1.png',
-      emojiImage: 'assets/pngs/emoj1.png',
-      stickerText: 'X20',
-      count: 20,
-      amount: 100250,
-    ),
-    GiftItem(
-      id: '16',
-      name: 'Big Box',
-      backgroundImage: 'assets/pngs/gift_bg2.png',
-      emojiImage: 'assets/pngs/emoj4.png',
-      stickerText: 'X20',
-      count: 20,
-      amount: 100250,
-    ),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _isUnlocked = widget.isUnlocked;
+    if (_isUnlocked) _initializePlayback();
+  }
+
+  @override
+  void dispose() {
+    _chewieController?.dispose();
+    _videoController?.dispose();
+    super.dispose();
+  }
+
+  Future<void> _initializePlayback() async {
+    if (widget.videoId.trim().isEmpty) return;
+    if (_isLoadingStream || _videoController != null) return;
+
+    setState(() {
+      _isLoadingStream = true;
+      _streamError = null;
+    });
+
+    try {
+      // Resolve the streaming URL via /api/v1/content/videos/{id}/stream.
+      // The backend returns { streamingUrl, hlsPlaylistUrl, ... } — we prefer
+      // HLS when present, falling back to the progressive URL.
+      final streamPayload = await _api.getJson(
+        ApiConstants.videoStreamPath(widget.videoId),
+        (json) => json,
+        authenticate: true,
+      );
+
+      final hls = (streamPayload['hlsPlaylistUrl'] as String?)?.trim();
+      final progressive =
+          (streamPayload['streamingUrl'] as String?)?.trim();
+      final url = (hls != null && hls.isNotEmpty)
+          ? hls
+          : (progressive ?? '');
+      if (url.isEmpty) {
+        throw const FormatException('No streaming URL returned');
+      }
+
+      final controller =
+          VideoPlayerController.networkUrl(Uri.parse(url));
+      await controller.initialize();
+
+      if (!mounted) {
+        await controller.dispose();
+        return;
+      }
+
+      final chewie = ChewieController(
+        videoPlayerController: controller,
+        autoPlay: true,
+        looping: false,
+        allowedScreenSleep: false,
+        materialProgressColors: ChewieProgressColors(
+          playedColor: AppColors.buttonColor,
+          handleColor: AppColors.buttonColor,
+          bufferedColor: AppColors.text.withValues(alpha: 0.2),
+          backgroundColor: AppColors.text.withValues(alpha: 0.08),
+        ),
+      );
+      controller.addListener(_onPlayerTick);
+
+      setState(() {
+        _videoController = controller;
+        _chewieController = chewie;
+        _isLoadingStream = false;
+      });
+    } catch (e, st) {
+      Logger.error('VideoPlayerScreen.initializePlayback failed', e, st);
+      if (!mounted) return;
+      setState(() {
+        _isLoadingStream = false;
+        _streamError = 'Could not load this video. Please try again.';
+      });
+    }
+  }
+
+  void _onPlayerTick() {
+    if (_playRecorded) return;
+    final c = _videoController;
+    if (c == null || !c.value.isInitialized || !c.value.isPlaying) return;
+    if (c.value.position.inMilliseconds < 250) return;
+    _playRecorded = true;
+    _recordPlay();
+  }
+
+  Future<void> _recordPlay() async {
+    if (widget.videoId.trim().isEmpty) return;
+    try {
+      await _api.postJson<Map<String, dynamic>>(
+        ApiConstants.videoRecordPlayPath(widget.videoId),
+        const {'platform': 'mobile'},
+        (json) => json,
+        successStatus: ApiConstants.statusOk,
+        authenticate: true,
+      );
+    } catch (e, st) {
+      // Non-fatal — viewer experience must continue even if telemetry fails.
+      Logger.error('VideoPlayerScreen.recordPlay failed', e, st);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
       body: Stack(
         children: [
-          // Background image
+          // Background poster — visible while the video loads or while locked.
           Positioned.fill(
-            child: Image.asset(
-              'assets/pngs/sabinus_background_image.png',
+            child: VideoCoverImage(
+              imageUrl: widget.thumbnailUrl ?? '',
               fit: BoxFit.cover,
-              alignment: Alignment.center,
+              fallbackAsset: 'assets/pngs/sabinus_background_image.png',
             ),
           ),
 
-          // Subtle blur/gradient overlay for readability
+          // Subtle blur/gradient overlay for readability.
           Positioned.fill(
             child: Container(
               decoration: BoxDecoration(
@@ -205,14 +234,51 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
             ),
           ),
 
-          // Content
+          // Live player layered over the poster once initialized.
+          if (_isUnlocked && _chewieController != null)
+            Positioned.fill(
+              child: AspectRatio(
+                aspectRatio: _videoController!.value.aspectRatio == 0
+                    ? 16 / 9
+                    : _videoController!.value.aspectRatio,
+                child: Chewie(controller: _chewieController!),
+              ),
+            ),
+
+          if (_isUnlocked && _isLoadingStream)
+            const Positioned.fill(
+              child: Center(
+                child: CircularProgressIndicator(
+                  valueColor:
+                      AlwaysStoppedAnimation<Color>(AppColors.buttonColor),
+                ),
+              ),
+            ),
+
+          if (_isUnlocked && _streamError != null)
+            Positioned.fill(
+              child: Center(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 32.padding),
+                  child: Text(
+                    _streamError!,
+                    textAlign: TextAlign.center,
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: AppColors.text,
+                      fontSize: 14.font,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+          // Foreground UI (top bar, unlock button, gift CTA, etc.)
           SafeArea(
             child: Padding(
               padding: EdgeInsets.symmetric(horizontal: 23.padding),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Top bar
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -222,14 +288,6 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                         onTap: () => Navigator.of(context).pop(),
                       ),
                       const Spacer(),
-                      // Text(
-                      //   'Now Playing',
-                      //   style: TextStyle(
-                      //     color: AppColors.text,
-                      //     fontSize: 16.font,
-                      //     fontWeight: FontWeight.w600,
-                      //   ),
-                      // ),
                       _circleIconButton(
                         context,
                         Icons.more_vert_rounded,
@@ -253,7 +311,6 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                     ),
                     20.column,
                   ],
-                  // Creator/info row + actions
                   Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     crossAxisAlignment: CrossAxisAlignment.end,
@@ -287,7 +344,8 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                         icon: Icons.favorite_border_rounded,
                         iconSize: 24.icon,
                         iconColor: AppColors.text,
-                        backgroundColor: AppColors.text.withValues(alpha: 0.08),
+                        backgroundColor:
+                            AppColors.text.withValues(alpha: 0.08),
                         buttonSize: 44,
                       ),
                       14.row,
@@ -295,7 +353,8 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                         onTap: () {},
                         icon: Icons.share_outlined,
                         iconSize: 24.icon,
-                        backgroundColor: AppColors.text.withValues(alpha: 0.08),
+                        backgroundColor:
+                            AppColors.text.withValues(alpha: 0.08),
                         buttonSize: 44,
                         iconColor: AppColors.text,
                       ),
@@ -305,25 +364,44 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      // Avatar
                       CircleAvatar(
                         radius: 20.radius,
-                        backgroundImage: const AssetImage(
-                          'assets/pngs/follows.png',
+                        backgroundColor:
+                            AppColors.text.withValues(alpha: 0.15),
+                        child: Icon(
+                          Icons.person,
+                          size: 24.icon,
+                          color: AppColors.text.withValues(alpha: 0.45),
                         ),
                       ),
                       10.row,
-                      // Name
                       Expanded(
-                        child: Text(
-                          'Mr Funny',
-                          style: AppTextStyles.bodyMedium.copyWith(
-                            color: AppColors.text,
-                            fontSize: 20.font,
-                            fontWeight: FontWeight.w500,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              widget.title.isEmpty ? 'Untitled' : widget.title,
+                              style: AppTextStyles.bodyMedium.copyWith(
+                                color: AppColors.text,
+                                fontSize: 16.font,
+                                fontWeight: FontWeight.w600,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            Text(
+                              widget.artistName.isEmpty
+                                  ? 'Unknown artist'
+                                  : widget.artistName,
+                              style: AppTextStyles.bodyMedium.copyWith(
+                                color: AppColors.text.withValues(alpha: 0.7),
+                                fontSize: 13.font,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
                         ),
                       ),
                       const Spacer(),
@@ -338,32 +416,6 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                         backgroundColor: AppColors.buttonColor,
                         width: 136.maxWidth,
                         height: 52.maxHeight,
-                      ),
-                    ],
-                  ),
-                  10.column,
-                  // Description
-                  Text(
-                    'Lorem ipsum dolor sit amet consectetur. Consectetur aliquam varius tortor fermentum at purus. Sodales eget in tristique duis pulvinar nibh ornare amet.',
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      color: AppColors.text,
-                      fontSize: 14.font,
-                      height: 1.35,
-                      fontWeight: FontWeight.w400,
-                    ),
-                  ),
-                  11.column,
-                  // Bottom nav mock
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      _bottomNavItem(Icons.home_outlined, 'Home'),
-                      _bottomNavItem(Icons.explore_outlined, 'Discover'),
-                      _bottomNavItem(Icons.search_outlined, 'Search'),
-                      _bottomNavItem(
-                        Icons.video_library_outlined,
-                        'Library',
-                        selected: true,
                       ),
                     ],
                   ),
@@ -396,28 +448,6 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
     );
   }
 
-  // Widget _bottomAction(IconData icon, String label) {
-  Widget _bottomNavItem(IconData icon, String label, {bool selected = false}) {
-    final Color color = selected
-        ? AppColors.text
-        : AppColors.text.withValues(alpha: 0.40);
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, color: color, size: 24.icon),
-        8.column,
-        Text(
-          label,
-          style: AppTextStyles.bodyMedium.copyWith(
-            color: color,
-            fontSize: 14.font,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-      ],
-    );
-  }
-
   void _showUnlockModal() {
     showDialog(
       context: context,
@@ -446,21 +476,23 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
       backgroundColor: AppColors.modalBackground,
       isScrollControlled: false,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20.radius)),
+        borderRadius:
+            BorderRadius.vertical(top: Radius.circular(20.radius)),
       ),
       builder: (context) {
         return UnlockConfirmBottomSheet(
-          title: 'But Why Sabinus',
-          subtitle: 'Sabinus',
-          imagePath: 'assets/pngs/sabinus.png',
+          title: widget.title.isEmpty ? 'This video' : widget.title,
+          subtitle: widget.artistName,
+          imagePath: widget.thumbnailUrl ?? 'assets/pngs/sabinus.png',
           primaryButtonText: 'Unlock Video',
           isPremiumMode: false,
           onClose: () => Navigator.of(context).pop(),
-          onConfirm: () {
+          onConfirm: () async {
             Navigator.of(context).pop();
-            setState(() {
-              _isUnlocked = true;
-            });
+            await _unlockOnBackend();
+            if (!mounted) return;
+            setState(() => _isUnlocked = true);
+            _initializePlayback();
             _showSuccessDialog();
           },
         );
@@ -474,28 +506,26 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
       backgroundColor: AppColors.modalBackground,
       isScrollControlled: false,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20.radius)),
+        borderRadius:
+            BorderRadius.vertical(top: Radius.circular(20.radius)),
       ),
       builder: (context) {
         final isDemo = ApiConstants.demoMode;
         return UnlockConfirmBottomSheet(
-          title: 'With You ft. Omah Lay',
-          subtitle: 'Davido',
-          imagePath: 'assets/pngs/follows.png',
+          title: widget.title.isEmpty ? 'This video' : widget.title,
+          subtitle: widget.artistName,
+          imagePath: widget.thumbnailUrl ?? 'assets/pngs/follows.png',
           primaryButtonText: 'Unlock Video',
           isPremiumMode: true,
-          unlockTitle: 'Unlock Song',
-          // coinCost: '100,250',
-          // In demo mode the wallet check is bypassed server-side, so the UI
-          // never shows the insufficient-coins error or the Get Coins CTA.
+          unlockTitle: 'Unlock Video',
           showInsufficientCoinsError: !isDemo,
           onClose: () => Navigator.of(context).pop(),
-          onConfirm: () {
-            // This will only be called if user has enough coins
+          onConfirm: () async {
             Navigator.of(context).pop();
-            setState(() {
-              _isUnlocked = true;
-            });
+            await _unlockOnBackend();
+            if (!mounted) return;
+            setState(() => _isUnlocked = true);
+            _initializePlayback();
             _showSuccessDialog();
           },
           onGetCoins: isDemo
@@ -509,6 +539,22 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
     );
   }
 
+  Future<void> _unlockOnBackend() async {
+    if (widget.videoId.trim().isEmpty) return;
+    try {
+      await _api.postJson<Map<String, dynamic>>(
+        ApiConstants.videoUnlockPath(widget.videoId),
+        const {},
+        (json) => json,
+        successStatus: ApiConstants.statusOk,
+        authenticate: true,
+      );
+    } catch (e, st) {
+      // Demo mode silently allows unlock; in production this should bubble up.
+      Logger.error('VideoPlayerScreen.unlockOnBackend failed', e, st);
+    }
+  }
+
   void _showSuccessDialog() {
     showDialog(
       context: context,
@@ -516,13 +562,12 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
       builder: (_) => UnlockSuccessDialog(
         heading: 'Congratulation!',
         message: 'You have a unlocked',
-        mediaTitle: 'But Why Sabinus',
-        mediaSubtitle: 'Davido',
-        imagePath: 'assets/pngs/sabinus.png',
+        mediaTitle: widget.title.isEmpty ? 'This video' : widget.title,
+        mediaSubtitle: widget.artistName,
+        imagePath: widget.thumbnailUrl ?? 'assets/pngs/sabinus.png',
         primaryButtonText: 'Play Now',
         onPrimary: () {
           Navigator.of(context).pop();
-          // Optionally start playback here
         },
       ),
     );
@@ -562,22 +607,16 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
           _showGiftBoxModal();
         },
       ),
-     
       MenuItemModel(
         text: 'Add to favourite',
         icon: Icons.favorite_outline,
-        onTap: () {
-          // Handle add to favourite
-        },
+        onTap: () {},
       ),
       MenuItemModel(
         text: 'Share with friends',
         icon: Icons.share_outlined,
-        onTap: () {
-          // Handle share with friends
-        },
+        onTap: () {},
       ),
-      
     ];
 
     showModalBottomSheet(

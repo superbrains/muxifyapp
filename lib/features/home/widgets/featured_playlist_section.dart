@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:muxify/core/constants/app_sizes.dart';
 import 'package:muxify/features/home/models/playlist_item.dart';
+import 'package:muxify/features/home/models/track_item.dart';
 import 'package:muxify/features/home/widgets/playlist_card.dart';
 
 class FeaturedPlaylistSection extends StatelessWidget {
   final List<PlaylistItem> playlists;
   final VoidCallback? onSeeAll;
   final void Function(PlaylistItem playlist)? onPlaylistTap;
+  final void Function(TrackItem track)? onTrackTap;
   final bool isLoading;
 
   const FeaturedPlaylistSection({
@@ -14,6 +16,7 @@ class FeaturedPlaylistSection extends StatelessWidget {
     required this.playlists,
     this.onSeeAll,
     this.onPlaylistTap,
+    this.onTrackTap,
     this.isLoading = false,
   });
 
@@ -51,6 +54,7 @@ class FeaturedPlaylistSection extends StatelessWidget {
                   onFavoriteTap: () {},
                   onMenuTap: () {},
                   onSeeAllTap: onSeeAll,
+                  onTrackTap: onTrackTap,
                 ),
               );
             },

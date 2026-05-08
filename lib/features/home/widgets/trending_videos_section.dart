@@ -11,11 +11,19 @@ import 'package:muxify/features/home/widgets/see_all_button.dart';
 
 class TrendingVideosSection extends StatelessWidget {
   final List<VideoItem> items;
+  final int? totalCount;
+  final void Function(VideoItem item)? onItemTap;
 
-  const TrendingVideosSection({super.key, required this.items});
+  const TrendingVideosSection({
+    super.key,
+    required this.items,
+    this.totalCount,
+    this.onItemTap,
+  });
 
   @override
   Widget build(BuildContext context) {
+    if (items.isEmpty) return const SizedBox.shrink();
     return SizedBox(
       height: 495.maxHeight,
       child: ListView.separated(
@@ -23,8 +31,16 @@ class TrendingVideosSection extends StatelessWidget {
         padding: EdgeInsets.only(right: 24.padding),
         separatorBuilder: (context, index) => 12.row,
         itemCount: 3,
-        itemBuilder: (context, _) {
-          final pageItems = items.take(4).toList();
+        itemBuilder: (context, pageIndex) {
+          final start = (pageIndex * 4) % (items.isEmpty ? 1 : items.length);
+          final pageItems = items.length <= 4
+              ? items
+              : List<VideoItem>.from(
+                  Iterable.generate(
+                    4,
+                    (i) => items[(start + i) % items.length],
+                  ),
+                );
 
           return Container(
             width: 330.maxWidth,
@@ -74,7 +90,7 @@ class TrendingVideosSection extends StatelessWidget {
                         Text('Trending', style: AppTextStyles.trendingText),
                         4.column,
                         Text(
-                          '54 Videos',
+                          '${totalCount ?? items.length} Videos',
                           style: AppTextStyles.trendingText.copyWith(
                             fontSize: 12.font,
                             color: AppColors.text.withValues(alpha: 0.5),
@@ -99,7 +115,12 @@ class TrendingVideosSection extends StatelessWidget {
                   itemCount: pageItems.length,
                   itemBuilder: (context, index) {
                     final item = pageItems[index];
-                    return GridVideoCard(item: item, onTap: () {});
+                    return GridVideoCard(
+                      item: item,
+                      onTap: onItemTap == null
+                          ? null
+                          : () => onItemTap!(item),
+                    );
                   },
                 ),
 

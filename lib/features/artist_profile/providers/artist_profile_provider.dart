@@ -302,6 +302,14 @@ class ArtistProfileProvider extends ChangeNotifier {
     return _repository.getTrackStreamUrl(trackId);
   }
 
+  /// Fetches an artist's public profile without mutating provider state.
+  /// Used by callers (e.g. the Music Player image fallback) that just need
+  /// the avatar URL and shouldn't disturb a profile screen the user may
+  /// already be viewing.
+  Future<ArtistPublicProfile> getArtistPublicProfile(String artistId) {
+    return _repository.getArtistProfile(artistId);
+  }
+
   Future<void> unlockTrack(String trackId) async {
     if (_isPlaybackActionInFlight) return;
     _isPlaybackActionInFlight = true;

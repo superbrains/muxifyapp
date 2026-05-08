@@ -124,6 +124,22 @@ class ApiConstants {
   static const String feedMostGiftedPath = '$apiV1Prefix/feed/most-gifted';
   static const String feedTopGiversPath = '$apiV1Prefix/feed/top-givers';
 
+  // Home Videos tab feed endpoints (all require auth).
+  static const String feedTrendingVideosPath =
+      '$apiV1Prefix/feed/videos/trending';
+  static const String feedHotReleaseVideosPath =
+      '$apiV1Prefix/feed/videos/hot-releases';
+  static const String feedTopChartVideosPath =
+      '$apiV1Prefix/feed/videos/top-charts';
+  static const String feedNewReleaseVideosPath =
+      '$apiV1Prefix/feed/videos/new-releases';
+  static const String feedVideosFromFollowingPath =
+      '$apiV1Prefix/feed/videos/from-following';
+  static const String feedVideoSpotlightPath =
+      '$apiV1Prefix/feed/videos/spotlight';
+  static const String feedMostGiftedVideosPath =
+      '$apiV1Prefix/feed/videos/most-gifted';
+
   static String trackStreamPath(String trackId) =>
       '$apiV1Prefix/content/tracks/${Uri.encodeComponent(trackId.trim())}/stream';
 
@@ -132,6 +148,12 @@ class ApiConstants {
 
   static String videoUnlockPath(String videoId) =>
       '$apiV1Prefix/content/videos/${Uri.encodeComponent(videoId.trim())}/unlock';
+
+  static String videoStreamPath(String videoId) =>
+      '$apiV1Prefix/content/videos/${Uri.encodeComponent(videoId.trim())}/stream';
+
+  static String videoRecordPlayPath(String videoId) =>
+      '$apiV1Prefix/content/videos/${Uri.encodeComponent(videoId.trim())}/play';
 
   static const String giftTypesPath = '$apiV1Prefix/gifts/types';
   static const String giftSendPath = '$apiV1Prefix/gifts/send';

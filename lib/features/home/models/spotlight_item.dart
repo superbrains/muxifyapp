@@ -4,6 +4,7 @@ class SpotlightItem {
   final String id;
   final String title;
   final String artist;
+  final String? artistId;
   final String playCount;
   final String? imageUrl;
   final bool isUnlocked;
@@ -14,12 +15,14 @@ class SpotlightItem {
     required this.title,
     required this.artist,
     required this.playCount,
+    this.artistId,
     this.imageUrl,
     this.isUnlocked = false,
     this.isPlayable = false,
   });
 
   factory SpotlightItem.fromSpotlightDto(SpotlightDto dto) {
+    final type = dto.type.toLowerCase();
     return SpotlightItem(
       id: dto.contentId ?? dto.id,
       title: dto.title,
@@ -27,7 +30,7 @@ class SpotlightItem {
       playCount: '',
       imageUrl: dto.imageUrl.isEmpty ? null : dto.imageUrl,
       isUnlocked: true,
-      isPlayable: dto.type == 'track',
+      isPlayable: type == 'track' || type == 'video',
     );
   }
 
@@ -36,6 +39,7 @@ class SpotlightItem {
       id: dto.id,
       title: dto.title,
       artist: dto.artistName,
+      artistId: dto.artistId,
       playCount: _formatGifts(dto.totalGiftsReceived),
       imageUrl: dto.coverArtUrl,
       isUnlocked: true,

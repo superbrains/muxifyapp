@@ -6,6 +6,7 @@ import 'package:muxify/core/constants/app_colors.dart';
 import 'package:muxify/core/constants/app_sizes.dart';
 import 'package:muxify/core/constants/app_text_styles.dart';
 import 'package:muxify/features/home/models/playlist_item.dart';
+import 'package:muxify/features/home/models/track_item.dart';
 import 'package:muxify/features/home/widgets/playlist_track_item.dart';
 import 'package:muxify/features/home/widgets/see_all_button.dart';
 
@@ -16,6 +17,7 @@ class PlaylistCard extends StatelessWidget {
   final VoidCallback? onFavoriteTap;
   final VoidCallback? onMenuTap;
   final VoidCallback? onSeeAllTap;
+  final void Function(TrackItem track)? onTrackTap;
 
   const PlaylistCard({
     super.key,
@@ -25,6 +27,7 @@ class PlaylistCard extends StatelessWidget {
     this.onFavoriteTap,
     this.onMenuTap,
     this.onSeeAllTap,
+    this.onTrackTap,
   });
 
   @override
@@ -205,7 +208,7 @@ class PlaylistCard extends StatelessWidget {
                       final track = playlist.tracks[index];
                       return PlaylistTrackItem(
                         track: track,
-                        onTap: () {},
+                        onTap: () => onTrackTap?.call(track),
                         onMenuTap: () {},
                       );
                     },

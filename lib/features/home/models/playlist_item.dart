@@ -47,6 +47,7 @@ class PlaylistItem {
             id: t.id,
             title: t.title,
             artist: t.artistName,
+            artistId: t.artistId,
             imageUrl: t.coverArtUrl,
           ),
         )
