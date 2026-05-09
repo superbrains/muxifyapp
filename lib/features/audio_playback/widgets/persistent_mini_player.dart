@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:muxify/core/constants/api_constants.dart';
 import 'package:muxify/core/constants/app_colors.dart';
 import 'package:muxify/core/constants/app_sizes.dart';
 import 'package:muxify/core/constants/app_text_styles.dart';
+import 'package:muxify/core/router/app_router.dart';
 import 'package:muxify/features/audio_playback/models/track.dart';
 import 'package:muxify/features/audio_playback/providers/audio_provider.dart';
 
@@ -30,7 +30,7 @@ class PersistentMiniPlayer extends StatelessWidget {
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: () => _openFullPlayer(context),
+      onTap: () => _openFullPlayer(track),
       child: Container(
         decoration: BoxDecoration(
           gradient: const LinearGradient(
@@ -96,9 +96,23 @@ class PersistentMiniPlayer extends StatelessWidget {
     );
   }
 
-  void _openFullPlayer(BuildContext context) {
+  void _openFullPlayer(Track track) {
     HapticFeedback.lightImpact();
-    context.pushNamed('music-player');
+    final params = <String, String>{
+      'trackId': track.id,
+      'title': track.title,
+      'artistName': track.artist,
+      'isUnlocked': track.isUnlocked.toString(),
+    };
+    final artistId = (track.artistId ?? '').trim();
+    if (artistId.isNotEmpty) params['artistId'] = artistId;
+    final albumName = (track.albumName ?? '').trim();
+    if (albumName.isNotEmpty) params['albumName'] = albumName;
+    final artworkUrl = (track.artworkUrl ?? '').trim();
+    if (artworkUrl.isNotEmpty) params['backgroundImageUrl'] = artworkUrl;
+    final audioUrl = (track.audioUrl ?? '').trim();
+    if (audioUrl.isNotEmpty) params['audioUrl'] = audioUrl;
+    AppRouter.router.pushNamed('music-player', queryParameters: params);
   }
 }
 
