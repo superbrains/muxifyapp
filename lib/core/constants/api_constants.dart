@@ -158,6 +158,24 @@ class ApiConstants {
   static const String giftTypesPath = '$apiV1Prefix/gifts/types';
   static const String giftSendPath = '$apiV1Prefix/gifts/send';
 
+  // Track engagement (like/share) — wired to the backend ContentEndpoints
+  // additions in Muxify.Api.
+  static String trackLikePath(String trackId) =>
+      '$apiV1Prefix/content/tracks/${Uri.encodeComponent(trackId.trim())}/like';
+
+  static String trackLikeStatusPath(String trackId) =>
+      '$apiV1Prefix/content/tracks/${Uri.encodeComponent(trackId.trim())}/like-status';
+
+  static String trackSharePath(String trackId) =>
+      '$apiV1Prefix/content/tracks/${Uri.encodeComponent(trackId.trim())}/share';
+
+  // Playlist endpoints (existing on backend) — used by the music player's
+  // "Add to playlist" picker.
+  static const String playlistsPath = '$apiV1Prefix/playlists';
+
+  static String playlistTracksPath(String playlistId) =>
+      '$apiV1Prefix/playlists/${Uri.encodeComponent(playlistId.trim())}/tracks';
+
   static const Duration connectTimeout = Duration(seconds: 30);
   static const Duration receiveTimeout = Duration(seconds: 30);
   static const Duration sendTimeout = Duration(seconds: 30);

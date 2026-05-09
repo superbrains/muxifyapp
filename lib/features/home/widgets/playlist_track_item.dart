@@ -1,5 +1,7 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:muxify/core/constants/api_constants.dart';
 import 'package:muxify/core/constants/app_colors.dart';
 import 'package:muxify/core/constants/app_sizes.dart';
 import 'package:muxify/core/constants/app_text_styles.dart';
@@ -34,21 +36,7 @@ class PlaylistTrackItem extends StatelessWidget {
 
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(6.radius),
-                child: Container(
-                  // color: AppColors.glassyDark,
-                  // Image.network(track.imageUrl, fit: BoxFit.cover),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(6.radius),
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        Colors.orange.withValues(alpha: 0.4),
-                        Colors.red.withValues(alpha: 0.4),
-                      ],
-                    ),
-                  ),
-                ),
+                child: _buildThumbnail(),
               ),
             ),
             12.row,
@@ -79,7 +67,7 @@ class PlaylistTrackItem extends StatelessWidget {
                 ],
               ),
             ),
-            // Menu Icon 
+            // Menu Icon
             GestureDetector(
               onTap: () {
                 HapticFeedback.lightImpact();
@@ -91,6 +79,35 @@ class PlaylistTrackItem extends StatelessWidget {
                 size: 24.icon,
               ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildThumbnail() {
+    final url = track.imageUrl?.trim() ?? '';
+    if (url.isEmpty) return _placeholderGradient();
+    return CachedNetworkImage(
+      imageUrl: ApiConstants.resolvePublicUrl(url),
+      fit: BoxFit.cover,
+      width: double.infinity,
+      height: double.infinity,
+      placeholder: (_, __) => _placeholderGradient(),
+      errorWidget: (_, __, ___) => _placeholderGradient(),
+    );
+  }
+
+  Widget _placeholderGradient() {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(6.radius),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.orange.withValues(alpha: 0.4),
+            Colors.red.withValues(alpha: 0.4),
           ],
         ),
       ),

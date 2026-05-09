@@ -4,10 +4,11 @@ import 'package:go_router/go_router.dart';
 import 'package:muxify/core/constants/app_colors.dart';
 import 'package:muxify/core/constants/app_sizes.dart';
 import 'package:muxify/core/constants/app_text_styles.dart';
-import 'package:muxify/core/models/auth/auth_login_result.dart';
 import 'package:muxify/core/router/app_router.dart';
 import 'package:muxify/core/services/local_storage_service.dart';
-import 'package:muxify/core/utils/app_toast.dart';
+import 'package:muxify/features/auth/providers/auth_provider.dart';
+import 'package:muxify/shared/widgets/user_avatar.dart';
+import 'package:provider/provider.dart';
 
 /// Fan home menu from the right (matches mobile dashboard nav sheet).
 class HomeMenuDrawer extends StatefulWidget {
@@ -18,29 +19,32 @@ class HomeMenuDrawer extends StatefulWidget {
 }
 
 class _HomeMenuDrawerState extends State<HomeMenuDrawer> {
-  AuthUserDto? _user;
   bool _biometricEnabled = false;
 
   @override
   void initState() {
     super.initState();
-    _reload();
+    _reloadBiometric();
+    // Refresh user from storage in case another flow updated it without going
+    // through AuthProvider (defensive — most paths now notify directly).
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      context.read<AuthProvider>().loadCurrentUser();
+    });
   }
 
-  Future<void> _reload() async {
-    final raw = await LocalStorageService.getAuthUserJson();
+  Future<void> _reloadBiometric() async {
     final biometric = await LocalStorageService.isBiometricEnabled();
     if (!mounted) return;
-    setState(() {
-      _user = AuthUserDto.tryParseStored(raw);
-      _biometricEnabled = biometric;
-    });
+    setState(() => _biometricEnabled = biometric);
   }
 
   Future<void> _signOut() async {
     HapticFeedback.mediumImpact();
     Navigator.of(context).pop();
     await LocalStorageService.clearUserCredentials();
+    if (!mounted) return;
+    context.read<AuthProvider>().clearCurrentUser();
     if (!mounted) return;
     context.go(AppRouter.login);
   }
@@ -54,7 +58,7 @@ class _HomeMenuDrawerState extends State<HomeMenuDrawer> {
   Widget build(BuildContext context) {
     final w = MediaQuery.sizeOf(context).width;
     final drawerWidth = w * 0.88;
-    final user = _user;
+    final user = context.watch<AuthProvider>().currentUser;
 
     return Drawer(
       width: drawerWidth.clamp(280.0, 360.0),
@@ -66,9 +70,7 @@ class _HomeMenuDrawerState extends State<HomeMenuDrawer> {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                ClipOval(
-                  child: _Avatar(avatar: user?.avatar),
-                ),
+                UserAvatar(avatar: user?.avatar, size: 48),
                 12.row,
                 Expanded(
                   child: Column(
@@ -135,11 +137,19 @@ class _HomeMenuDrawerState extends State<HomeMenuDrawer> {
             ),
             28.column,
             _DrawerRow(
+              icon: Icons.library_music_rounded,
+              label: 'My Music',
+              onTap: () {
+                HapticFeedback.lightImpact();
+                _closeThen(() => context.push(AppRouter.myMusic));
+              },
+            ),
+            _DrawerRow(
               icon: Icons.shield_outlined,
               label: 'Account Verification',
               onTap: () {
                 HapticFeedback.lightImpact();
-                AppToast.showInfo('Account verification coming soon.');
+                _closeThen(() => context.push(AppRouter.accountVerification));
               },
             ),
             _DrawerRow(
@@ -147,7 +157,7 @@ class _HomeMenuDrawerState extends State<HomeMenuDrawer> {
               label: 'Wallet & Payment',
               onTap: () {
                 HapticFeedback.lightImpact();
-                AppToast.showInfo('Wallet & payment coming soon.');
+                _closeThen(() => context.push(AppRouter.walletPayment));
               },
             ),
             Theme(
@@ -171,7 +181,7 @@ class _HomeMenuDrawerState extends State<HomeMenuDrawer> {
                     label: 'PIN',
                     onTap: () {
                       HapticFeedback.lightImpact();
-                      AppToast.showInfo('PIN settings coming soon.');
+                      _closeThen(() => context.push(AppRouter.pinSettings));
                     },
                   ),
                   _SubRow(
@@ -216,7 +226,7 @@ class _HomeMenuDrawerState extends State<HomeMenuDrawer> {
               label: 'About Muxify',
               onTap: () {
                 HapticFeedback.lightImpact();
-                AppToast.showInfo('About Muxify coming soon.');
+                _closeThen(() => context.push(AppRouter.aboutMuxify));
               },
             ),
             _DrawerRow(
@@ -224,7 +234,7 @@ class _HomeMenuDrawerState extends State<HomeMenuDrawer> {
               label: 'Privacy Policies',
               onTap: () {
                 HapticFeedback.lightImpact();
-                AppToast.showInfo('Privacy policies coming soon.');
+                _closeThen(() => context.push(AppRouter.privacyPolicy));
               },
             ),
             _DrawerRow(
@@ -232,7 +242,7 @@ class _HomeMenuDrawerState extends State<HomeMenuDrawer> {
               label: 'Legals',
               onTap: () {
                 HapticFeedback.lightImpact();
-                AppToast.showInfo('Legals coming soon.');
+                _closeThen(() => context.push(AppRouter.legals));
               },
             ),
             _DrawerRow(
@@ -240,7 +250,7 @@ class _HomeMenuDrawerState extends State<HomeMenuDrawer> {
               label: 'Customer Services',
               onTap: () {
                 HapticFeedback.lightImpact();
-                AppToast.showInfo('Customer services coming soon.');
+                _closeThen(() => context.push(AppRouter.customerServices));
               },
             ),
             _DrawerRow(
@@ -248,7 +258,7 @@ class _HomeMenuDrawerState extends State<HomeMenuDrawer> {
               label: 'FAQ',
               onTap: () {
                 HapticFeedback.lightImpact();
-                AppToast.showInfo('FAQ coming soon.');
+                _closeThen(() => context.push(AppRouter.faq));
               },
             ),
             12.column,
@@ -263,45 +273,12 @@ class _HomeMenuDrawerState extends State<HomeMenuDrawer> {
               danger: true,
               onTap: () {
                 HapticFeedback.lightImpact();
-                AppToast.showInfo('Delete account: contact support.');
+                _closeThen(() => context.push(AppRouter.deleteAccount));
               },
             ),
           ],
         ),
       ),
-    );
-  }
-}
-
-class _Avatar extends StatelessWidget {
-  const _Avatar({this.avatar});
-
-  final String? avatar;
-
-  @override
-  Widget build(BuildContext context) {
-    final url = avatar?.trim();
-    if (url != null &&
-        url.isNotEmpty &&
-        (url.startsWith('http://') || url.startsWith('https://'))) {
-      return Image.network(
-        url,
-        width: 48,
-        height: 48,
-        fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => Image.asset(
-          'assets/pngs/profile_placeholder.png',
-          width: 48,
-          height: 48,
-          fit: BoxFit.cover,
-        ),
-      );
-    }
-    return Image.asset(
-      'assets/pngs/profile_placeholder.png',
-      width: 48,
-      height: 48,
-      fit: BoxFit.cover,
     );
   }
 }

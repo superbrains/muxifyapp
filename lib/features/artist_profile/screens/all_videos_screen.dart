@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:muxify/core/constants/app_colors.dart';
 import 'package:muxify/core/constants/app_sizes.dart';
+import 'package:muxify/core/providers/unlocked_content_provider.dart';
 import 'package:muxify/features/artist_profile/models/new_release_item.dart';
 import 'package:muxify/features/artist_profile/widgets/custom_app_bar_widget.dart';
 import 'package:muxify/features/artist_profile/widgets/release_card_widget.dart';
 import 'package:muxify/features/artist_profile/widgets/search_container_widget.dart';
 import 'package:muxify/shared/widgets/unlock_all_songs_modal.dart';
+import 'package:provider/provider.dart';
 
 class AllVideosScreen extends StatefulWidget {
   const AllVideosScreen({super.key});
@@ -108,10 +110,31 @@ class _AllVideosScreenState extends State<AllVideosScreen> {
             HapticFeedback.lightImpact();
             // Navigate to video details
           },
-          onUnlockTap: () => _showUnlockModal(_videos[index]),
+          onUnlockTap: () {
+            if (context
+                .read<UnlockedContentProvider>()
+                .isUnlocked(_videos[index].id)) {
+              setState(() {
+                _videos[index] = _videos[index].copyWith(isUnlocked: true);
+              });
+              return;
+            }
+            _showUnlockModal(_videos[index]);
+          },
         );
       },
     );
+  }
+
+  Future<void> _persistUnlock(NewReleaseItem video) async {
+    setState(() {
+      final index = _videos.indexOf(video);
+      if (index != -1) {
+        _videos[index] = _videos[index].copyWith(isUnlocked: true);
+      }
+    });
+    if (!mounted) return;
+    await context.read<UnlockedContentProvider>().markUnlocked(video.id);
   }
 
   void _showUnlockModal(NewReleaseItem video) {
@@ -125,21 +148,11 @@ class _AllVideosScreenState extends State<AllVideosScreen> {
           },
           onUnlockPremium: () {
             Navigator.of(context).pop();
-            setState(() {
-              final index = _videos.indexOf(video);
-              if (index != -1) {
-                _videos[index] = _videos[index].copyWith(isUnlocked: true);
-              }
-            });
+            _persistUnlock(video);
           },
           onUnlockFree: () {
             Navigator.of(context).pop();
-            setState(() {
-              final index = _videos.indexOf(video);
-              if (index != -1) {
-                _videos[index] = _videos[index].copyWith(isUnlocked: true);
-              }
-            });
+            _persistUnlock(video);
           },
         );
       },

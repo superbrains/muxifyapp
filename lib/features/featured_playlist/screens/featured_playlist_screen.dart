@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:muxify/core/constants/app_colors.dart';
 import 'package:muxify/core/constants/app_sizes.dart';
+import 'package:muxify/core/providers/unlocked_content_provider.dart';
 import 'package:muxify/core/router/app_router.dart';
 import 'package:muxify/features/featured_playlist/models/genre_song_item.dart';
 import 'package:muxify/features/home/data/feed_dtos.dart';
@@ -12,6 +13,7 @@ import 'package:muxify/shared/widgets/genre_song_item_widget.dart';
 import 'package:muxify/shared/widgets/gradient_header_with_tabs.dart';
 import 'package:muxify/shared/widgets/unlock_all_songs_modal.dart';
 import 'package:muxify/shared/widgets/unlock_button.dart';
+import 'package:provider/provider.dart';
 
 class FeaturedPlaylistScreen extends StatefulWidget {
   final String? initialTabId;
@@ -222,7 +224,8 @@ class _FeaturedPlaylistScreenState extends State<FeaturedPlaylistScreen> {
           item: song,
           onTap: () => _openPlayer(song),
           onPlayUnlockTap: () {
-            if (song.isUnlocked) {
+            if (song.isUnlocked ||
+                context.read<UnlockedContentProvider>().isUnlocked(song.id)) {
               _openPlayer(song);
             } else {
               _showUnlockModal(song);

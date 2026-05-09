@@ -6,14 +6,13 @@ import 'package:muxify/core/constants/api_constants.dart';
 import 'package:muxify/core/constants/app_colors.dart';
 import 'package:muxify/core/constants/app_sizes.dart';
 import 'package:muxify/core/constants/app_text_styles.dart';
-import 'package:muxify/core/router/app_router.dart';
 import 'package:muxify/features/audio_playback/models/track.dart';
 import 'package:muxify/features/audio_playback/providers/audio_provider.dart';
 
-/// Docked mini-player that mirrors the in-app design of the legacy
-/// `NowPlayingBar` but is driven entirely by [AudioProvider]. Tapping the bar
-/// pushes the full [MusicPlayerScreen]; the play/pause button toggles
-/// playback in place. A thin progress line at the top reflects position.
+/// Docked mini-player for the Muxify brand: glassy dark surface, brand-red
+/// progress + play button, animated equalizer + marquee while playing.
+/// Tapping anywhere on the bar opens the full [MusicPlayerScreen]; the
+/// individual controls toggle playback / skip in place.
 class PersistentMiniPlayer extends StatelessWidget {
   const PersistentMiniPlayer({super.key});
 
@@ -21,7 +20,7 @@ class PersistentMiniPlayer extends StatelessWidget {
   Widget build(BuildContext context) {
     final audio = context.watch<AudioProvider>();
     final track = audio.currentTrack;
-    if (!audio.hasActiveTrack || track == null) {
+    if (track == null) {
       return const SizedBox.shrink();
     }
 
@@ -29,127 +28,134 @@ class PersistentMiniPlayer extends StatelessWidget {
     final position = audio.position.inMilliseconds.clamp(0, duration);
     final progress = duration > 0 ? position / duration : 0.0;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.nowPlayingBackground.withValues(alpha: 0.5),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.shadowColor.withValues(alpha: 0.3),
-            blurRadius: 8,
-            offset: const Offset(0, -2),
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => _openFullPlayer(context),
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFF1A1A1A), Color(0xFF0E0E0E)],
           ),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _ProgressLine(progress: progress.clamp(0.0, 1.0)),
-          Padding(
-            padding: EdgeInsets.all(12.padding),
-            child: Row(
-              children: [
-                _Artwork(track: track, onTap: () => _openFullPlayer(context)),
-                12.row,
-                Expanded(
-                  child: GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: () => _openFullPlayer(context),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          track.title,
-                          style: AppTextStyles.bodyMedium.copyWith(
-                            fontSize: 14.font,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.text,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        2.column,
-                        Text(
-                          track.artist,
-                          style: AppTextStyles.bodySmall.copyWith(
-                            fontSize: 12.font,
-                            fontWeight: FontWeight.w400,
-                            color: AppColors.text.withValues(alpha: 0.7),
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                12.row,
-                _MiniControl(
-                  icon: Icons.skip_previous,
-                  size: 24.icon,
-                  onTap: audio.previous,
-                ),
-                _MiniControl(
-                  icon: audio.isPlaying
-                      ? Icons.pause_rounded
-                      : Icons.play_arrow_rounded,
-                  size: 30.icon,
-                  onTap: audio.togglePlayPause,
-                ),
-                _MiniControl(
-                  icon: Icons.skip_next,
-                  size: 24.icon,
-                  onTap: audio.next,
-                ),
-              ],
+          border: Border(
+            top: BorderSide(
+              color: Colors.white.withValues(alpha: 0.06),
+              width: 1,
             ),
           ),
-        ],
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.40),
+              blurRadius: 16,
+              offset: const Offset(0, -4),
+            ),
+          ],
+        ),
+        child: SafeArea(
+          top: false,
+          minimum: EdgeInsets.zero,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _BrandProgressLine(progress: progress.clamp(0.0, 1.0)),
+              Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: 14.padding,
+                  vertical: 10.padding,
+                ),
+                child: Row(
+                  children: [
+                    _Artwork(track: track),
+                    12.row,
+                    if (audio.isPlaying) ...[
+                      const _EqualizerBars(),
+                      8.row,
+                    ],
+                    Expanded(child: _TitleArtist(track: track)),
+                    8.row,
+                    _SkipButton(
+                      icon: Icons.skip_previous,
+                      onTap: audio.previous,
+                    ),
+                    _PlayPauseButton(
+                      isPlaying: audio.isPlaying,
+                      onTap: audio.togglePlayPause,
+                    ),
+                    _SkipButton(
+                      icon: Icons.skip_next,
+                      onTap: audio.next,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
 
   void _openFullPlayer(BuildContext context) {
     HapticFeedback.lightImpact();
-    final loc = GoRouterState.of(context).uri.path;
-    if (loc == AppRouter.musicPlayer) return;
     context.pushNamed('music-player');
   }
 }
 
-class _ProgressLine extends StatelessWidget {
-  const _ProgressLine({required this.progress});
+class _BrandProgressLine extends StatelessWidget {
+  const _BrandProgressLine({required this.progress});
   final double progress;
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
       height: 2.border,
-      child: LinearProgressIndicator(
-        value: progress,
-        backgroundColor: AppColors.text.withValues(alpha: 0.2),
-        valueColor: AlwaysStoppedAnimation<Color>(AppColors.text),
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: ColoredBox(color: Colors.white.withValues(alpha: 0.10)),
+          ),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: FractionallySizedBox(
+              widthFactor: progress,
+              child: const DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      AppColors.buttonColor,
+                      AppColors.miniPlayerProgressEnd,
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
 class _Artwork extends StatelessWidget {
-  const _Artwork({required this.track, required this.onTap});
+  const _Artwork({required this.track});
   final Track track;
-  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(6.radius),
-        child: SizedBox(
-          width: 41.maxWidth,
-          height: 41.maxHeight,
-          child: _ArtworkImage(url: track.artworkUrl),
+    return Container(
+      width: 44.maxWidth,
+      height: 44.maxHeight,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8.radius),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.10),
+          width: 1,
         ),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(8.radius),
+        child: _ArtworkImage(url: track.artworkUrl),
       ),
     );
   }
@@ -162,14 +168,11 @@ class _ArtworkImage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final raw = (url ?? '').trim();
-    if (raw.isEmpty) {
-      return _fallback();
-    }
+    if (raw.isEmpty) return _fallback();
     final lower = raw.toLowerCase();
-    final isRemote =
-        lower.startsWith('http://') ||
-            lower.startsWith('https://') ||
-            raw.startsWith('/');
+    final isRemote = lower.startsWith('http://') ||
+        lower.startsWith('https://') ||
+        raw.startsWith('/');
     if (isRemote) {
       return Image.network(
         ApiConstants.resolvePublicUrl(raw),
@@ -190,28 +193,276 @@ class _ArtworkImage extends StatelessWidget {
       );
 }
 
-class _MiniControl extends StatelessWidget {
-  const _MiniControl({
-    required this.icon,
-    required this.size,
-    required this.onTap,
-  });
+class _TitleArtist extends StatelessWidget {
+  const _TitleArtist({required this.track});
+  final Track track;
 
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _MarqueeText(
+          text: track.title,
+          style: AppTextStyles.bodyMedium.copyWith(
+            fontSize: 14.font,
+            fontWeight: FontWeight.w600,
+            color: AppColors.text,
+          ),
+        ),
+        2.column,
+        Text(
+          track.artist,
+          style: AppTextStyles.bodySmall.copyWith(
+            fontSize: 12.font,
+            fontWeight: FontWeight.w400,
+            color: AppColors.text.withValues(alpha: 0.60),
+          ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ],
+    );
+  }
+}
+
+class _MarqueeText extends StatefulWidget {
+  const _MarqueeText({required this.text, required this.style});
+  final String text;
+  final TextStyle style;
+
+  @override
+  State<_MarqueeText> createState() => _MarqueeTextState();
+}
+
+class _MarqueeTextState extends State<_MarqueeText>
+    with SingleTickerProviderStateMixin {
+  static const double _pixelsPerSecond = 30;
+  static const double _gap = 32;
+
+  late final AnimationController _ctrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(vsync: this);
+  }
+
+  @override
+  void didUpdateWidget(covariant _MarqueeText oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.text != widget.text) {
+      _ctrl.stop();
+      _ctrl.value = 0;
+    }
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  void _ensureRunning(double textWidth, double maxWidth) {
+    final shouldScroll = textWidth > maxWidth;
+    if (!shouldScroll) {
+      if (_ctrl.isAnimating) {
+        _ctrl.stop();
+        _ctrl.value = 0;
+      }
+      return;
+    }
+    if (_ctrl.isAnimating) return;
+    final distance = textWidth + _gap;
+    final ms = ((distance / _pixelsPerSecond) * 1000).round();
+    _ctrl.duration = Duration(milliseconds: ms);
+    _ctrl.repeat();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final tp = TextPainter(
+          text: TextSpan(text: widget.text, style: widget.style),
+          maxLines: 1,
+          textDirection: TextDirection.ltr,
+        )..layout();
+        final textWidth = tp.width;
+        final maxWidth = constraints.maxWidth;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _ensureRunning(textWidth, maxWidth);
+        });
+        if (textWidth <= maxWidth) {
+          return Text(
+            widget.text,
+            style: widget.style,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          );
+        }
+        final loopWidth = textWidth + _gap;
+        return ClipRect(
+          child: SizedBox(
+            height: tp.height,
+            child: AnimatedBuilder(
+              animation: _ctrl,
+              builder: (_, _) {
+                final dx = -_ctrl.value * loopWidth;
+                return Transform.translate(
+                  offset: Offset(dx, 0),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(widget.text, style: widget.style, maxLines: 1),
+                      SizedBox(width: _gap),
+                      Text(widget.text, style: widget.style, maxLines: 1),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _EqualizerBars extends StatefulWidget {
+  const _EqualizerBars();
+
+  @override
+  State<_EqualizerBars> createState() => _EqualizerBarsState();
+}
+
+class _EqualizerBarsState extends State<_EqualizerBars>
+    with TickerProviderStateMixin {
+  static const _durationsMs = [600, 720, 840];
+  late final List<AnimationController> _controllers;
+
+  @override
+  void initState() {
+    super.initState();
+    _controllers = _durationsMs
+        .map((ms) => AnimationController(
+              vsync: this,
+              duration: Duration(milliseconds: ms),
+            )..repeat(reverse: true))
+        .toList();
+  }
+
+  @override
+  void dispose() {
+    for (final c in _controllers) {
+      c.dispose();
+    }
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: List.generate(3, (i) {
+        return Padding(
+          padding: EdgeInsets.symmetric(horizontal: 1.padding),
+          child: AnimatedBuilder(
+            animation: _controllers[i],
+            builder: (_, _) {
+              final t = Curves.easeInOut.transform(_controllers[i].value);
+              final h = 6.0 + t * 8.0;
+              return Container(
+                width: 2.5.maxWidth,
+                height: h.maxHeight,
+                decoration: BoxDecoration(
+                  color: AppColors.buttonColor,
+                  borderRadius: BorderRadius.circular(1.radius),
+                ),
+              );
+            },
+          ),
+        );
+      }),
+    );
+  }
+}
+
+class _SkipButton extends StatelessWidget {
+  const _SkipButton({required this.icon, required this.onTap});
   final IconData icon;
-  final double size;
   final Future<void> Function() onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 4.padding),
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: () {
-          HapticFeedback.lightImpact();
-          onTap();
-        },
-        child: Icon(icon, color: AppColors.text, size: size),
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () {
+        HapticFeedback.lightImpact();
+        onTap();
+      },
+      child: SizedBox(
+        width: 44.maxWidth,
+        height: 44.maxHeight,
+        child: Icon(
+          icon,
+          size: 24.icon,
+          color: AppColors.text.withValues(alpha: 0.80),
+        ),
+      ),
+    );
+  }
+}
+
+class _PlayPauseButton extends StatefulWidget {
+  const _PlayPauseButton({required this.isPlaying, required this.onTap});
+  final bool isPlaying;
+  final Future<void> Function() onTap;
+
+  @override
+  State<_PlayPauseButton> createState() => _PlayPauseButtonState();
+}
+
+class _PlayPauseButtonState extends State<_PlayPauseButton> {
+  double _scale = 1.0;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTapDown: (_) => setState(() => _scale = 0.92),
+      onTapUp: (_) => setState(() => _scale = 1.0),
+      onTapCancel: () => setState(() => _scale = 1.0),
+      onTap: () {
+        HapticFeedback.lightImpact();
+        widget.onTap();
+      },
+      child: AnimatedScale(
+        scale: _scale,
+        duration: const Duration(milliseconds: 80),
+        curve: Curves.easeOut,
+        child: Container(
+          width: 40.maxWidth,
+          height: 40.maxHeight,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: AppColors.buttonColor,
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.buttonColor.withValues(alpha: 0.35),
+                blurRadius: 12,
+              ),
+            ],
+          ),
+          child: Icon(
+            widget.isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
+            color: AppColors.text,
+            size: 24.icon,
+          ),
+        ),
       ),
     );
   }

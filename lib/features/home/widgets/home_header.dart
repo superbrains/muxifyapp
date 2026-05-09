@@ -5,8 +5,11 @@ import 'package:muxify/core/constants/app_colors.dart';
 import 'package:muxify/core/constants/app_sizes.dart';
 import 'package:muxify/core/constants/app_text_styles.dart';
 import 'package:muxify/core/router/app_router.dart';
+import 'package:muxify/features/auth/providers/auth_provider.dart';
 import 'package:muxify/features/home/models/tab_option.dart';
 import 'package:muxify/features/home/widgets/tab_option_button.dart';
+import 'package:muxify/shared/widgets/user_avatar.dart';
+import 'package:provider/provider.dart';
 
 class HomeHeader extends StatelessWidget {
   final String selectedTab;
@@ -142,6 +145,22 @@ class HomeHeader extends StatelessWidget {
         ),
         16.row,
         GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () {
+            HapticFeedback.lightImpact();
+            context.push(AppRouter.myMusic);
+          },
+          child: Tooltip(
+            message: 'My Music',
+            child: Icon(
+              Icons.library_music_rounded,
+              size: 26.icon,
+              color: AppColors.text,
+            ),
+          ),
+        ),
+        16.row,
+        GestureDetector(
           onTap: () {
             HapticFeedback.lightImpact();
             final isPhoneLayout = MediaQuery.sizeOf(context).width < 650;
@@ -151,12 +170,10 @@ class HomeHeader extends StatelessWidget {
               context.push(AppRouter.fanProfile);
             }
           },
-          child: ClipOval(
-            child: Image.asset(
-              'assets/pngs/profile_placeholder.png',
-              height: 38.icon,
-              width: 38.icon,
-              fit: BoxFit.cover,
+          child: Consumer<AuthProvider>(
+            builder: (_, auth, __) => UserAvatar(
+              avatar: auth.currentUser?.avatar,
+              size: 38.icon,
             ),
           ),
         ),

@@ -10,6 +10,7 @@ import 'package:provider/provider.dart';
 import 'package:muxify/core/constants/app_colors.dart';
 import 'package:muxify/core/constants/app_sizes.dart';
 import 'package:muxify/core/constants/app_text_styles.dart';
+import 'package:muxify/core/providers/unlocked_content_provider.dart';
 import 'package:muxify/core/utils/app_toast.dart';
 import 'package:muxify/features/artist_profile/models/new_release_item.dart';
 import 'package:muxify/features/artist_profile/providers/artist_profile_provider.dart';
@@ -754,6 +755,11 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen> {
           await provider.unlockTrack(release.id);
         }
         provider.markTrackUnlocked(release.id);
+        if (mounted) {
+          await context
+              .read<UnlockedContentProvider>()
+              .markUnlocked(release.id);
+        }
         await AppToast.showInfo('Unlocked!');
       } catch (e) {
         await AppToast.showError(e.toString());

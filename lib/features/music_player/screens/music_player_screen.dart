@@ -2,15 +2,20 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:muxify/core/constants/api_constants.dart';
 import 'package:muxify/core/constants/app_colors.dart';
 import 'package:muxify/core/constants/app_sizes.dart';
+import 'package:muxify/core/providers/unlocked_content_provider.dart';
+import 'package:muxify/core/utils/app_toast.dart';
 import 'package:muxify/core/utils/logger.dart';
 import 'package:muxify/features/artist_profile/providers/artist_profile_provider.dart';
 import 'package:muxify/features/audio_playback/models/track.dart';
 import 'package:muxify/features/audio_playback/providers/audio_provider.dart';
-import 'package:muxify/shared/widgets/gift_box_modal.dart';
-import 'package:muxify/features/music_player/widgets/lyrics_modal.dart';
+import 'package:muxify/features/music_player/models/track_share_info.dart';
+import 'package:muxify/features/music_player/providers/music_player_interaction_provider.dart';
+import 'package:muxify/features/music_player/widgets/add_to_playlist_sheet.dart';
+import 'package:muxify/features/music_player/widgets/lyrics_overlay.dart';
 import 'package:muxify/features/music_player/widgets/music_player_top_bar.dart';
 import 'package:muxify/features/music_player/widgets/lyrics_button_widget.dart';
 import 'package:muxify/features/music_player/widgets/locked_song_image_list.dart';
@@ -19,6 +24,8 @@ import 'package:muxify/features/music_player/widgets/song_info_overlay.dart';
 import 'package:muxify/features/music_player/widgets/music_progress_bar.dart';
 import 'package:muxify/features/music_player/widgets/playback_controls.dart';
 import 'package:muxify/features/music_player/widgets/send_gifts_button.dart';
+import 'package:muxify/features/music_player/widgets/unlock_confirm_modal.dart';
+import 'package:muxify/shared/widgets/gift_box_modal.dart';
 import 'package:muxify/features/statistics/models/gift_item.dart';
 
 class MusicPlayerScreen extends StatefulWidget {
@@ -30,6 +37,7 @@ class MusicPlayerScreen extends StatefulWidget {
   final String? backgroundImageUrl;
   final String? audioUrl;
   final bool? isUnlocked;
+  final int? unlockCostCoins;
 
   const MusicPlayerScreen({
     super.key,
@@ -41,6 +49,7 @@ class MusicPlayerScreen extends StatefulWidget {
     this.backgroundImageUrl,
     this.audioUrl,
     this.isUnlocked,
+    this.unlockCostCoins,
   });
 
   @override
@@ -48,9 +57,7 @@ class MusicPlayerScreen extends StatefulWidget {
 }
 
 class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
-  bool _isLiked = false;
-  bool _isAdded = false;
-  bool _isUnlocked = true;
+  bool _showLyrics = false;
 
   // Resolved artist avatar (image fallback chain step 2). Populated lazily
   // when the track has no cover but we have an artistId.
@@ -216,11 +223,10 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
   @override
   void initState() {
     super.initState();
-    // TEMP: lock feature disabled for now.
-    _isUnlocked = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       _hydrateAudio();
+      _hydrateLikeStatus();
     });
     _resolveBackgroundFallbacks();
   }
@@ -270,11 +276,27 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
     await audio.playSingle(track);
   }
 
+  /// Pulls the heart-on/off state for the current track from the backend so
+  /// the heart icon survives leaving and re-entering the player.
+  Future<void> _hydrateLikeStatus() async {
+    final trackId = (widget.trackId ?? '').trim();
+    if (trackId.isEmpty) return;
+    await context
+        .read<MusicPlayerInteractionProvider>()
+        .hydrateLikeStatus(trackId);
+  }
+
   @override
   Widget build(BuildContext context) {
     final audio = context.watch<AudioProvider>();
+    final interaction = context.watch<MusicPlayerInteractionProvider>();
+    final unlockedContent = context.watch<UnlockedContentProvider>();
     final position = audio.position.inMilliseconds / 1000;
     final duration = audio.duration.inMilliseconds / 1000;
+
+    final trackId = (widget.trackId ?? '').trim();
+    final isUnlocked = _resolveUnlocked(unlockedContent);
+    final isLiked = trackId.isEmpty ? false : interaction.isLiked(trackId);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -287,7 +309,7 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
           Positioned.fill(child: _buildPlayerBackground()),
 
           // Dark overlay for unlocked songs only
-          if (_isUnlocked)
+          if (isUnlocked)
             Positioned.fill(
               child: Container(
                 decoration: BoxDecoration(
@@ -306,7 +328,7 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
             ),
 
           // Blur effect for locked songs only
-          if (!_isUnlocked)
+          if (!isUnlocked)
             Positioned.fill(
               child: BackdropFilter(
                 filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
@@ -327,6 +349,17 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
               ),
             ),
 
+          // Lyrics overlay — fades in over the artwork while leaving the
+          // playback controls (rendered after this in the Stack) tappable.
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 250),
+            switchInCurve: Curves.easeOut,
+            switchOutCurve: Curves.easeIn,
+            child: _showLyrics
+                ? const LyricsOverlay(key: ValueKey('lyrics-overlay'))
+                : const SizedBox.shrink(key: ValueKey('lyrics-overlay-hidden')),
+          ),
+
           // Content
           SafeArea(
             bottom: true,
@@ -336,20 +369,19 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
                 MusicPlayerTopBar(
                   artistName: widget.artistName ?? 'Omah Lay',
                   albumName: widget.albumName ?? 'Latest Release',
-                  isUnlocked: _isUnlocked,
-                  // TEMP: lock feature disabled for now.
-                  onToggleUnlock: () {},
+                  isUnlocked: isUnlocked,
+                  onToggleUnlock: () => _handleUnlockTap(isUnlocked),
                 ),
 
                 // Lyrics Button
                 LyricsButtonWidget(
                   icon: Icons.music_note_outlined,
-                  text: 'Lyrics',
-                  onTap: _showLyricsModal,
+                  text: _showLyrics ? 'Hide Lyrics' : 'Lyrics',
+                  onTap: _toggleLyrics,
                 ),
 
                 // Horizontal image list for locked songs
-                if (!_isUnlocked) ...[
+                if (!isUnlocked) ...[
                   20.column,
                   LockedSongImageList(images: _lockedSongImages),
                   20.column,
@@ -366,26 +398,15 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
                         SongInfoOverlay(
                           songTitle: widget.title ?? 'Moving',
                           artistName: widget.artistName ?? 'Omah Lay',
-                          isUnlocked: _isUnlocked,
-                          isLiked: _isLiked,
-                          isAdded: _isAdded,
-                          onToggleLike: () {
-                            setState(() {
-                              _isLiked = !_isLiked;
-                            });
-                          },
-                          onToggleAdd: () {
-                            setState(() {
-                              _isAdded = !_isAdded;
-                            });
-                          },
-                          onShare: () {
-                            HapticFeedback.lightImpact();
-                          },
-                          onUnlockSong: () {
-                            // TEMP: lock feature disabled for now.
-                          },
-                          onShowLyrics: _showLyricsModal,
+                          isUnlocked: isUnlocked,
+                          isLiked: isLiked,
+                          isAdded: false,
+                          onToggleLike: () => _handleToggleLike(trackId),
+                          onToggleAdd: () =>
+                              _handleAddToPlaylist(trackId, interaction),
+                          onShare: () => _handleShare(trackId, interaction),
+                          onUnlockSong: () => _handleUnlockTap(isUnlocked),
+                          onShowLyrics: _toggleLyrics,
                         ),
 
                         30.column,
@@ -440,29 +461,149 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
     );
   }
 
-  void _showLyricsModal() {
-    showDialog(
-      context: context,
-      barrierDismissible: true,
-      builder: (BuildContext context) {
-        return const LyricsModal();
+  /// Resolves the track's unlock state from the union of:
+  /// 1. the route argument (`widget.isUnlocked`)
+  /// 2. the persisted [UnlockedContentProvider] for this trackId
+  /// Defaults to true (free track) when neither hint is present.
+  bool _resolveUnlocked(UnlockedContentProvider provider) {
+    if (widget.isUnlocked == true) return true;
+    final trackId = (widget.trackId ?? '').trim();
+    if (trackId.isNotEmpty && provider.isUnlocked(trackId)) return true;
+    if (widget.isUnlocked == false) return false;
+    return true; // No lock signal — treat as free.
+  }
+
+  void _toggleLyrics() {
+    setState(() => _showLyrics = !_showLyrics);
+  }
+
+  Future<void> _handleToggleLike(String trackId) async {
+    HapticFeedback.lightImpact();
+    if (trackId.isEmpty) return;
+    final ok = await context
+        .read<MusicPlayerInteractionProvider>()
+        .toggleLike(trackId);
+    if (!ok && mounted) {
+      await AppToast.showError('Could not update favourite. Try again.');
+    }
+  }
+
+  Future<void> _handleAddToPlaylist(
+    String trackId,
+    MusicPlayerInteractionProvider interaction,
+  ) async {
+    HapticFeedback.lightImpact();
+    if (trackId.isEmpty) {
+      await AppToast.showError('Track is not ready yet.');
+      return;
+    }
+    await AddToPlaylistSheet.show(
+      context,
+      trackId: trackId,
+      trackTitle: widget.title ?? 'this song',
+      interaction: interaction,
+    );
+  }
+
+  Future<void> _handleShare(
+    String trackId,
+    MusicPlayerInteractionProvider interaction,
+  ) async {
+    HapticFeedback.lightImpact();
+    if (trackId.isEmpty) {
+      await AppToast.showError('Track is not ready yet.');
+      return;
+    }
+    try {
+      final TrackShareInfo info = await interaction.shareTrack(trackId);
+      if (!mounted) return;
+      // Pick the share-source rect from a sensible iPad anchor; on phones
+      // this is ignored.
+      final box = context.findRenderObject() as RenderBox?;
+      await Share.share(
+        info.shareableText,
+        subject: info.title.isEmpty ? null : info.title,
+        sharePositionOrigin: box == null
+            ? null
+            : box.localToGlobal(Offset.zero) & box.size,
+      );
+    } catch (e) {
+      if (!mounted) return;
+      await AppToast.showError('Could not share track.');
+      Logger.warning('Share track failed: $e');
+    }
+  }
+
+  Future<void> _handleUnlockTap(bool isCurrentlyUnlocked) async {
+    HapticFeedback.lightImpact();
+    if (isCurrentlyUnlocked) {
+      // Visual no-op — the icon shows the unlocked state for free / already-
+      // unlocked tracks; tapping it again does nothing meaningful.
+      return;
+    }
+    final trackId = (widget.trackId ?? '').trim();
+    if (trackId.isEmpty) {
+      await AppToast.showError('Track is not ready yet.');
+      return;
+    }
+    final interaction = context.read<MusicPlayerInteractionProvider>();
+    final unlockedContent = context.read<UnlockedContentProvider>();
+    await UnlockConfirmModal.show(
+      context,
+      trackId: trackId,
+      trackTitle: widget.title ?? 'this song',
+      artistName: widget.artistName ?? '',
+      unlockCostCoins: widget.unlockCostCoins ?? 100,
+      interaction: interaction,
+      onUnlocked: () async {
+        await unlockedContent.markUnlocked(trackId);
       },
     );
   }
 
   void _showGiftBoxModal() {
+    final provider = context.read<ArtistProfileProvider>();
+    final artistId = (widget.artistId ?? '').trim();
     showDialog(
       context: context,
       barrierDismissible: true,
-      builder: (BuildContext context) {
+      builder: (BuildContext dialogContext) {
         return GiftBoxModal(
           headerText: 'GIFTBOX',
           subHeaderText: 'Tap to send gift',
           giftItems: _giftItems,
           onClose: () {
-            Navigator.of(context).pop();
+            Navigator.of(dialogContext).pop();
           },
           onGiftSelected: (GiftItem gift) {},
+          // Demo mode: short-circuit the coin/wallet check and call the real
+          // gift API as soon as a gift is selected. Mirrors the wiring used
+          // on the artist profile screen.
+          onSendGift: artistId.isEmpty
+              ? null
+              : (GiftItem gift) async {
+                  Navigator.of(dialogContext).pop();
+                  if (gift.id.isEmpty) {
+                    await AppToast.showError('Invalid gift selection.');
+                    return;
+                  }
+                  try {
+                    final response = await provider.sendGift(
+                      artistId: artistId,
+                      giftType: gift.id,
+                      trackId: widget.trackId,
+                    );
+                    if (response != null && response.success) {
+                      await AppToast.showInfo(
+                        response.message?.isNotEmpty == true
+                            ? response.message!
+                            : 'Gift sent!',
+                      );
+                    }
+                  } catch (e) {
+                    await AppToast.showError(e.toString());
+                  }
+                },
         );
       },
     );

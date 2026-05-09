@@ -318,6 +318,43 @@ class ApiRequester {
     );
   }
 
+  /// DELETE; success when status is one of [successStatus] or [alsoAcceptStatuses].
+  /// Use this for endpoints that respond 204 No Content.
+  Future<void> deleteNoContent(
+    String path, {
+    int successStatus = ApiConstants.statusNoContent,
+    Iterable<int>? alsoAcceptStatuses,
+    bool authenticate = false,
+  }) async {
+    final authHeaders = await _authHeadersIfNeeded(authenticate);
+    http.Response response = await _guardNetwork(
+      () => _client.delete(path, headers: authHeaders.isEmpty ? null : authHeaders),
+    );
+
+    if (authenticate &&
+        response.statusCode == ApiConstants.statusUnauthorized &&
+        await _tryRefreshAccessToken()) {
+      final h2 = await _authHeadersIfNeeded(true);
+      response = await _guardNetwork(
+        () => _client.delete(path, headers: h2.isEmpty ? null : h2),
+      );
+    }
+
+    final acceptable = <int>{successStatus, ...?alsoAcceptStatuses};
+    if (acceptable.contains(response.statusCode)) {
+      return;
+    }
+
+    throw ApiRequestException(
+      _messageFromErrorBody(
+        response.body,
+        response.statusCode,
+        authenticatedCaller: authenticate,
+      ),
+      statusCode: response.statusCode,
+    );
+  }
+
   /// DELETE; parse [successStatus] response as JSON object into [T].
   Future<T> deleteJson<T>(
     String path,

@@ -27,6 +27,18 @@ import 'package:muxify/features/artist_profile/screens/album_details_screen.dart
 import 'package:muxify/features/music_player/screens/music_player_screen.dart';
 import 'package:muxify/features/music_player/screens/get_coins_screen.dart';
 import 'package:muxify/features/fan_profile/screens/fan_profile_screen.dart';
+import 'package:muxify/features/profile_menu/screens/about_muxify_screen.dart';
+import 'package:muxify/features/profile_menu/screens/account_verification_screen.dart';
+import 'package:muxify/features/profile_menu/screens/customer_services_screen.dart';
+import 'package:muxify/features/profile_menu/screens/delete_account_screen.dart';
+import 'package:muxify/features/profile_menu/screens/faq_screen.dart';
+import 'package:muxify/features/profile_menu/screens/legals_screen.dart';
+import 'package:muxify/features/profile_menu/screens/pin_settings_screen.dart';
+import 'package:muxify/features/profile_menu/screens/privacy_policy_screen.dart';
+import 'package:muxify/features/profile_menu/screens/wallet_payment_screen.dart';
+import 'package:muxify/features/my_music/screens/my_music_screen.dart';
+import 'package:muxify/features/my_music/screens/playlist_detail_screen.dart';
+import 'package:muxify/features/my_music/screens/playlist_track_picker_screen.dart';
 
 class AppRouter {
   AppRouter._();
@@ -58,6 +70,28 @@ class AppRouter {
   static const String musicPlayer = '/music-player';
   static const String getCoins = '/get-coins';
   static const String fanProfile = '/fan-profile';
+
+  // My Music hub (Library + local playlists).
+  static const String myMusic = '/my-music';
+  static const String playlistDetail = '/my-music/playlists/:id';
+  static const String playlistAddTracks = '/my-music/playlists/:id/add';
+
+  static String playlistDetailPath(String playlistId) =>
+      '/my-music/playlists/${Uri.encodeComponent(playlistId.trim())}';
+
+  static String playlistAddTracksPath(String playlistId) =>
+      '/my-music/playlists/${Uri.encodeComponent(playlistId.trim())}/add';
+
+  // Fan profile menu sub-pages.
+  static const String accountVerification = '/account-verification';
+  static const String walletPayment = '/wallet-payment';
+  static const String pinSettings = '/pin-settings';
+  static const String aboutMuxify = '/about';
+  static const String privacyPolicy = '/privacy';
+  static const String legals = '/legals';
+  static const String customerServices = '/support';
+  static const String faq = '/faq';
+  static const String deleteAccount = '/delete-account';
 
   static final GoRouter router = GoRouter(
     initialLocation: splash,
@@ -332,6 +366,102 @@ class AppRouter {
         name: 'fan-profile',
         pageBuilder: (context, state) =>
             MaterialPage(key: state.pageKey, child: const FanProfileScreen()),
+      ),
+      GoRoute(
+        path: myMusic,
+        name: 'my-music',
+        pageBuilder: (context, state) =>
+            MaterialPage(key: state.pageKey, child: const MyMusicScreen()),
+      ),
+      GoRoute(
+        path: playlistDetail,
+        name: 'playlist-detail',
+        pageBuilder: (context, state) {
+          final id = state.pathParameters['id'] ?? '';
+          return MaterialPage(
+            key: state.pageKey,
+            child: PlaylistDetailScreen(playlistId: id),
+          );
+        },
+      ),
+      GoRoute(
+        path: playlistAddTracks,
+        name: 'playlist-add-tracks',
+        pageBuilder: (context, state) {
+          final id = state.pathParameters['id'] ?? '';
+          return MaterialPage(
+            key: state.pageKey,
+            child: PlaylistTrackPickerScreen(playlistId: id),
+          );
+        },
+      ),
+      GoRoute(
+        path: accountVerification,
+        name: 'account-verification',
+        pageBuilder: (context, state) => MaterialPage(
+          key: state.pageKey,
+          child: const AccountVerificationScreen(),
+        ),
+      ),
+      GoRoute(
+        path: walletPayment,
+        name: 'wallet-payment',
+        pageBuilder: (context, state) => MaterialPage(
+          key: state.pageKey,
+          child: const WalletPaymentScreen(),
+        ),
+      ),
+      GoRoute(
+        path: pinSettings,
+        name: 'pin-settings',
+        pageBuilder: (context, state) => MaterialPage(
+          key: state.pageKey,
+          child: const PinSettingsScreen(),
+        ),
+      ),
+      GoRoute(
+        path: aboutMuxify,
+        name: 'about-muxify',
+        pageBuilder: (context, state) => MaterialPage(
+          key: state.pageKey,
+          child: const AboutMuxifyScreen(),
+        ),
+      ),
+      GoRoute(
+        path: privacyPolicy,
+        name: 'privacy-policy',
+        pageBuilder: (context, state) => MaterialPage(
+          key: state.pageKey,
+          child: const PrivacyPolicyScreen(),
+        ),
+      ),
+      GoRoute(
+        path: legals,
+        name: 'legals',
+        pageBuilder: (context, state) =>
+            MaterialPage(key: state.pageKey, child: const LegalsScreen()),
+      ),
+      GoRoute(
+        path: customerServices,
+        name: 'customer-services',
+        pageBuilder: (context, state) => MaterialPage(
+          key: state.pageKey,
+          child: const CustomerServicesScreen(),
+        ),
+      ),
+      GoRoute(
+        path: faq,
+        name: 'faq',
+        pageBuilder: (context, state) =>
+            MaterialPage(key: state.pageKey, child: const FaqScreen()),
+      ),
+      GoRoute(
+        path: deleteAccount,
+        name: 'delete-account',
+        pageBuilder: (context, state) => MaterialPage(
+          key: state.pageKey,
+          child: const DeleteAccountScreen(),
+        ),
       ),
     ],
     errorBuilder: (context, state) =>

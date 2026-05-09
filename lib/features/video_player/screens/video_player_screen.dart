@@ -7,8 +7,10 @@ import 'package:muxify/core/constants/app_colors.dart';
 import 'package:muxify/core/constants/app_sizes.dart';
 import 'package:muxify/core/constants/app_text_styles.dart';
 import 'package:muxify/core/network/api_requester.dart';
+import 'package:muxify/core/providers/unlocked_content_provider.dart';
 import 'package:muxify/core/router/app_router.dart';
 import 'package:muxify/core/utils/logger.dart';
+import 'package:provider/provider.dart';
 import 'package:muxify/features/home/widgets/video_cover_image.dart';
 import 'package:muxify/features/statistics/models/gift_item.dart';
 import 'package:muxify/shared/widgets/circular_icon_button.dart';
@@ -98,6 +100,15 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   void initState() {
     super.initState();
     _isUnlocked = widget.isUnlocked;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      // Persisted unlock from a previous session/screen overrides the route param.
+      final unlocked = context.read<UnlockedContentProvider>();
+      if (!_isUnlocked && unlocked.isUnlocked(widget.videoId)) {
+        setState(() => _isUnlocked = true);
+        _initializePlayback();
+      }
+    });
     if (_isUnlocked) _initializePlayback();
   }
 
@@ -333,7 +344,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                           ),
                           onTap: () {
                             HapticFeedback.lightImpact();
-                            _showUnlockModal();
+                            _handleUnlockTap();
                           },
                         ),
                         const Spacer(),
@@ -448,6 +459,20 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
     );
   }
 
+  /// Routes the user past the unlock modal if the video is already unlocked
+  /// (persisted from a previous unlock). Otherwise opens the unlock flow.
+  void _handleUnlockTap() {
+    final unlocked = context.read<UnlockedContentProvider>();
+    if (unlocked.isUnlocked(widget.videoId)) {
+      if (!_isUnlocked) {
+        setState(() => _isUnlocked = true);
+        _initializePlayback();
+      }
+      return;
+    }
+    _showUnlockModal();
+  }
+
   void _showUnlockModal() {
     showDialog(
       context: context,
@@ -549,6 +574,10 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
         successStatus: ApiConstants.statusOk,
         authenticate: true,
       );
+      if (!mounted) return;
+      await context
+          .read<UnlockedContentProvider>()
+          .markUnlocked(widget.videoId);
     } catch (e, st) {
       // Demo mode silently allows unlock; in production this should bubble up.
       Logger.error('VideoPlayerScreen.unlockOnBackend failed', e, st);
@@ -597,7 +626,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
         text: 'Unlock',
         iconPath: 'assets/pngs/unlock_icon.png',
         onTap: () {
-          _showUnlockModal();
+          _handleUnlockTap();
         },
       ),
       MenuItemModel(

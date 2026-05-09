@@ -19,7 +19,12 @@ enum AuthResetPasswordState { idle, loading }
 
 class AuthProvider extends ChangeNotifier {
   AuthProvider({AuthRepository? repository})
-    : _repository = repository ?? AuthRepository();
+    : _repository = repository ?? AuthRepository() {
+    // Hydrate from local storage at construction so screens watching this
+    // provider can render the avatar/name on first frame after a hot restart
+    // or splash → home navigation.
+    loadCurrentUser();
+  }
 
   final AuthRepository _repository;
 
@@ -28,6 +33,13 @@ class AuthProvider extends ChangeNotifier {
   AuthVerifyEmailState _verifyEmailState = AuthVerifyEmailState.idle;
   AuthForgotPasswordState _forgotPasswordState = AuthForgotPasswordState.idle;
   AuthResetPasswordState _resetPasswordState = AuthResetPasswordState.idle;
+
+  AuthUserDto? _currentUser;
+
+  /// The signed-in user as last persisted to [LocalStorageService.getAuthUserJson].
+  /// Updated reactively by [loadCurrentUser], [updateStoredAvatarUrl], and the
+  /// auth-success paths (login, register, email verify).
+  AuthUserDto? get currentUser => _currentUser;
 
   AuthLoginState get loginState => _loginState;
 
@@ -247,12 +259,31 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  /// Hydrate [currentUser] from local storage so widgets watching [AuthProvider]
+  /// can display avatar/name without reading SharedPreferences themselves.
+  Future<void> loadCurrentUser() async {
+    final raw = await LocalStorageService.getAuthUserJson();
+    final user = AuthUserDto.tryParseStored(raw);
+    if (_currentUser == user) return;
+    _currentUser = user;
+    notifyListeners();
+  }
+
+  /// Drop the in-memory user (e.g. on sign-out). Storage is cleared elsewhere.
+  void clearCurrentUser() {
+    if (_currentUser == null) return;
+    _currentUser = null;
+    notifyListeners();
+  }
+
   Future<void> updateStoredAvatarUrl(String resolvedUrl) async {
     final raw = await LocalStorageService.getAuthUserJson();
     final user = AuthUserDto.tryParseStored(raw);
     if (user == null) return;
     final updated = user.copyWith(avatar: resolvedUrl);
     await LocalStorageService.setAuthUserJson(jsonEncode(updated.toJson()));
+    _currentUser = updated;
+    notifyListeners();
   }
 
   Future<void> _persistEmailVerifiedUser() async {
@@ -261,6 +292,8 @@ class AuthProvider extends ChangeNotifier {
     if (user == null) return;
     final updated = user.copyWith(isVerified: true);
     await LocalStorageService.setAuthUserJson(jsonEncode(updated.toJson()));
+    _currentUser = updated;
+    notifyListeners();
   }
 
   /// Call when leaving login flow without completing sign-in so state is predictable.
@@ -290,6 +323,8 @@ class AuthProvider extends ChangeNotifier {
     await LocalStorageService.setAccessToken(result.token.trim());
     await LocalStorageService.setRefreshToken(result.refreshToken.trim());
     await LocalStorageService.setAuthUserJson(jsonEncode(result.user.toJson()));
+    _currentUser = result.user;
+    notifyListeners();
   }
 
   void resetVerifyEmailPresentationState() {

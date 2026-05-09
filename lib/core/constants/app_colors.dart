@@ -19,7 +19,7 @@ class AppColors {
   static const Color toggleSelected = Color(0xFFE5E5E5);
   static const Color toggleUnselected = Color(0xFF2A2A2A);
   static const Color toggleSelectedText = Color(0xFF000000);
-  static const Color nowPlayingBackground = Color(0xFF78D6E3);
+  static const Color miniPlayerProgressEnd = Color(0xFFFF6A5C);
   static const Color playlistGradientStart = Color(0xFF141414);
   static const Color unlockButtonDefault = Color(0xFF555555);
   static const Color shadowColor = Color(0xFF000000);

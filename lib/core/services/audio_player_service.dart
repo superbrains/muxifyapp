@@ -37,8 +37,9 @@ class AudioPlayerService {
   }
 
   Track? get currentTrack {
+    if (_queue.isEmpty) return null;
     final idx = _player.currentIndex;
-    if (idx == null || idx < 0 || idx >= _queue.length) return null;
+    if (idx == null || idx < 0 || idx >= _queue.length) return _queue.first;
     return _queue[idx];
   }
 

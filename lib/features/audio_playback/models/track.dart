@@ -11,6 +11,15 @@ class Track {
   final String? audioUrl;
   final bool isUnlocked;
 
+  /// Synchronized lyrics in LRC format (with `[mm:ss.xx]` timestamps), null
+  /// when unavailable. Populated only when this Track is built from a fully
+  /// hydrated detail response — list/queue items typically leave it null.
+  final String? lrcContent;
+
+  /// Origin of [lrcContent]: `"Artist"` or `"LrcLib"`. Used by the player UI
+  /// to decide whether to show a lyrics-credit footnote.
+  final String? lrcSource;
+
   const Track({
     required this.id,
     required this.title,
@@ -20,12 +29,16 @@ class Track {
     this.artworkUrl,
     this.audioUrl,
     this.isUnlocked = true,
+    this.lrcContent,
+    this.lrcSource,
   });
 
   Track copyWith({
     String? audioUrl,
     String? artworkUrl,
     bool? isUnlocked,
+    String? lrcContent,
+    String? lrcSource,
   }) {
     return Track(
       id: id,
@@ -36,6 +49,8 @@ class Track {
       artworkUrl: artworkUrl ?? this.artworkUrl,
       audioUrl: audioUrl ?? this.audioUrl,
       isUnlocked: isUnlocked ?? this.isUnlocked,
+      lrcContent: lrcContent ?? this.lrcContent,
+      lrcSource: lrcSource ?? this.lrcSource,
     );
   }
 

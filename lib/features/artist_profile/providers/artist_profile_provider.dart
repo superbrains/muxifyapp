@@ -76,6 +76,45 @@ class ArtistProfileProvider extends ChangeNotifier {
   bool _isPlaybackActionInFlight = false;
   bool get isPlaybackActionInFlight => _isPlaybackActionInFlight;
 
+  /// Set of track/video IDs the user has already unlocked, kept in sync from
+  /// [UnlockedContentProvider] via the proxy provider in `main.dart`.
+  /// Applied to every freshly loaded list so cards render "Play" instead of
+  /// "Unlock" without waiting for the backend to reflect the unlock.
+  Set<String> _persistedUnlockedIds = const <String>{};
+
+  /// Keeps the persisted-unlock set in sync and re-applies it across all
+  /// already-loaded lists. Called by the proxy provider whenever the
+  /// [UnlockedContentProvider] notifies a change.
+  void updatePersistedUnlocks(Set<String> ids) {
+    _persistedUnlockedIds = ids;
+    var changed = false;
+    _releases = _applyUnlocks(_releases, mutated: () => changed = true);
+    _tracks = _applyUnlocks(_tracks, mutated: () => changed = true);
+    _albums = _applyUnlocks(_albums, mutated: () => changed = true);
+    _videos = _applyUnlocks(_videos, mutated: () => changed = true);
+    if (changed) notifyListeners();
+  }
+
+  List<NewReleaseItem> _applyUnlocks(
+    List<NewReleaseItem> items, {
+    void Function()? mutated,
+  }) {
+    if (_persistedUnlockedIds.isEmpty || items.isEmpty) return items;
+    var anyChange = false;
+    final updated = <NewReleaseItem>[];
+    for (final item in items) {
+      if (!item.isUnlocked && _persistedUnlockedIds.contains(item.id)) {
+        anyChange = true;
+        updated.add(item.copyWith(isUnlocked: true, unlockCostCoins: 0));
+      } else {
+        updated.add(item);
+      }
+    }
+    if (!anyChange) return items;
+    mutated?.call();
+    return updated;
+  }
+
   Future<void> loadArtistProfile(
     String artistId, {
     bool forceRefresh = false,
@@ -114,11 +153,14 @@ class ArtistProfileProvider extends ChangeNotifier {
 
     try {
       final response = await _repository.getArtistNewReleases(artistId);
-      _releases = response.items
-          .map(
-            (item) => NewReleaseItem.fromArtistNewReleaseItem(item, artistName),
-          )
-          .toList();
+      _releases = _applyUnlocks(
+        response.items
+            .map(
+              (item) =>
+                  NewReleaseItem.fromArtistNewReleaseItem(item, artistName),
+            )
+            .toList(),
+      );
     } on ApiRequestException catch (e) {
       _releasesError = e.message;
     } catch (_) {
@@ -142,9 +184,11 @@ class ArtistProfileProvider extends ChangeNotifier {
 
     try {
       final response = await _repository.getArtistTracks(artistId);
-      _tracks = response.items
-          .map((item) => NewReleaseItem.fromArtistTrackItem(item, artistName))
-          .toList();
+      _tracks = _applyUnlocks(
+        response.items
+            .map((item) => NewReleaseItem.fromArtistTrackItem(item, artistName))
+            .toList(),
+      );
     } on ApiRequestException catch (e) {
       _tracksError = e.message;
     } catch (_) {
@@ -168,9 +212,11 @@ class ArtistProfileProvider extends ChangeNotifier {
 
     try {
       final response = await _repository.getArtistAlbums(artistId);
-      _albums = response.items
-          .map((item) => NewReleaseItem.fromArtistAlbumItem(item, artistName))
-          .toList();
+      _albums = _applyUnlocks(
+        response.items
+            .map((item) => NewReleaseItem.fromArtistAlbumItem(item, artistName))
+            .toList(),
+      );
     } on ApiRequestException catch (e) {
       _albumsError = e.message;
     } catch (_) {
@@ -194,9 +240,11 @@ class ArtistProfileProvider extends ChangeNotifier {
 
     try {
       final response = await _repository.getArtistVideos(artistId);
-      _videos = response.items
-          .map((item) => NewReleaseItem.fromArtistVideoItem(item, artistName))
-          .toList();
+      _videos = _applyUnlocks(
+        response.items
+            .map((item) => NewReleaseItem.fromArtistVideoItem(item, artistName))
+            .toList(),
+      );
     } on ApiRequestException catch (e) {
       _videosError = e.message;
     } catch (_) {
