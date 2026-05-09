@@ -6,6 +6,7 @@ class TrackItem {
   final String? artistId;
   final String? imageUrl;
   final String? duration;
+  final bool isUnlocked;
 
   TrackItem({
     required this.id,
@@ -14,6 +15,7 @@ class TrackItem {
     this.artistId,
     this.imageUrl,
     this.duration,
+    this.isUnlocked = true,
   });
 
   // Factory constructor for creating from JSON (backend data)
@@ -25,6 +27,7 @@ class TrackItem {
       artistId: json['artistId'] as String?,
       imageUrl: json['imageUrl'] as String?,
       duration: json['duration'] as String?,
+      isUnlocked: json['isUnlocked'] as bool? ?? true,
     );
   }
 }

@@ -137,6 +137,15 @@ class AudioPlayerService {
 
   Future<void> seek(Duration position) => _player.seek(position);
 
+  /// Jumps to the given queue index and restarts that track from the
+  /// beginning. No-op if the index is out of range or the queue is empty.
+  Future<void> seekToIndex(int index) async {
+    if (_queue.isEmpty) return;
+    if (index < 0 || index >= _queue.length) return;
+    await _player.seek(Duration.zero, index: index);
+    await _player.play();
+  }
+
   Future<void> setLoopMode(LoopMode mode) => _player.setLoopMode(mode);
 
   Future<void> setShuffle(bool enabled) async {

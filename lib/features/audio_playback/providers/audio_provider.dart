@@ -97,6 +97,7 @@ class AudioProvider extends ChangeNotifier {
   Future<void> next() => _service.next();
   Future<void> previous() => _service.previous();
   Future<void> seek(Duration position) => _service.seek(position);
+  Future<void> seekToIndex(int index) => _service.seekToIndex(index);
   Future<void> setShuffle(bool enabled) => _service.setShuffle(enabled);
 
   Future<void> toggleShuffle() => _service.setShuffle(!_isShuffled);
@@ -112,9 +113,6 @@ class AudioProvider extends ChangeNotifier {
 
   Future<void> clear() => _service.clear();
 
-  // Suppress lint for the held but otherwise unread index — it drives
-  // notifyListeners() so callers re-read currentTrack.
-  // ignore: unused_element
   int? get currentIndex => _currentIndex;
 
   @override

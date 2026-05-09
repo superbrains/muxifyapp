@@ -16,7 +16,7 @@ class SongInfoOverlay extends StatelessWidget {
   final VoidCallback onToggleAdd;
   final VoidCallback onShare;
   final VoidCallback onUnlockSong;
-  final VoidCallback onShowLyrics;
+  final VoidCallback onShowQueue;
 
   const SongInfoOverlay({
     super.key,
@@ -29,7 +29,7 @@ class SongInfoOverlay extends StatelessWidget {
     required this.onToggleAdd,
     required this.onShare,
     required this.onUnlockSong,
-    required this.onShowLyrics,
+    required this.onShowQueue,
   });
 
   @override
@@ -70,7 +70,7 @@ class SongInfoOverlay extends StatelessWidget {
             LyricsButtonWidget(
               icon: Icons.notes_rounded,
               text: 'List',
-              onTap: onShowLyrics,
+              onTap: onShowQueue,
             ),
           ],
         ),

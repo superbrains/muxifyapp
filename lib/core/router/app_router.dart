@@ -93,9 +93,15 @@ class AppRouter {
   static const String faq = '/faq';
   static const String deleteAccount = '/delete-account';
 
+  /// Live name of the topmost route. The mini-player listens to this so it
+  /// can hide itself while `/music-player` is on top, without depending on
+  /// each screen to flip a flag in initState/dispose.
+  static final ValueNotifier<String?> topRouteName = ValueNotifier<String?>(null);
+
   static final GoRouter router = GoRouter(
     initialLocation: splash,
     debugLogDiagnostics: true,
+    observers: [_MiniPlayerRouteObserver()],
     routes: [
       GoRoute(
         path: splash,
@@ -467,4 +473,28 @@ class AppRouter {
     errorBuilder: (context, state) =>
         Scaffold(body: Center(child: Text('Page not found: ${state.uri}'))),
   );
+}
+
+/// Tracks the topmost route via Navigator lifecycle callbacks. Push/pop/replace
+/// all fire here, so [AppRouter.topRouteName] always reflects what's on top.
+class _MiniPlayerRouteObserver extends NavigatorObserver {
+  @override
+  void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    AppRouter.topRouteName.value = route.settings.name;
+  }
+
+  @override
+  void didPop(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    AppRouter.topRouteName.value = previousRoute?.settings.name;
+  }
+
+  @override
+  void didReplace({Route<dynamic>? newRoute, Route<dynamic>? oldRoute}) {
+    AppRouter.topRouteName.value = newRoute?.settings.name;
+  }
+
+  @override
+  void didRemove(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    AppRouter.topRouteName.value = previousRoute?.settings.name;
+  }
 }

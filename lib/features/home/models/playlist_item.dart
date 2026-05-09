@@ -49,6 +49,7 @@ class PlaylistItem {
             artist: t.artistName,
             artistId: t.artistId,
             imageUrl: t.coverArtUrl,
+            isUnlocked: t.isUnlocked,
           ),
         )
         .toList();

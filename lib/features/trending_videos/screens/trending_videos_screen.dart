@@ -1,15 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:muxify/core/constants/app_colors.dart';
 import 'package:muxify/core/constants/app_sizes.dart';
-import 'package:muxify/features/home/models/video_item.dart';
-import 'package:go_router/go_router.dart';
+import 'package:muxify/core/constants/app_text_styles.dart';
 import 'package:muxify/core/router/app_router.dart';
+import 'package:muxify/features/home/models/category_tab.dart';
+import 'package:muxify/features/home/models/video_item.dart';
+import 'package:muxify/features/home/providers/home_provider.dart';
 import 'package:muxify/features/home/widgets/grid_video_card.dart';
 import 'package:muxify/shared/widgets/content_header.dart';
 import 'package:muxify/shared/widgets/gradient_header_with_tabs.dart';
-import 'package:muxify/shared/widgets/unlock_button.dart';
 import 'package:muxify/shared/widgets/unlock_all_songs_modal.dart';
-import 'package:muxify/features/home/models/category_tab.dart';
+import 'package:muxify/shared/widgets/unlock_button.dart';
+import 'package:provider/provider.dart';
+import 'package:shimmer/shimmer.dart';
 
 class TrendingVideosScreen extends StatefulWidget {
   const TrendingVideosScreen({super.key});
@@ -34,57 +38,14 @@ class _TrendingVideosScreenState extends State<TrendingVideosScreen> {
     CategoryTab(id: 'new_release', title: 'New Release', icon: Icons.fiber_new),
   ];
 
-  // Sample video data
-  final List<VideoItem> _videos = [
-    VideoItem(
-      id: '1',
-      title: 'Oga Sabinus and Food',
-      imageUrl: 'assets/pngs/sabinus.png',
-      creator: 'Mr Funny',
-      creatorImageUrl: 'assets/pngs/follows.png',
-      views: '25K',
-    ),
-    VideoItem(
-      id: '2',
-      title: 'Food and Karate',
-      imageUrl: 'assets/pngs/sabinus.png',
-      creator: 'KikiBoy',
-      creatorImageUrl: 'assets/pngs/follows.png',
-      views: '25K',
-    ),
-    VideoItem(
-      id: '3',
-      title: 'Billionaire Club ft. Olamide',
-      imageUrl: 'assets/pngs/sabinus.png',
-      creator: 'MrNed',
-      creatorImageUrl: 'assets/pngs/follows.png',
-      views: '25K',
-    ),
-    VideoItem(
-      id: '4',
-      title: 'My crazy chef',
-      imageUrl: 'assets/pngs/sabinus.png',
-      creator: 'MrRebel',
-      creatorImageUrl: 'assets/pngs/follows.png',
-      views: '25K',
-    ),
-    VideoItem(
-      id: '5',
-      title: 'Oga Sabinus and Food',
-      imageUrl: 'assets/pngs/sabinus.png',
-      creator: 'Mr Funny',
-      creatorImageUrl: 'assets/pngs/follows.png',
-      views: '25K',
-    ),
-    VideoItem(
-      id: '6',
-      title: 'Food and Karate',
-      imageUrl: 'assets/pngs/sabinus.png',
-      creator: 'KikiBoy',
-      creatorImageUrl: 'assets/pngs/follows.png',
-      views: '25K',
-    ),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      context.read<HomeProvider>().loadVideoCategoryTab(_selectedTab);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -110,6 +71,7 @@ class _TrendingVideosScreenState extends State<TrendingVideosScreen> {
               setState(() {
                 _selectedTab = categoryId;
               });
+              context.read<HomeProvider>().loadVideoCategoryTab(categoryId);
             },
           ),
           36.column,
@@ -150,7 +112,18 @@ class _TrendingVideosScreenState extends State<TrendingVideosScreen> {
           Expanded(
             child: SingleChildScrollView(
               padding: EdgeInsets.symmetric(horizontal: 27.padding),
-              child: _buildVideosGrid(),
+              child: Consumer<HomeProvider>(
+                builder: (context, provider, _) {
+                  final videos = provider.videosForCategory(_selectedTab);
+                  final isLoading = provider.isLoadingVideoCategory(_selectedTab);
+                  final hasLoaded = provider.hasLoadedVideoCategory(_selectedTab);
+                  return _buildVideosGrid(
+                    videos: videos,
+                    isLoading: isLoading,
+                    hasLoaded: hasLoaded,
+                  );
+                },
+              ),
             ),
           ),
         ],
@@ -158,28 +131,94 @@ class _TrendingVideosScreenState extends State<TrendingVideosScreen> {
     );
   }
 
-  Widget _buildVideosGrid() {
+  Widget _buildVideosGrid({
+    required List<VideoItem> videos,
+    required bool isLoading,
+    required bool hasLoaded,
+  }) {
+    if (isLoading && videos.isEmpty) {
+      return _buildShimmerGrid();
+    }
+    if (videos.isEmpty && hasLoaded) {
+      return Padding(
+        padding: EdgeInsets.symmetric(vertical: 60.padding),
+        child: Center(
+          child: Text(
+            'No videos yet.',
+            style: AppTextStyles.bodyMedium.copyWith(
+              fontSize: 14.font,
+              color: AppColors.text.withValues(alpha: 0.7),
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+      );
+    }
     return GridView.builder(
       shrinkWrap: true,
-      physics: NeverScrollableScrollPhysics(),
+      physics: const NeverScrollableScrollPhysics(),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
         crossAxisSpacing: 15.padding,
         mainAxisSpacing: 20.padding,
         childAspectRatio: 1.3.maxHeight,
       ),
-      itemCount: _videos.length,
+      itemCount: videos.length,
       padding: EdgeInsets.only(top: 35.padding, bottom: 30.padding),
       itemBuilder: (context, index) {
+        final item = videos[index];
         return GridVideoCard(
-          item: _videos[index],
-          onTap: () {
-            // Navigate to video player via GoRouter
-            context.push(AppRouter.videoPlayer);
-          },
+          item: item,
+          onTap: () => _openVideoItem(item),
         );
       },
     );
+  }
+
+  Widget _buildShimmerGrid() {
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        crossAxisSpacing: 15.padding,
+        mainAxisSpacing: 20.padding,
+        childAspectRatio: 1.3.maxHeight,
+      ),
+      itemCount: 4,
+      padding: EdgeInsets.only(top: 35.padding, bottom: 30.padding),
+      itemBuilder: (context, _) {
+        return Shimmer.fromColors(
+          baseColor: const Color(0xFF2A2A2A),
+          highlightColor: const Color(0xFF3A3A3A),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16.radius),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _openVideoItem(VideoItem item) {
+    final id = item.id.trim();
+    if (id.isEmpty) return;
+    final thumb = item.imageUrl.trim();
+    final artistId = item.creatorId?.trim();
+    final uri = Uri(
+      path: AppRouter.videoPlayer,
+      queryParameters: {
+        'videoId': id,
+        'title': item.title,
+        'artistName': item.creator,
+        if (artistId != null && artistId.isNotEmpty) 'artistId': artistId,
+        if (thumb.isNotEmpty) 'thumbnailUrl': thumb,
+        'isUnlocked': '${item.isUnlocked}',
+      },
+    );
+    context.push(uri.toString());
   }
 
   String _getSectionTitle() {

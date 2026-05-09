@@ -1,4 +1,5 @@
 import 'package:chewie/chewie.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
@@ -120,70 +121,133 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   }
 
   Future<void> _initializePlayback() async {
-    if (widget.videoId.trim().isEmpty) return;
-    if (_isLoadingStream || _videoController != null) return;
+    final tag = 'VideoPlayer[${widget.videoId}]';
+    if (widget.videoId.trim().isEmpty) {
+      Logger.warning('$tag aborted: empty videoId on route params');
+      return;
+    }
+    if (_isLoadingStream || _videoController != null) {
+      Logger.info('$tag skipped: already loading or initialized');
+      return;
+    }
 
     setState(() {
       _isLoadingStream = true;
       _streamError = null;
     });
 
+    final streamPath = ApiConstants.videoStreamPath(widget.videoId);
+    Logger.info('$tag step 1/4 — fetching stream metadata: GET $streamPath');
+
+    Map<String, dynamic> streamPayload;
     try {
-      // Resolve the streaming URL via /api/v1/content/videos/{id}/stream.
-      // The backend returns { streamingUrl, hlsPlaylistUrl, ... } — we prefer
-      // HLS when present, falling back to the progressive URL.
-      final streamPayload = await _api.getJson(
-        ApiConstants.videoStreamPath(widget.videoId),
+      streamPayload = await _api.getJson(
+        streamPath,
         (json) => json,
         authenticate: true,
       );
-
-      final hls = (streamPayload['hlsPlaylistUrl'] as String?)?.trim();
-      final progressive =
-          (streamPayload['streamingUrl'] as String?)?.trim();
-      final url = (hls != null && hls.isNotEmpty)
-          ? hls
-          : (progressive ?? '');
-      if (url.isEmpty) {
-        throw const FormatException('No streaming URL returned');
-      }
-
-      final controller =
-          VideoPlayerController.networkUrl(Uri.parse(url));
-      await controller.initialize();
-
-      if (!mounted) {
-        await controller.dispose();
-        return;
-      }
-
-      final chewie = ChewieController(
-        videoPlayerController: controller,
-        autoPlay: true,
-        looping: false,
-        allowedScreenSleep: false,
-        materialProgressColors: ChewieProgressColors(
-          playedColor: AppColors.buttonColor,
-          handleColor: AppColors.buttonColor,
-          bufferedColor: AppColors.text.withValues(alpha: 0.2),
-          backgroundColor: AppColors.text.withValues(alpha: 0.08),
-        ),
-      );
-      controller.addListener(_onPlayerTick);
-
-      setState(() {
-        _videoController = controller;
-        _chewieController = chewie;
-        _isLoadingStream = false;
-      });
+      Logger.info('$tag step 2/4 — stream payload keys: ${streamPayload.keys.toList()}');
+      Logger.debug('$tag stream payload: $streamPayload');
     } catch (e, st) {
-      Logger.error('VideoPlayerScreen.initializePlayback failed', e, st);
+      Logger.error('$tag step 1/4 FAILED — could not fetch stream metadata', e, st);
       if (!mounted) return;
       setState(() {
         _isLoadingStream = false;
-        _streamError = 'Could not load this video. Please try again.';
+        _streamError = _formatPlaybackError('Stream lookup failed', e);
       });
+      return;
     }
+
+    // Backend `StreamingUrlDto` returns `url` (progressive MP4, presigned) and
+    // optionally `hlsUrl` (HLS master playlist; may be a relative API path).
+    final progressive = (streamPayload['url'] as String?)?.trim();
+    final hlsRaw = (streamPayload['hlsUrl'] as String?)?.trim();
+    final hls = (hlsRaw != null && hlsRaw.isNotEmpty)
+        ? ApiConstants.resolvePublicUrl(hlsRaw)
+        : null;
+    Logger.info(
+      '$tag resolved URLs — progressive=${progressive?.isNotEmpty == true ? progressive : '<empty>'}, '
+      'hls=${hls ?? '<empty>'}',
+    );
+
+    // Prefer the progressive MP4 because it is presigned and self-contained;
+    // HLS is a fallback if the backend ever omits the progressive URL.
+    final url = (progressive != null && progressive.isNotEmpty)
+        ? progressive
+        : (hls ?? '');
+    final usingHls = !(progressive != null && progressive.isNotEmpty) && hls != null;
+
+    if (url.isEmpty) {
+      Logger.error('$tag step 2/4 FAILED — payload contained no url or hlsUrl');
+      if (!mounted) return;
+      setState(() {
+        _isLoadingStream = false;
+        _streamError = _formatPlaybackError(
+          'No streaming URL returned by backend',
+          'payload=$streamPayload',
+        );
+      });
+      return;
+    }
+
+    Logger.info('$tag step 3/4 — initializing controller (${usingHls ? 'HLS' : 'progressive'}): $url');
+
+    VideoPlayerController? controller;
+    try {
+      controller = VideoPlayerController.networkUrl(Uri.parse(url));
+      await controller.initialize();
+      Logger.success(
+        '$tag step 4/4 — controller initialized '
+        '(duration=${controller.value.duration}, size=${controller.value.size})',
+      );
+    } catch (e, st) {
+      Logger.error('$tag step 3/4 FAILED — controller could not initialize url=$url', e, st);
+      await controller?.dispose();
+      if (!mounted) return;
+      setState(() {
+        _isLoadingStream = false;
+        _streamError = _formatPlaybackError(
+          'Player init failed for ${usingHls ? 'HLS' : 'MP4'} url',
+          '$e\nurl=$url',
+        );
+      });
+      return;
+    }
+
+    if (!mounted) {
+      await controller.dispose();
+      return;
+    }
+
+    final chewie = ChewieController(
+      videoPlayerController: controller,
+      autoPlay: true,
+      looping: false,
+      allowedScreenSleep: false,
+      materialProgressColors: ChewieProgressColors(
+        playedColor: AppColors.buttonColor,
+        handleColor: AppColors.buttonColor,
+        bufferedColor: AppColors.text.withValues(alpha: 0.2),
+        backgroundColor: AppColors.text.withValues(alpha: 0.08),
+      ),
+    );
+    controller.addListener(_onPlayerTick);
+
+    setState(() {
+      _videoController = controller;
+      _chewieController = chewie;
+      _isLoadingStream = false;
+    });
+  }
+
+  /// In debug builds, surface the underlying error in the UI so the developer
+  /// can see *why* playback failed without scraping the console. Release builds
+  /// fall back to the generic message.
+  String _formatPlaybackError(String stage, Object detail) {
+    if (kDebugMode) {
+      return 'Cannot play this video.\n\n[$stage]\n$detail';
+    }
+    return 'Could not load this video. Please try again.';
   }
 
   void _onPlayerTick() {

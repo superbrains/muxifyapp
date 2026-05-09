@@ -18,8 +18,9 @@ import 'package:muxify/features/music_player/widgets/add_to_playlist_sheet.dart'
 import 'package:muxify/features/music_player/widgets/lyrics_overlay.dart';
 import 'package:muxify/features/music_player/widgets/music_player_top_bar.dart';
 import 'package:muxify/features/music_player/widgets/lyrics_button_widget.dart';
-import 'package:muxify/features/music_player/widgets/locked_song_image_list.dart';
 import 'package:muxify/features/music_player/widgets/muxify_branded_background.dart';
+import 'package:muxify/features/music_player/widgets/queue_artwork_carousel.dart';
+import 'package:muxify/features/music_player/widgets/queue_list_sheet.dart';
 import 'package:muxify/features/music_player/widgets/song_info_overlay.dart';
 import 'package:muxify/features/music_player/widgets/music_progress_bar.dart';
 import 'package:muxify/features/music_player/widgets/playback_controls.dart';
@@ -63,15 +64,10 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
   // when the track has no cover but we have an artistId.
   String? _resolvedArtistAvatar;
 
-  // Mock images for locked song horizontal list
-  final List<String> _lockedSongImages = [
-    'assets/pngs/follows.png',
-    'assets/pngs/latest_release.png',
-    'assets/pngs/active_play.png',
-    'assets/pngs/follows.png',
-    'assets/pngs/latest_release.png',
-    'assets/pngs/active_play.png',
-  ];
+  // Auto-skip de-dup guard: the last queue index we already skipped past.
+  // Prevents the post-frame callback from firing audio.next() repeatedly for
+  // the same locked index while the queue settles after the skip.
+  int? _lastAutoSkippedIndex;
 
   // Mock gift items for the gift box modal
   final List<GiftItem> _giftItems = [
@@ -294,9 +290,28 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
     final position = audio.position.inMilliseconds / 1000;
     final duration = audio.duration.inMilliseconds / 1000;
 
-    final trackId = (widget.trackId ?? '').trim();
-    final isUnlocked = _resolveUnlocked(unlockedContent);
+    final currentTrack = audio.currentTrack;
+    final currentTrackId = (currentTrack?.id ?? '').trim();
+    final widgetTrackId = (widget.trackId ?? '').trim();
+    final trackId = currentTrackId.isNotEmpty ? currentTrackId : widgetTrackId;
+    final isUnlocked = _resolveUnlocked(unlockedContent, currentTrack);
     final isLiked = trackId.isEmpty ? false : interaction.isLiked(trackId);
+    final displayTitle = currentTrack?.title.trim().isNotEmpty == true
+        ? currentTrack!.title
+        : widget.title;
+    final displayArtist = currentTrack?.artist.trim().isNotEmpty == true
+        ? currentTrack!.artist
+        : widget.artistName;
+    final displayCover = currentTrack?.artworkUrl?.trim().isNotEmpty == true
+        ? currentTrack!.artworkUrl
+        : widget.backgroundImageUrl;
+
+    // Auto-skip locked tracks during playback. Schedule on the next frame so
+    // we don't trigger setState/playback calls while build is running.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _maybeAutoSkipLocked(audio, unlockedContent);
+    });
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -306,7 +321,7 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
           //   1. track cover (widget.backgroundImageUrl)
           //   2. artist avatar (resolved on init via artistId)
           //   3. branded Muxify background widget
-          Positioned.fill(child: _buildPlayerBackground()),
+          Positioned.fill(child: _buildPlayerBackground(displayCover)),
 
           // Dark overlay for unlocked songs only
           if (isUnlocked)
@@ -367,10 +382,11 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
               children: [
                 // Top Bar
                 MusicPlayerTopBar(
-                  artistName: widget.artistName ?? 'Omah Lay',
+                  artistName: displayArtist ?? 'Omah Lay',
                   albumName: widget.albumName ?? 'Latest Release',
                   isUnlocked: isUnlocked,
-                  onToggleUnlock: () => _handleUnlockTap(isUnlocked),
+                  onToggleUnlock: () =>
+                      _handleUnlockTap(isUnlocked, trackId: trackId),
                 ),
 
                 // Lyrics Button
@@ -380,10 +396,16 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
                   onTap: _toggleLyrics,
                 ),
 
-                // Horizontal image list for locked songs
-                if (!isUnlocked) ...[
+                // Horizontal queue artwork carousel — only when more than
+                // one track is queued. With a single track we keep the
+                // existing background-art-only layout.
+                if (audio.queue.length > 1) ...[
                   20.column,
-                  LockedSongImageList(images: _lockedSongImages),
+                  QueueArtworkCarousel(
+                    queue: audio.queue,
+                    currentIndex: audio.currentIndex,
+                    audio: audio,
+                  ),
                   20.column,
                 ] else
                   Spacer(),
@@ -396,8 +418,8 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
                       children: [
                         // Song Info Overlay
                         SongInfoOverlay(
-                          songTitle: widget.title ?? 'Moving',
-                          artistName: widget.artistName ?? 'Omah Lay',
+                          songTitle: displayTitle ?? 'Moving',
+                          artistName: displayArtist ?? 'Omah Lay',
                           isUnlocked: isUnlocked,
                           isLiked: isLiked,
                           isAdded: false,
@@ -405,8 +427,9 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
                           onToggleAdd: () =>
                               _handleAddToPlaylist(trackId, interaction),
                           onShare: () => _handleShare(trackId, interaction),
-                          onUnlockSong: () => _handleUnlockTap(isUnlocked),
-                          onShowLyrics: _toggleLyrics,
+                          onUnlockSong: () =>
+                              _handleUnlockTap(isUnlocked, trackId: trackId),
+                          onShowQueue: () => QueueListSheet.show(context),
                         ),
 
                         30.column,
@@ -461,16 +484,58 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
     );
   }
 
-  /// Resolves the track's unlock state from the union of:
-  /// 1. the route argument (`widget.isUnlocked`)
-  /// 2. the persisted [UnlockedContentProvider] for this trackId
-  /// Defaults to true (free track) when neither hint is present.
-  bool _resolveUnlocked(UnlockedContentProvider provider) {
+  /// Resolves the *currently displayed* track's unlock state. Priority:
+  /// 1. UnlockedContentProvider for the active id (queue track id wins,
+  ///    falling back to the route arg).
+  /// 2. Track.isUnlocked from the AudioProvider's current queue track.
+  /// 3. The route argument (`widget.isUnlocked`) when no queue track has
+  ///    superseded it.
+  /// Defaults to true (free track) when no lock signal exists.
+  bool _resolveUnlocked(
+    UnlockedContentProvider provider,
+    Track? currentTrack,
+  ) {
+    final currentId = (currentTrack?.id ?? '').trim();
+    final widgetId = (widget.trackId ?? '').trim();
+    final activeId = currentId.isNotEmpty ? currentId : widgetId;
+    if (activeId.isNotEmpty && provider.isUnlocked(activeId)) return true;
+    if (currentTrack != null) {
+      // Queue track is the source of truth once playback has started.
+      return currentTrack.isUnlocked;
+    }
     if (widget.isUnlocked == true) return true;
-    final trackId = (widget.trackId ?? '').trim();
-    if (trackId.isNotEmpty && provider.isUnlocked(trackId)) return true;
     if (widget.isUnlocked == false) return false;
     return true; // No lock signal — treat as free.
+  }
+
+  /// If the currently-playing queue track is locked and at least one other
+  /// queue track is unlocked, advance past it. Skips at most once per index
+  /// transition (de-duped via [_lastAutoSkippedIndex]).
+  void _maybeAutoSkipLocked(
+    AudioProvider audio,
+    UnlockedContentProvider unlockedContent,
+  ) {
+    final track = audio.currentTrack;
+    if (track == null) return;
+    final idx = audio.currentIndex;
+    if (idx == null) return;
+    if (_lastAutoSkippedIndex == idx) return;
+
+    final isCurrentUnlocked =
+        track.isUnlocked || unlockedContent.isUnlocked(track.id);
+    if (isCurrentUnlocked) return;
+
+    final hasUnlockedElsewhere = audio.queue.any(
+      (t) => t.id != track.id &&
+          (t.isUnlocked || unlockedContent.isUnlocked(t.id)),
+    );
+    if (!hasUnlockedElsewhere) {
+      // All locked — stop on this track so the user can unlock it.
+      return;
+    }
+
+    _lastAutoSkippedIndex = idx;
+    audio.next();
   }
 
   void _toggleLyrics() {
@@ -534,29 +599,42 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
     }
   }
 
-  Future<void> _handleUnlockTap(bool isCurrentlyUnlocked) async {
+  Future<void> _handleUnlockTap(
+    bool isCurrentlyUnlocked, {
+    required String trackId,
+  }) async {
     HapticFeedback.lightImpact();
     if (isCurrentlyUnlocked) {
       // Visual no-op — the icon shows the unlocked state for free / already-
       // unlocked tracks; tapping it again does nothing meaningful.
       return;
     }
-    final trackId = (widget.trackId ?? '').trim();
-    if (trackId.isEmpty) {
+    final id = trackId.trim();
+    if (id.isEmpty) {
       await AppToast.showError('Track is not ready yet.');
       return;
     }
     final interaction = context.read<MusicPlayerInteractionProvider>();
     final unlockedContent = context.read<UnlockedContentProvider>();
+    final audio = context.read<AudioProvider>();
+    final currentTrack = audio.currentTrack;
+    final trackTitle = (currentTrack?.title.trim().isNotEmpty == true
+            ? currentTrack!.title
+            : widget.title) ??
+        'this song';
+    final artistName = (currentTrack?.artist.trim().isNotEmpty == true
+            ? currentTrack!.artist
+            : widget.artistName) ??
+        '';
     await UnlockConfirmModal.show(
       context,
-      trackId: trackId,
-      trackTitle: widget.title ?? 'this song',
-      artistName: widget.artistName ?? '',
+      trackId: id,
+      trackTitle: trackTitle,
+      artistName: artistName,
       unlockCostCoins: widget.unlockCostCoins ?? 100,
       interaction: interaction,
       onUnlocked: () async {
-        await unlockedContent.markUnlocked(trackId);
+        await unlockedContent.markUnlocked(id);
       },
     );
   }
@@ -609,11 +687,12 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
     );
   }
 
-  /// Returns the background image with fallbacks. The track cover wins; if it
-  /// fails or is empty we try the resolved artist avatar; otherwise we render
-  /// the branded Muxify background.
-  Widget _buildPlayerBackground() {
-    final cover = (widget.backgroundImageUrl ?? '').trim();
+  /// Returns the background image with fallbacks. The active queue track's
+  /// cover wins (caller passes it in); if it fails or is empty we try the
+  /// resolved artist avatar; otherwise we render the branded Muxify
+  /// background.
+  Widget _buildPlayerBackground(String? activeCover) {
+    final cover = (activeCover ?? '').trim();
     if (cover.isNotEmpty) {
       return _networkOrAsset(cover, onError: _avatarOrBranded);
     }

@@ -158,7 +158,22 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen> {
       return;
     }
     if (type == 'video') {
-      context.push(AppRouter.videoPlayer);
+      final id = release.id.trim();
+      if (id.isEmpty) return;
+      final thumb = release.coverImageUrl.trim();
+      final artistId = widget.artist.id.trim();
+      final uri = Uri(
+        path: AppRouter.videoPlayer,
+        queryParameters: {
+          'videoId': id,
+          'title': release.title,
+          'artistName': release.artist,
+          if (artistId.isNotEmpty) 'artistId': artistId,
+          if (thumb.isNotEmpty) 'thumbnailUrl': thumb,
+          'isUnlocked': '${release.isUnlocked}',
+        },
+      );
+      context.push(uri.toString());
       return;
     }
     ReleasePlaybackHelper.openFromRelease(

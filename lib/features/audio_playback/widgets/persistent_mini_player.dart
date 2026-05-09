@@ -182,7 +182,7 @@ class _ArtworkImage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final raw = (url ?? '').trim();
-    if (raw.isEmpty) return _fallback();
+    if (raw.isEmpty) return const _BrandedArtworkFallback();
     final lower = raw.toLowerCase();
     final isRemote = lower.startsWith('http://') ||
         lower.startsWith('https://') ||
@@ -191,20 +191,48 @@ class _ArtworkImage extends StatelessWidget {
       return Image.network(
         ApiConstants.resolvePublicUrl(raw),
         fit: BoxFit.cover,
-        errorBuilder: (_, _, _) => _fallback(),
+        errorBuilder: (_, _, _) => const _BrandedArtworkFallback(),
       );
     }
     return Image.asset(
       raw,
       fit: BoxFit.cover,
-      errorBuilder: (_, _, _) => _fallback(),
+      errorBuilder: (_, _, _) => const _BrandedArtworkFallback(),
     );
   }
+}
 
-  Widget _fallback() => Image.asset(
-        'assets/pngs/active_play.png',
-        fit: BoxFit.cover,
-      );
+class _BrandedArtworkFallback extends StatelessWidget {
+  const _BrandedArtworkFallback();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Color(0xFF050507),
+        gradient: RadialGradient(
+          center: Alignment(-0.7, -0.7),
+          radius: 1.4,
+          colors: [
+            AppColors.buttonColor,
+            Color(0xFF050507),
+            AppColors.blue,
+          ],
+          stops: [0.0, 0.65, 1.0],
+        ),
+      ),
+      alignment: Alignment.center,
+      child: Opacity(
+        opacity: 0.85,
+        child: Image.asset(
+          'assets/pngs/logo.png',
+          width: 22,
+          height: 22,
+          fit: BoxFit.contain,
+        ),
+      ),
+    );
+  }
 }
 
 class _TitleArtist extends StatelessWidget {

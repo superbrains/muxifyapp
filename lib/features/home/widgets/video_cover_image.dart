@@ -1,10 +1,13 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:muxify/core/constants/api_constants.dart';
 
-/// Renders a video thumbnail that may be either a local asset path
-/// (e.g. `assets/pngs/release_placeholder.png`) or a fully-qualified
-/// network URL — VideoItem.fromFeedVideo emits HTTP URLs from the backend
-/// and asset paths only as a fallback when the backend has no thumbnail.
+/// Renders a video thumbnail. Accepts:
+///  * a fully-qualified URL (`http://...`, `https://...`) — fetched as network image
+///  * a backend-relative API path (`/api/v1/media/...`) — resolved against the
+///    API base URL and fetched as a network image
+///  * a local asset path (`assets/...`) — loaded as a Flutter asset
+///  * empty — falls back to [fallbackAsset]
 class VideoCoverImage extends StatelessWidget {
   final String imageUrl;
   final double? width;
@@ -23,11 +26,14 @@ class VideoCoverImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final url = imageUrl.trim();
-    if (url.isEmpty) return _asset(fallbackAsset);
+    final raw = imageUrl.trim();
+    if (raw.isEmpty) return _asset(fallbackAsset);
 
-    final isNetwork = url.startsWith('http://') || url.startsWith('https://');
-    if (!isNetwork) return _asset(url);
+    if (raw.startsWith('assets/')) return _asset(raw);
+
+    final url = (raw.startsWith('http://') || raw.startsWith('https://'))
+        ? raw
+        : ApiConstants.resolvePublicUrl(raw);
 
     return CachedNetworkImage(
       imageUrl: url,

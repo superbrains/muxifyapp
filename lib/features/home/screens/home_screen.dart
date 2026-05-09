@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 import 'package:muxify/core/constants/app_colors.dart';
 import 'package:muxify/core/constants/app_sizes.dart';
 import 'package:muxify/core/router/app_router.dart';
+import 'package:muxify/features/audio_playback/models/track.dart';
+import 'package:muxify/features/audio_playback/providers/audio_provider.dart';
 import 'package:muxify/features/home/models/category_tab.dart';
 import 'package:muxify/features/home/models/followed_item.dart';
 import 'package:muxify/features/home/models/new_release_item.dart';
@@ -263,24 +265,49 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _openCategoryPlaylist(PlaylistItem playlist) {
-    final firstTrack = playlist.tracks.isNotEmpty ? playlist.tracks.first : null;
-    if (firstTrack != null) {
-      _openPlayer(
-        trackId: firstTrack.id,
-        title: firstTrack.title,
-        artistName: firstTrack.artist,
-        artistId: firstTrack.artistId,
-        coverUrl: firstTrack.imageUrl ?? playlist.imageUrl,
+  Future<void> _openCategoryPlaylist(PlaylistItem playlist) async {
+    if (playlist.tracks.isEmpty) {
+      // Fallback: deep link into the FeaturedPlaylistScreen for this category.
+      final uri = Uri(
+        path: AppRouter.trending,
+        queryParameters: {'tabId': _selectedCategoryId},
       );
+      context.push(uri.toString());
       return;
     }
-    // Fallback: deep link into the FeaturedPlaylistScreen for this category.
-    final uri = Uri(
-      path: AppRouter.trending,
-      queryParameters: {'tabId': _selectedCategoryId},
+
+    // Cap to top 10 from the in-memory genre group and queue them up.
+    final source = playlist.tracks.take(10).toList();
+    final fallbackCover = playlist.imageUrl?.trim().isNotEmpty == true
+        ? playlist.imageUrl
+        : null;
+    final tracks = source
+        .map(
+          (t) => Track(
+            id: t.id,
+            title: t.title,
+            artist: t.artist,
+            artistId: t.artistId,
+            artworkUrl: (t.imageUrl?.trim().isNotEmpty == true)
+                ? t.imageUrl
+                : fallbackCover,
+            isUnlocked: t.isUnlocked,
+          ),
+        )
+        .toList();
+
+    await context.read<AudioProvider>().loadAndPlay(tracks);
+    if (!mounted) return;
+
+    final first = source.first;
+    _openPlayer(
+      trackId: first.id,
+      title: first.title,
+      artistName: first.artist,
+      artistId: first.artistId,
+      coverUrl: first.imageUrl ?? playlist.imageUrl,
+      isUnlocked: first.isUnlocked,
     );
-    context.push(uri.toString());
   }
 
   // ---------------------------------------------------------------------------
