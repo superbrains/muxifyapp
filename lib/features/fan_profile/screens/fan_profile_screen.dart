@@ -127,7 +127,7 @@ class _FanProfileScreenState extends State<FanProfileScreen> {
                         width: 298.maxWidth,
                         child: Text(
                           textAlign: TextAlign.center,
-                          "I'm a super Davido fan. Lorem ipsum dolor sit amet consectetur. Purus odio ultrices eleifend mollis",
+                          "I'm a super Davido fan. Been streaming since day one — gifts, unlocks, all the way.",
                           style: AppTextStyles.bodyMedium.copyWith(
                             color: AppColors.text,
                             fontSize: 12.font,

@@ -233,7 +233,7 @@ class SendGiftBottomSheet extends StatelessWidget {
           12.column,
 
           Text(
-            'By clicking Gifts, you coins equivalent to this user, this will be deducted from your coin balance. Lorem ipsum dolor sit amet consectetur. Purus odio ultrices eleifend mollis eu duis vel sed.',
+            'By sending a gift, the selected coin amount will be deducted from your wallet and sent directly to this creator. Gifts are final and cannot be reversed.',
             style: AppTextStyles.bodySmall.copyWith(
               color: AppColors.text.withValues(alpha: 0.6),
               fontSize: 10.font,

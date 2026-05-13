@@ -13,31 +13,31 @@ class MedalsSection extends StatelessWidget {
       {
         'name': 'Iron Fan',
         'description':
-            'Lorem ipsum dolor sit amet consectetur. Vulputate magna lobortis sed ultrices cras blandit ipsum est eget. Nibh interdum semper velit erat ultrices sed auctor etiam. Nunc sit neque urna sed mauris nec. Ac suscipit faucibus ac sed porta facilisis cursus nec consectetur. Eu quis sit enim nullam etiam fermentum urna. Blandit vitae sed lacus cursus in sed velit. Velit cras pellentesque consectetur neque etiam non nibh auctor accumsan. Sociis ultrices amet adipiscing vitae egestas ullamcorper ligula eget consectetur. Nibh non augue orci sed.',
+            'Your first medal. Awarded when you start streaming and reacting to tracks — every fan begins here on the road up the ranks.',
         'image': 'assets/pngs/earned_badge.png',
       },
       {
         'name': 'Crown Fan',
         'description':
-            'Lorem ipsum dolor sit amet consectetur. Vulputate magna lobortis sed ultrices cras blandit ipsum est eget. Nibh interdum semper velit erat ultrices sed auctor etiam. Nunc sit neque urna sed mauris nec. Ac suscipit faucibus ac sed porta facilisis cursus nec consectetur. Eu quis sit enim nullam etiam fermentum urna. Blandit vitae sed lacus cursus in sed velit. Velit cras pellentesque consectetur neque etiam non nibh auctor accumsan. Sociis ultrices amet adipiscing vitae egestas ullamcorper ligula eget consectetur. Nibh non augue orci sed.',
+            'For supporters who show up. Keep streaming, gifting and unlocking exclusive drops to climb past the Iron tier.',
         'image': 'assets/pngs/earned_badge.png',
       },
       {
         'name': 'Gold Fan',
         'description':
-            'Lorem ipsum dolor sit amet consectetur. Vulputate magna lobortis sed ultrices cras blandit ipsum est eget. Nibh interdum semper velit erat ultrices sed auctor etiam. Nunc sit neque urna sed mauris nec. Ac suscipit faucibus ac sed porta facilisis cursus nec consectetur. Eu quis sit enim nullam etiam fermentum urna. Blandit vitae sed lacus cursus in sed velit. Velit cras pellentesque consectetur neque etiam non nibh auctor accumsan. Sociis ultrices amet adipiscing vitae egestas ullamcorper ligula eget consectetur. Nibh non augue orci sed.',
+            'A serious supporter. Gold Fans rack up gifts and unlocks consistently and stand out on artist leaderboards.',
         'image': 'assets/pngs/earned_badge.png',
       },
       {
         'name': 'Platinum Fan',
         'description':
-            'Lorem ipsum dolor sit amet consectetur. Vulputate magna lobortis sed ultrices cras blandit ipsum est eget. Nibh interdum semper velit erat ultrices sed auctor etiam. Nunc sit neque urna sed mauris nec. Ac suscipit faucibus ac sed porta facilisis cursus nec consectetur. Eu quis sit enim nullam etiam fermentum urna. Blandit vitae sed lacus cursus in sed velit. Velit cras pellentesque consectetur neque etiam non nibh auctor accumsan. Sociis ultrices amet adipiscing vitae egestas ullamcorper ligula eget consectetur. Nibh non augue orci sed.',
+            'Reserved for elite supporters. Platinum Fans are among the loudest voices behind the artists they back.',
         'image': 'assets/pngs/earned_badge.png',
       },
       {
         'name': 'Diamond Fan',
         'description':
-            'Lorem ipsum dolor sit amet consectetur. Vulputate magna lobortis sed ultrices cras blandit ipsum est eget. Nibh interdum semper velit erat ultrices sed auctor etiam. Nunc sit neque urna sed mauris nec. Ac suscipit faucibus ac sed porta facilisis cursus nec consectetur. Eu quis sit enim nullam etiam fermentum urna. Blandit vitae sed lacus cursus in sed velit. Velit cras pellentesque consectetur neque etiam non nibh auctor accumsan. Sociis ultrices amet adipiscing vitae egestas ullamcorper ligula eget consectetur. Nibh non augue orci sed.',
+            'The top fan tier. Diamond Fans do more than support artists — they help break them. Only the most dedicated reach this rank.',
         'image': 'assets/pngs/earned_badge.png',
       },
     ];

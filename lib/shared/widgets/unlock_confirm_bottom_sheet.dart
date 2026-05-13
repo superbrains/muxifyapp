@@ -189,8 +189,8 @@ class UnlockConfirmBottomSheet extends StatelessWidget {
           8.column,
           Text(
             isPremiumMode
-                ? 'Lorem ipsum dolor sit amet consectetur. Purus odio ultrices eleifend vel sed. At praesent scelerisque nibh blandit nulla adipiscing sed rhoncus.'
-                : 'By clicking Unlock Song, you have given consent to consume this media for free in the event of ads may play within. Lorem ipsum dolor sit amet consectetur. Purus odio ultrices eleifenduis vel sed.',
+                ? 'By unlocking this song with coins, the amount shown will be deducted from your wallet. Coin spends are final and non-refundable once confirmed.'
+                : 'By clicking Unlock Song, you give consent to consume this media for free with ads that may play within. Ads help support the artist, so thanks for tuning in.',
             textAlign: TextAlign.center,
             style: AppTextStyles.bodySmall.copyWith(
               fontSize: 9.font,

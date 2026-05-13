@@ -124,7 +124,7 @@ class UnlockAllSongsModal extends StatelessWidget {
                   ),
                   8.column,
                   Text(
-                    'Lorem ipsum dolor sit amet consectetur. Purus odio ultrices eleifend mollis eu duis vel sed. At praesent scelerisque nibh blandit nulla adipiscing sed rhoncus.',
+                    'Unlocking all songs spends coins from your wallet. Once confirmed, coin spends are final and cannot be reversed. Check your balance before you proceed.',
                     style: AppTextStyles.bodySmall.copyWith(
                       fontSize: 12.font,
                       fontWeight: FontWeight.w400,
