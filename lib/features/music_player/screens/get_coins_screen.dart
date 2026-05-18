@@ -77,11 +77,10 @@ class _GetCoinsScreenState extends State<GetCoinsScreen> {
         packageId: selected.id,
         packageLabel: 'm${_formatNumber(selected.totalCoins)} • ${selected.name}',
         priceDisplay: _formatNumber(selected.priceDisplay.toInt()),
-        // CustomerContact is required by the backend; the wallet service
-        // sends it as the user's phone on file. For the bottom sheet here we
-        // pass a placeholder that the user can override at the OTP prompt for
-        // mobile-money channels. For card / bank-transfer the value is unused
-        // but still required by the schema.
+        // CustomerContact is only needed for mobile-money channels (OTP); the
+        // payment sheet prompts the user for it when a channel requires it.
+        // Bank-transfer / card channels don't use it, so an empty value is
+        // fine here.
         customerContact: '',
       ),
     );

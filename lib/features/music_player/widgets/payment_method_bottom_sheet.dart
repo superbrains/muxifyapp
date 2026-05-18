@@ -69,6 +69,17 @@ class _PaymentMethodBottomSheetState extends State<PaymentMethodBottomSheet> {
   Future<void> _onMethodTapped(CollectionMethod method) async {
     if (_initiatingMethod != null) return;
     HapticFeedback.lightImpact();
+
+    // Mobile-money channels SMS the customer an OTP, so they need a phone
+    // number. Bank-transfer / card channels don't — their contact stays blank.
+    var contact = widget.customerContact.trim();
+    if (method.requiresOtp && contact.isEmpty) {
+      final entered = await _promptForPhone();
+      if (entered == null || entered.trim().isEmpty) return; // user cancelled
+      contact = entered.trim();
+    }
+
+    if (!mounted) return;
     setState(() => _initiatingMethod = method);
 
     // Capture the GoRouter before any await so we can navigate without
@@ -78,13 +89,13 @@ class _PaymentMethodBottomSheetState extends State<PaymentMethodBottomSheet> {
     try {
       if (method.requiresOtp) {
         // Fire-and-forget OTP send so Brij can SMS the user before we initiate.
-        await _api.sendPaymentOtp(customerContact: widget.customerContact);
+        await _api.sendPaymentOtp(customerContact: contact);
       }
 
       final result = await _api.initiateCollection(
         packageId: widget.packageId,
         paymentMethodId: method.id,
-        customerContact: widget.customerContact,
+        customerContact: contact,
         customerName: widget.customerName,
         customerEmail: widget.customerEmail,
         redirectUrl: 'muxify://payments/callback',
@@ -104,6 +115,77 @@ class _PaymentMethodBottomSheetState extends State<PaymentMethodBottomSheet> {
       setState(() => _initiatingMethod = null);
       await AppToast.showError('Could not start payment. Try another method.');
     }
+  }
+
+  /// Prompts for the phone number Brij will SMS the OTP to. Returns null when
+  /// the user dismisses the dialog without entering anything.
+  Future<String?> _promptForPhone() {
+    final controller = TextEditingController();
+    return showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: AppColors.background,
+        title: Text(
+          'Enter your phone number',
+          style: AppTextStyles.bodyMedium.copyWith(
+            color: AppColors.text,
+            fontSize: 16.font,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              "We'll text a one-time code to this number to confirm the payment.",
+              style: AppTextStyles.bodySmall.copyWith(
+                color: AppColors.text.withValues(alpha: 0.6),
+                fontSize: 12.font,
+              ),
+            ),
+            10.column,
+            TextField(
+              controller: controller,
+              keyboardType: TextInputType.phone,
+              autofocus: true,
+              style: AppTextStyles.bodyMedium.copyWith(color: AppColors.text),
+              decoration: InputDecoration(
+                hintText: 'e.g. 0801 234 5678',
+                hintStyle: AppTextStyles.bodySmall.copyWith(
+                  color: AppColors.text.withValues(alpha: 0.4),
+                ),
+              ),
+              onSubmitted: (v) =>
+                  Navigator.of(dialogContext).pop(v.trim()),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: Text(
+              'Cancel',
+              style: AppTextStyles.buttonText.copyWith(
+                color: AppColors.text.withValues(alpha: 0.6),
+                fontSize: 14.font,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () =>
+                Navigator.of(dialogContext).pop(controller.text.trim()),
+            child: Text(
+              'Continue',
+              style: AppTextStyles.buttonText.copyWith(
+                color: AppColors.buttonColor,
+                fontSize: 14.font,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
