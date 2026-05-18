@@ -2,50 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:muxify/core/constants/app_colors.dart';
 import 'package:muxify/core/constants/app_sizes.dart';
 import 'package:muxify/core/constants/app_text_styles.dart';
+import 'package:muxify/features/fan_profile/models/fan_profile_models.dart';
 
 class ActivitiesSection extends StatelessWidget {
-  const ActivitiesSection({super.key});
+  const ActivitiesSection({super.key, required this.activities});
+
+  final List<FanActivity> activities;
 
   @override
   Widget build(BuildContext context) {
-    final activities = [
-      {
-        'icon': 'assets/pngs/davido.png',
-        'title': 'Played: Wizkid - Kese',
-        'time': 'Today • 5:10PM',
-      },
-      {
-        'icon': 'assets/pngs/davido.png',
-        'title': 'Unlocked: Omah Lay - Moving',
-        'time': 'Today • 5:10PM',
-      },
-      {
-        'icon': 'assets/pngs/earned_badge.png',
-        'title': 'New Medal: Mr Funny - Sabinus again',
-        'time': 'Today • 5:10PM',
-      },
-      {
-        'icon': 'assets/pngs/fan_profile_image.png',
-        'title': 'Gifted: Mr Funny - Sabinus again',
-        'time': 'Today • 5:10PM',
-      },
-      {
-        'icon': 'assets/pngs/badge_1.png',
-        'title': 'New Badge: Mr Funny - Sabinus again',
-        'time': 'Today • 5:10PM',
-      },
-      {
-        'icon': 'assets/pngs/badge_2.png',
-        'title': 'New Badge: Mr Funny - Sabinus again',
-        'time': 'Today • 5:10PM',
-      },
-      {
-        'icon': 'assets/pngs/badge_3.png',
-        'title': 'Unlocked: Omah Lay - Moving',
-        'time': 'Today • 5:10PM',
-      },
-    ];
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -71,44 +36,60 @@ class ActivitiesSection extends StatelessWidget {
               ],
             ),
           ),
-          child: ListView.separated(
-            shrinkWrap: true,
-            physics: NeverScrollableScrollPhysics(),
-            padding: EdgeInsets.all(16.padding),
-            itemCount: activities.length,
-            separatorBuilder: (context, index) => 16.column,
-            itemBuilder: (context, index) {
-              final activity = activities[index];
-              return _buildActivityItem(activity);
-            },
-          ),
+          padding: EdgeInsets.all(16.padding),
+          child: activities.isEmpty
+              ? Text(
+                  'No activities yet.',
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: AppColors.text.withValues(alpha: 0.6),
+                    fontSize: 12.font,
+                  ),
+                )
+              : ListView.separated(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  padding: EdgeInsets.zero,
+                  itemCount: activities.length,
+                  separatorBuilder: (context, index) => 16.column,
+                  itemBuilder: (context, index) =>
+                      _ActivityRow(activity: activities[index]),
+                ),
         ),
       ],
     );
   }
+}
 
-  Widget _buildActivityItem(Map<String, dynamic> activity) {
+class _ActivityRow extends StatelessWidget {
+  const _ActivityRow({required this.activity});
+
+  final FanActivity activity;
+
+  @override
+  Widget build(BuildContext context) {
+    final iconAsset = _iconAssetForActivity(activity);
+    final title = _titleForActivity(activity);
+    final time = _formatTimestamp(activity.activityAt);
+
     return Row(
       children: [
-        // Activity Icon
         ClipRRect(
           borderRadius: BorderRadius.circular(5.radius),
-          child: Image.asset(
-            activity['icon'],
+          child: SizedBox(
             width: 45.maxWidth,
             height: 45.maxHeight,
-            fit: BoxFit.cover,
+            child: Image.asset(iconAsset, fit: BoxFit.cover),
           ),
         ),
-
         15.row,
-        // Activity Content
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                activity['title'],
+                title,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
                 style: AppTextStyles.bodyMedium.copyWith(
                   color: AppColors.text,
                   fontSize: 14.font,
@@ -117,7 +98,7 @@ class ActivitiesSection extends StatelessWidget {
               ),
               2.column,
               Text(
-                activity['time'],
+                time,
                 style: AppTextStyles.bodySmall.copyWith(
                   color: AppColors.text.withValues(alpha: 0.6),
                   fontSize: 12.font,
@@ -129,5 +110,88 @@ class ActivitiesSection extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  static String _iconAssetForActivity(FanActivity a) {
+    switch (a.activityType) {
+      case 'BadgeEarned':
+        return 'assets/pngs/badge_1.png';
+      case 'MedalEarned':
+        return 'assets/pngs/earned_badge.png';
+      case 'GiftSent':
+      case 'GiftReceived':
+        return 'assets/pngs/fan_profile_image.png';
+      case 'TrackPlay':
+      case 'VideoPlay':
+      case 'ContentUnlock':
+      case 'ContentLike':
+      case 'ContentShare':
+        return 'assets/pngs/davido.png';
+      case 'ArtistFollow':
+        return 'assets/pngs/fan_verify.png';
+      default:
+        return 'assets/pngs/davido.png';
+    }
+  }
+
+  static String _titleForActivity(FanActivity a) {
+    final artist = a.artistName ?? 'an artist';
+    final track = a.trackTitle ?? a.videoTitle ?? '';
+    switch (a.activityType) {
+      case 'TrackPlay':
+        return track.isNotEmpty ? 'Played: $artist - $track' : 'Played a track';
+      case 'VideoPlay':
+        return track.isNotEmpty ? 'Watched: $artist - $track' : 'Watched a video';
+      case 'ContentUnlock':
+        return track.isNotEmpty
+            ? 'Unlocked: $artist - $track'
+            : 'Unlocked content';
+      case 'GiftSent':
+        final gift = a.giftType ?? 'a gift';
+        return 'Sent $gift to $artist';
+      case 'GiftReceived':
+        final gift = a.giftType ?? 'a gift';
+        return 'Received $gift';
+      case 'ArtistFollow':
+        return 'Followed $artist';
+      case 'BadgeEarned':
+        final badge = a.badgeName ?? 'a badge';
+        return 'Earned badge: $badge';
+      case 'MedalEarned':
+        final medal = a.medalName ?? 'a medal';
+        return 'Earned medal: $medal';
+      case 'ContentLike':
+        return track.isNotEmpty ? 'Liked: $artist - $track' : 'Liked content';
+      case 'ContentShare':
+        return track.isNotEmpty ? 'Shared: $artist - $track' : 'Shared content';
+      default:
+        return a.activityType;
+    }
+  }
+
+  static String _formatTimestamp(DateTime when) {
+    final now = DateTime.now();
+    final local = when.toLocal();
+    final dayDiff = DateTime(now.year, now.month, now.day)
+        .difference(DateTime(local.year, local.month, local.day))
+        .inDays;
+    final hour = local.hour == 0
+        ? 12
+        : (local.hour > 12 ? local.hour - 12 : local.hour);
+    final minute = local.minute.toString().padLeft(2, '0');
+    final ampm = local.hour >= 12 ? 'PM' : 'AM';
+    final timeStr = '$hour:$minute$ampm';
+    String dayStr;
+    if (dayDiff == 0) {
+      dayStr = 'Today';
+    } else if (dayDiff == 1) {
+      dayStr = 'Yesterday';
+    } else if (dayDiff < 7) {
+      dayStr = '$dayDiff days ago';
+    } else {
+      dayStr =
+          '${local.day.toString().padLeft(2, '0')}/${local.month.toString().padLeft(2, '0')}/${local.year}';
+    }
+    return '$dayStr • $timeStr';
   }
 }

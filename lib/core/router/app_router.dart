@@ -36,6 +36,8 @@ import 'package:muxify/features/profile_menu/screens/legals_screen.dart';
 import 'package:muxify/features/profile_menu/screens/pin_settings_screen.dart';
 import 'package:muxify/features/profile_menu/screens/privacy_policy_screen.dart';
 import 'package:muxify/features/profile_menu/screens/wallet_payment_screen.dart';
+import 'package:muxify/features/wallet/screens/payment_status_screen.dart';
+import 'package:muxify/features/wallet/services/wallet_api_service.dart';
 import 'package:muxify/features/my_music/screens/my_music_screen.dart';
 import 'package:muxify/features/my_music/screens/playlist_detail_screen.dart';
 import 'package:muxify/features/my_music/screens/playlist_track_picker_screen.dart';
@@ -69,7 +71,11 @@ class AppRouter {
   static const String albumDetails = '/album-details';
   static const String musicPlayer = '/music-player';
   static const String getCoins = '/get-coins';
-  static const String fanProfile = '/fan-profile';
+  static const String fanProfile = '/fan-profile/:fanId';
+
+  /// Builds a navigable URL for the fan profile of [fanId].
+  static String fanProfileFor(String fanId) =>
+      '/fan-profile/${Uri.encodeComponent(fanId.trim())}';
 
   // My Music hub (Library + local playlists).
   static const String myMusic = '/my-music';
@@ -92,6 +98,11 @@ class AppRouter {
   static const String customerServices = '/support';
   static const String faq = '/faq';
   static const String deleteAccount = '/delete-account';
+
+  /// Post-initiate wallet flow: WebView for hosted-checkout channels or
+  /// virtual-account/USSD details for offline-bank channels. Polls
+  /// `/payments/collections/{intentId}` until terminal.
+  static const String paymentStatus = '/payment-status';
 
   /// Live name of the topmost route. The mini-player listens to this so it
   /// can hide itself while `/music-player` is on top, without depending on
@@ -370,8 +381,13 @@ class AppRouter {
       GoRoute(
         path: fanProfile,
         name: 'fan-profile',
-        pageBuilder: (context, state) =>
-            MaterialPage(key: state.pageKey, child: const FanProfileScreen()),
+        pageBuilder: (context, state) {
+          final fanId = state.pathParameters['fanId'] ?? '';
+          return MaterialPage(
+            key: state.pageKey,
+            child: FanProfileScreen(fanId: fanId),
+          );
+        },
       ),
       GoRoute(
         path: myMusic,
@@ -468,6 +484,21 @@ class AppRouter {
           key: state.pageKey,
           child: const DeleteAccountScreen(),
         ),
+      ),
+      GoRoute(
+        path: paymentStatus,
+        name: 'payment-status',
+        pageBuilder: (context, state) {
+          final intentId = state.uri.queryParameters['intentId'] ?? '';
+          final extra = state.extra;
+          return MaterialPage(
+            key: state.pageKey,
+            child: PaymentStatusScreen(
+              intentId: intentId,
+              initial: extra is InitiateCollectionResult ? extra : null,
+            ),
+          );
+        },
       ),
     ],
     errorBuilder: (context, state) =>

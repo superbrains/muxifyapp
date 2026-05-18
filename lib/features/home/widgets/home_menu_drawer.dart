@@ -106,7 +106,15 @@ class _HomeMenuDrawerState extends State<HomeMenuDrawer> {
                         child: FilledButton(
                           onPressed: () {
                             HapticFeedback.lightImpact();
-                            _closeThen(() => context.push(AppRouter.fanProfile));
+                            final userId =
+                                context.read<AuthProvider>().currentUser?.id;
+                            if (userId != null && userId.isNotEmpty) {
+                              _closeThen(
+                                () => context.push(
+                                  AppRouter.fanProfileFor(userId),
+                                ),
+                              );
+                            }
                           },
                           style: FilledButton.styleFrom(
                             backgroundColor: AppColors.greyButtonColor,

@@ -6,6 +6,7 @@ import 'package:muxify/core/constants/app_sizes.dart';
 import 'package:muxify/core/constants/app_text_styles.dart';
 import 'package:muxify/core/router/app_router.dart';
 import 'package:muxify/features/profile_menu/services/profile_menu_api_service.dart';
+import 'package:muxify/features/wallet/services/wallet_api_service.dart';
 import 'package:muxify/shared/widgets/profile_section_scaffold.dart';
 
 class WalletPaymentScreen extends StatefulWidget {
@@ -16,10 +17,11 @@ class WalletPaymentScreen extends StatefulWidget {
 }
 
 class _WalletPaymentScreenState extends State<WalletPaymentScreen> {
-  final _api = ProfileMenuApiService();
+  final _api = WalletApiService();
 
   WalletSummary? _summary;
   List<WalletTransaction>? _transactions;
+  CoinRate _rate = CoinRate.fallback();
   bool _loading = true;
   String? _error;
 
@@ -38,11 +40,13 @@ class _WalletPaymentScreenState extends State<WalletPaymentScreen> {
       final results = await Future.wait([
         _api.fetchWalletSummary(),
         _api.fetchWalletTransactions(),
+        _api.fetchCoinRate(),
       ]);
       if (!mounted) return;
       setState(() {
         _summary = results[0] as WalletSummary;
         _transactions = results[1] as List<WalletTransaction>;
+        _rate = results[2] as CoinRate;
         _loading = false;
       });
     } catch (e) {
@@ -70,6 +74,7 @@ class _WalletPaymentScreenState extends State<WalletPaymentScreen> {
             _BalanceCard(
               loading: _loading,
               summary: _summary,
+              rate: _rate,
               onTopUp: () {
                 HapticFeedback.lightImpact();
                 context.push(AppRouter.getCoins);
@@ -178,11 +183,13 @@ class _BalanceCard extends StatelessWidget {
   const _BalanceCard({
     required this.loading,
     required this.summary,
+    required this.rate,
     required this.onTopUp,
   });
 
   final bool loading;
   final WalletSummary? summary;
+  final CoinRate rate;
   final VoidCallback onTopUp;
 
   @override
@@ -267,7 +274,7 @@ class _BalanceCard extends StatelessWidget {
           Text(
             loading
                 ? ' '
-                : '≈ ₦${_format((summary?.balance ?? 0) ~/ 2)} value',
+                : '≈ ₦${_format((summary?.balance ?? 0) ~/ rate.coinsPerNairaMajor)} value',
             style: AppTextStyles.bodyMedium.copyWith(
               fontSize: 12.font,
               color: AppColors.text.withValues(alpha: 0.7),
@@ -279,10 +286,14 @@ class _BalanceCard extends StatelessWidget {
               Expanded(
                 child: FilledButton.icon(
                   onPressed: onTopUp,
-                  icon: const Icon(Icons.add, size: 18),
+                  icon: Icon(Icons.add, size: 18, color: AppColors.background),
                   label: Text(
                     'Top up',
-                    style: AppTextStyles.buttonText.copyWith(fontSize: 14.font),
+                    style: AppTextStyles.buttonText.copyWith(
+                      fontSize: 14.font,
+                      color: AppColors.background,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                   style: FilledButton.styleFrom(
                     backgroundColor: AppColors.text,

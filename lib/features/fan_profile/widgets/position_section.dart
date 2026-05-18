@@ -4,7 +4,30 @@ import 'package:muxify/core/constants/app_sizes.dart';
 import 'package:muxify/core/constants/app_text_styles.dart';
 
 class PositionSection extends StatelessWidget {
-  const PositionSection({super.key});
+  const PositionSection({
+    super.key,
+    this.giftsRecord,
+    this.leaderboardRank,
+  });
+
+  final int? giftsRecord;
+  final int? leaderboardRank;
+
+  String get giftsRecordValue {
+    final value = giftsRecord;
+    if (value == null) return '';
+    return _formatThousands(value);
+  }
+
+  static String _formatThousands(int value) {
+    final str = value.toString();
+    final buf = StringBuffer();
+    for (var i = 0; i < str.length; i++) {
+      if (i > 0 && (str.length - i) % 3 == 0) buf.write(',');
+      buf.write(str[i]);
+    }
+    return buf.toString();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -25,9 +48,8 @@ class PositionSection extends StatelessWidget {
             // Gifts Record Card
             Expanded(
               child: Container(
-                padding: EdgeInsets.all(22.padding),
+                padding: EdgeInsets.all(18.padding),
                 decoration: BoxDecoration(
-                  // color: AppColors.text.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(14.radius),
                   border: Border.all(
                     color: AppColors.text.withValues(alpha: 0.1),
@@ -48,48 +70,55 @@ class PositionSection extends StatelessWidget {
                       width: 40.icon,
                       height: 40.icon,
                     ),
-                    15.row,
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        RichText(
-                          textAlign: TextAlign.start,
-
-                          text: TextSpan(
-                            style: AppTextStyles.displayText.copyWith(
-                              color: AppColors.text,
+                    12.row,
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          RichText(
+                            textAlign: TextAlign.start,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            text: TextSpan(
+                              style: AppTextStyles.displayText.copyWith(
+                                color: AppColors.text,
+                                fontWeight: FontWeight.w400,
+                              ),
+                              children: [
+                                TextSpan(
+                                  text: giftsRecordValue.isNotEmpty ? 'm' : '',
+                                  style: AppTextStyles.displayText.copyWith(
+                                    color: AppColors.text,
+                                    fontSize: 10.font,
+                                    fontWeight: FontWeight.w400,
+                                  ),
+                                ),
+                                TextSpan(
+                                  text: giftsRecordValue.isNotEmpty
+                                      ? giftsRecordValue
+                                      : '—',
+                                  style: AppTextStyles.displayText.copyWith(
+                                    color: AppColors.text,
+                                    fontSize: 18.font,
+                                    fontWeight: FontWeight.w400,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Text(
+                            'Gifts Record',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTextStyles.bodySmall.copyWith(
+                              color: AppColors.text.withValues(alpha: 0.7),
+                              fontSize: 15.font,
                               fontWeight: FontWeight.w400,
                             ),
-                            children: [
-                              TextSpan(
-                                text: 'm',
-                                style: AppTextStyles.displayText.copyWith(
-                                  color: AppColors.text,
-                                  fontSize: 10.font,
-                                  fontWeight: FontWeight.w400,
-                                ),
-                              ),
-                              TextSpan(
-                                text: '100,250',
-                                style: AppTextStyles.displayText.copyWith(
-                                  color: AppColors.text,
-                                  fontSize: 18.font,
-                                  fontWeight: FontWeight.w400,
-                                ),
-                              ),
-                            ],
                           ),
-                        ),
-                        // 4.column,
-                        Text(
-                          'Gifts Record',
-                          style: AppTextStyles.bodySmall.copyWith(
-                            color: AppColors.text.withValues(alpha: 0.7),
-                            fontSize: 15.font,
-                            fontWeight: FontWeight.w400,
-                          ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ],
                 ),
@@ -99,9 +128,8 @@ class PositionSection extends StatelessWidget {
             // Leaderboard Card
             Expanded(
               child: Container(
-                padding: EdgeInsets.all(22.padding),
+                padding: EdgeInsets.all(18.padding),
                 decoration: BoxDecoration(
-                  // color: AppColors.glassyDark,
                   borderRadius: BorderRadius.circular(14.radius),
                   border: Border.all(
                     color: AppColors.text.withValues(alpha: 0.1),
@@ -131,28 +159,34 @@ class PositionSection extends StatelessWidget {
                         height: 16.icon,
                       ),
                     ),
-                    15.row,
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '#2',
-                          style: AppTextStyles.bodyLarge.copyWith(
-                            color: AppColors.text,
-                            fontSize: 21.font,
-                            fontWeight: FontWeight.w600,
+                    12.row,
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            leaderboardRank != null ? '#$leaderboardRank' : '—',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTextStyles.bodyLarge.copyWith(
+                              color: AppColors.text,
+                              fontSize: 21.font,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
-                        ),
-                        // 4.column,
-                        Text(
-                          'Leaderboard',
-                          style: AppTextStyles.bodySmall.copyWith(
-                            color: AppColors.text.withValues(alpha: 0.7),
-                            fontSize: 15.font,
-                            fontWeight: FontWeight.w600,
+                          Text(
+                            'Leaderboard',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTextStyles.bodySmall.copyWith(
+                              color: AppColors.text.withValues(alpha: 0.7),
+                              fontSize: 15.font,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ],
                 ),

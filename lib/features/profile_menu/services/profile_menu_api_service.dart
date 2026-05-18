@@ -2,6 +2,13 @@ import 'package:muxify/core/constants/api_constants.dart';
 import 'package:muxify/core/network/api_exceptions.dart';
 import 'package:muxify/core/network/api_requester.dart';
 import 'package:muxify/core/utils/app_toast.dart';
+import 'package:muxify/features/wallet/services/wallet_api_service.dart';
+
+// Re-export wallet types so existing imports of
+// `package:muxify/features/profile_menu/services/profile_menu_api_service.dart`
+// keep working after the wallet logic was extracted to its own service.
+export 'package:muxify/features/wallet/services/wallet_api_service.dart'
+    show WalletSummary, WalletTransaction, WalletTxDirection, WalletTxKind;
 
 /// Thin facade for every backend call surfaced from the Fan Profile menu.
 ///
@@ -174,37 +181,17 @@ class ProfileMenuApiService {
   }
 
   // ---------------------------------------------------------------------------
-  // Wallet
+  // Wallet — thin delegates to [WalletApiService]. Kept here so existing
+  // callers (wallet_payment_screen) need not be re-wired during this slice.
   // ---------------------------------------------------------------------------
 
-  Future<WalletSummary> fetchWalletSummary() async {
-    try {
-      return await _requester.getJson<WalletSummary>(
-        '/api/v1/wallet/balance',
-        WalletSummary.fromJson,
-        authenticate: true,
-      );
-    } on ApiRequestException {
-      return WalletSummary.empty();
-    } catch (_) {
-      return WalletSummary.empty();
-    }
-  }
+  Future<WalletSummary> fetchWalletSummary() =>
+      _wallet.fetchWalletSummary();
 
-  Future<List<WalletTransaction>> fetchWalletTransactions() async {
-    try {
-      return await _requester.getJsonList<WalletTransaction>(
-        '/api/v1/wallet/transactions',
-        WalletTransaction.fromJson,
-        queryParameters: const {'page': 1, 'pageSize': 25},
-        authenticate: true,
-      );
-    } on ApiRequestException {
-      return const [];
-    } catch (_) {
-      return const [];
-    }
-  }
+  Future<List<WalletTransaction>> fetchWalletTransactions() =>
+      _wallet.fetchWalletTransactions();
+
+  late final WalletApiService _wallet = WalletApiService(requester: _requester);
 
   // ---------------------------------------------------------------------------
   // Account deactivation
@@ -229,99 +216,4 @@ class ProfileMenuApiService {
   }
 }
 
-// ===========================================================================
-// Wallet models
-// ===========================================================================
-
-class WalletSummary {
-  const WalletSummary({
-    required this.balance,
-    required this.tier,
-    this.lifetimeSpent = 0,
-    this.lifetimeEarned = 0,
-  });
-
-  factory WalletSummary.fromJson(Map<String, dynamic> json) {
-    final balance = json['balance'] ?? json['coins'] ?? json['amount'] ?? 0;
-    return WalletSummary(
-      balance: (balance is num) ? balance.toInt() : 0,
-      tier: (json['tier'] as String?) ?? 'Bronze',
-      lifetimeSpent:
-          (json['lifetimeSpent'] is num) ? (json['lifetimeSpent'] as num).toInt() : 0,
-      lifetimeEarned:
-          (json['lifetimeEarned'] is num) ? (json['lifetimeEarned'] as num).toInt() : 0,
-    );
-  }
-
-  factory WalletSummary.empty() => const WalletSummary(balance: 0, tier: 'Bronze');
-
-  final int balance;
-  final String tier;
-  final int lifetimeSpent;
-  final int lifetimeEarned;
-}
-
-enum WalletTxDirection { credit, debit }
-
-enum WalletTxKind { topUp, gift, unlock, refund, other }
-
-class WalletTransaction {
-  const WalletTransaction({
-    required this.id,
-    required this.title,
-    required this.amount,
-    required this.direction,
-    required this.kind,
-    required this.createdAt,
-  });
-
-  factory WalletTransaction.fromJson(Map<String, dynamic> json) {
-    final amount = json['amount'];
-    final amountInt = (amount is num) ? amount.toInt().abs() : 0;
-    final dir = (json['direction'] as String?)?.toLowerCase() ??
-        ((amount is num && amount < 0) ? 'debit' : 'credit');
-    final kindStr = (json['type'] ?? json['kind'] ?? 'other')
-        .toString()
-        .toLowerCase();
-    final created = DateTime.tryParse(json['createdAt']?.toString() ?? '') ??
-        DateTime.now();
-    return WalletTransaction(
-      id: json['id']?.toString() ?? '',
-      title: (json['title'] as String?) ??
-          (json['description'] as String?) ??
-          _titleFromKind(kindStr),
-      amount: amountInt,
-      direction: dir == 'debit' ? WalletTxDirection.debit : WalletTxDirection.credit,
-      kind: _kindFromString(kindStr),
-      createdAt: created,
-    );
-  }
-
-  final String id;
-  final String title;
-  final int amount;
-  final WalletTxDirection direction;
-  final WalletTxKind kind;
-  final DateTime createdAt;
-
-  static WalletTxKind _kindFromString(String s) {
-    if (s.contains('topup') || s.contains('top_up') || s.contains('purchase')) {
-      return WalletTxKind.topUp;
-    }
-    if (s.contains('gift')) return WalletTxKind.gift;
-    if (s.contains('unlock')) return WalletTxKind.unlock;
-    if (s.contains('refund')) return WalletTxKind.refund;
-    return WalletTxKind.other;
-  }
-
-  static String _titleFromKind(String s) {
-    final k = _kindFromString(s);
-    return switch (k) {
-      WalletTxKind.topUp => 'Coin top-up',
-      WalletTxKind.gift => 'Gift sent',
-      WalletTxKind.unlock => 'Content unlock',
-      WalletTxKind.refund => 'Refund',
-      WalletTxKind.other => 'Wallet activity',
-    };
-  }
-}
+// Wallet model types live in WalletApiService now and are re-exported above.

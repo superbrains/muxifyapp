@@ -158,6 +158,28 @@ class ApiConstants {
   static const String giftTypesPath = '$apiV1Prefix/gifts/types';
   static const String giftSendPath = '$apiV1Prefix/gifts/send';
 
+  // Fan Profile endpoints
+  static String fanProfilePath(String fanId) =>
+      '$apiV1Prefix/fans/${Uri.encodeComponent(fanId.trim())}/profile';
+
+  static String fanActivityPath(String fanId) =>
+      '$apiV1Prefix/fans/${Uri.encodeComponent(fanId.trim())}/activity';
+
+  static String fanSupportedArtistsPath(String fanId) =>
+      '$apiV1Prefix/fans/${Uri.encodeComponent(fanId.trim())}/supported-artists';
+
+  static String fanFollowedArtistsPath(String fanId) =>
+      '$apiV1Prefix/fans/${Uri.encodeComponent(fanId.trim())}/followed-artists';
+
+  static String fanBadgesPath(String fanId) =>
+      '$apiV1Prefix/fans/${Uri.encodeComponent(fanId.trim())}/badges';
+
+  static String fanMedalsPath(String fanId) =>
+      '$apiV1Prefix/fans/${Uri.encodeComponent(fanId.trim())}/medals';
+
+  static String fanGiftPath(String fanId) =>
+      '$apiV1Prefix/fans/${Uri.encodeComponent(fanId.trim())}/gift';
+
   // Track engagement (like/share) — wired to the backend ContentEndpoints
   // additions in Muxify.Api.
   static String trackLikePath(String trackId) =>

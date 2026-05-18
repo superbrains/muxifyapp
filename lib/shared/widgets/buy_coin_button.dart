@@ -3,10 +3,21 @@ import 'package:flutter/services.dart';
 import 'package:muxify/core/constants/app_colors.dart';
 import 'package:muxify/core/constants/app_sizes.dart';
 import 'package:muxify/core/constants/app_text_styles.dart';
-import 'package:muxify/features/music_player/widgets/payment_method_bottom_sheet.dart';
 
+/// Solid-red "Buy Coin" CTA. The button is presentation-only; the parent
+/// screen owns the purchase flow (package selection, payment-method sheet,
+/// status navigation) so this widget stays trivial to reuse.
 class BuyCoinButton extends StatelessWidget {
-  const BuyCoinButton({super.key});
+  const BuyCoinButton({
+    super.key,
+    required this.onPressed,
+    this.enabled = true,
+    this.label = 'Buy Coins',
+  });
+
+  final VoidCallback? onPressed;
+  final bool enabled;
+  final String label;
 
   @override
   Widget build(BuildContext context) {
@@ -14,19 +25,22 @@ class BuyCoinButton extends StatelessWidget {
       width: double.infinity,
       height: 56.buttonHeight,
       child: ElevatedButton(
-        onPressed: () {
-          HapticFeedback.lightImpact();
-          _showPaymentMethodBottomSheet(context);
-        },
+        onPressed: enabled
+            ? () {
+                HapticFeedback.lightImpact();
+                onPressed?.call();
+              }
+            : null,
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFFF94444), // Red background
+          backgroundColor: const Color(0xFFF94444),
+          disabledBackgroundColor: const Color(0xFFF94444).withValues(alpha: 0.4),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10.radius),
           ),
           elevation: 0,
         ),
         child: Text(
-          'Buy Coin',
+          label,
           style: AppTextStyles.bodyLarge.copyWith(
             color: AppColors.text,
             fontSize: 16.font,
@@ -34,16 +48,6 @@ class BuyCoinButton extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-
-  void _showPaymentMethodBottomSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (context) =>
-          PaymentMethodBottomSheet(onClose: () => Navigator.of(context).pop()),
     );
   }
 }

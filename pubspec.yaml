@@ -35,6 +35,8 @@ dependencies:
   chewie: ^1.8.5
   flutter_lyric: ^3.0.3
   share_plus: ^10.1.4
+  webview_flutter: ^4.10.0
+  uuid: ^4.5.1
 
 dev_dependencies:
   flutter_test:

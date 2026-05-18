@@ -112,19 +112,24 @@ class ApiRequester {
   }
 
   /// POST JSON body; parse [successStatus] response as JSON object into [T].
+  ///
+  /// [extraHeaders] are merged on top of the auth headers — used for things
+  /// like `Idempotency-Key` on payment-initiation calls.
   Future<T> postJson<T>(
     String path,
     Map<String, dynamic>? body,
     T Function(Map<String, dynamic> json) fromJson, {
     int successStatus = ApiConstants.statusOk,
     bool authenticate = false,
+    Map<String, String>? extraHeaders,
   }) async {
     final authHeaders = await _authHeadersIfNeeded(authenticate);
+    final merged = <String, String>{...authHeaders, ...?extraHeaders};
     http.Response response = await _guardNetwork(
       () => _client.post(
         path,
         body: body,
-        headers: authHeaders.isEmpty ? null : authHeaders,
+        headers: merged.isEmpty ? null : merged,
       ),
     );
 
@@ -132,8 +137,9 @@ class ApiRequester {
         response.statusCode == ApiConstants.statusUnauthorized &&
         await _tryRefreshAccessToken()) {
       final h2 = await _authHeadersIfNeeded(true);
+      final merged2 = <String, String>{...h2, ...?extraHeaders};
       response = await _guardNetwork(
-        () => _client.post(path, body: body, headers: h2.isEmpty ? null : h2),
+        () => _client.post(path, body: body, headers: merged2.isEmpty ? null : merged2),
       );
     }
 

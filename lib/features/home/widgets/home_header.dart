@@ -167,7 +167,10 @@ class HomeHeader extends StatelessWidget {
             if (isPhoneLayout) {
               Scaffold.maybeOf(context)?.openEndDrawer();
             } else {
-              context.push(AppRouter.fanProfile);
+              final userId = context.read<AuthProvider>().currentUser?.id;
+              if (userId != null && userId.isNotEmpty) {
+                context.push(AppRouter.fanProfileFor(userId));
+              }
             }
           },
           child: Consumer<AuthProvider>(
