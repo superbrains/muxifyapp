@@ -93,6 +93,15 @@ class HomeProvider extends ChangeNotifier {
   // VIDEO TAB STATE
   // ===========================================================================
 
+  /// Creator-category filter applied to every category-scoped feed call —
+  /// both audio (tracks) and video. Maps to the backend's `?category=` query
+  /// param which narrows results by uploader [UserRole]. One value per top
+  /// tab: "artist" = Music, "dj" = DJ Mix, "podcaster" = Podcast,
+  /// "creator" = Videos. Switching tabs reassigns this and clears all
+  /// category-scoped caches.
+  String _creatorCategory = 'artist';
+  String get creatorCategory => _creatorCategory;
+
   /// Mobile-side filter applied to all video feeds.
   /// "music"  -> MusicVideo + LyricVideo + Visualizer
   /// "content"-> BehindTheScenes + LivePerformance + Interview + Other
@@ -160,7 +169,7 @@ class HomeProvider extends ChangeNotifier {
       final response = await _requester.getJson(
         ApiConstants.feedRecentlyPlayedPath,
         (json) => json,
-        queryParameters: const {'pageSize': '5'},
+        queryParameters: {'pageSize': '5', 'category': _creatorCategory},
         authenticate: true,
       );
 
@@ -203,7 +212,11 @@ class HomeProvider extends ChangeNotifier {
       final response = await _requester.getJson(
         ApiConstants.trendingArtistsPath,
         (json) => json,
-        queryParameters: const {'page': '1', 'pageSize': '24'},
+        queryParameters: {
+          'page': '1',
+          'pageSize': '24',
+          'category': _creatorCategory,
+        },
         authenticate: useAuth,
       );
 
@@ -262,7 +275,11 @@ class HomeProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final dtos = await _feed.getNewReleases(days: 30, pageSize: 10);
+      final dtos = await _feed.getNewReleases(
+        days: 30,
+        pageSize: 10,
+        category: _creatorCategory,
+      );
       _popularNewReleases =
           dtos.map(NewReleaseItem.fromFeedTrack).toList(growable: false);
       _hasLoadedPopularNewReleases = true;
@@ -284,7 +301,10 @@ class HomeProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final dtos = await _feed.getFromFollowing(pageSize: 12);
+      final dtos = await _feed.getFromFollowing(
+        pageSize: 12,
+        category: _creatorCategory,
+      );
       _followed =
           dtos.map(FollowedItem.fromFeedTrack).toList(growable: false);
       _hasLoadedFollowed = true;
@@ -372,6 +392,43 @@ class HomeProvider extends ChangeNotifier {
   // VIDEO LOADERS
   // ===========================================================================
 
+  /// Switches the creator-category filter (Music / DJ Mix / Podcast / Videos
+  /// tabs) and clears every cached category-scoped list — audio AND video —
+  /// so the next access re-fetches under the new category. Caller is expected
+  /// to trigger the loaders for the currently visible sections after this
+  /// returns.
+  void setCreatorCategory(String category) {
+    final next = category.trim().toLowerCase();
+    if (next != 'artist' && next != 'dj' && next != 'podcaster' && next != 'creator') {
+      return;
+    }
+    if (next == _creatorCategory) return;
+    _creatorCategory = next;
+    // Drop every category-scoped audio cache.
+    _categoryCardsByTab.clear();
+    _loadingCategoryTabs.clear();
+    _spotlightByTab.clear();
+    _loadingSpotlightTabs.clear();
+    _recentlyPlayed = const [];
+    _hasLoadedRecentlyPlayed = false;
+    _trendingArtists = const [];
+    _hasLoadedTrendingArtists = false;
+    _popularNewReleases = const [];
+    _hasLoadedPopularNewReleases = false;
+    _followed = const [];
+    _hasLoadedFollowed = false;
+    // Drop every category-scoped video cache.
+    _videosByCategoryTab.clear();
+    _loadingVideoCategoryTabs.clear();
+    _videoSpotlightByTab.clear();
+    _loadingVideoSpotlightTabs.clear();
+    _popularReleaseVideos = const [];
+    _hasLoadedPopularReleaseVideos = false;
+    _followedVideos = const [];
+    _hasLoadedFollowedVideos = false;
+    notifyListeners();
+  }
+
   /// Switches the global Music/Content filter and clears cached video lists
   /// so they re-fetch with the new filter on next access.
   void setVideoFilter(String filter) {
@@ -426,6 +483,7 @@ class HomeProvider extends ChangeNotifier {
     try {
       final dtos = await _videoFeed.getNewReleaseVideos(
         videoType: _videoFilter,
+        category: _creatorCategory,
         days: 30,
         pageSize: 10,
       );
@@ -452,6 +510,7 @@ class HomeProvider extends ChangeNotifier {
     try {
       final dtos = await _videoFeed.getVideosFromFollowing(
         videoType: _videoFilter,
+        category: _creatorCategory,
         pageSize: 12,
       );
       _followedVideos =
@@ -494,34 +553,40 @@ class HomeProvider extends ChangeNotifier {
   }
 
   Future<List<FeedVideoDto>> _fetchVideosForCategory(String tabId) async {
+    final cat = _creatorCategory;
     switch (tabId) {
       case 'trending':
         return _videoFeed.getTrendingVideos(
           videoType: _videoFilter,
+          category: cat,
           period: 'week',
           pageSize: 24,
         );
       case 'hot_release':
         return _videoFeed.getHotReleaseVideos(
           videoType: _videoFilter,
+          category: cat,
           days: 14,
           pageSize: 24,
         );
       case 'top_chart':
         return _videoFeed.getTopChartVideos(
           videoType: _videoFilter,
+          category: cat,
           period: 'all',
           pageSize: 24,
         );
       case 'new_release':
         return _videoFeed.getNewReleaseVideos(
           videoType: _videoFilter,
+          category: cat,
           days: 30,
           pageSize: 24,
         );
       default:
         return _videoFeed.getTrendingVideos(
           videoType: _videoFilter,
+          category: cat,
           period: 'week',
           pageSize: 24,
         );
@@ -538,6 +603,7 @@ class HomeProvider extends ChangeNotifier {
       case 'most_gifted':
         final items = await _videoFeed.getMostGiftedVideos(
           period: 'week',
+          category: _creatorCategory,
           pageSize: 10,
         );
         return items.map((dto) {
@@ -569,17 +635,18 @@ class HomeProvider extends ChangeNotifier {
   // ===========================================================================
 
   Future<List<FeedTrackDto>> _fetchTracksForCategory(String tabId) async {
+    final cat = _creatorCategory;
     switch (tabId) {
       case 'trending':
-        return _feed.getTrendingTracks(period: 'week', pageSize: 24);
+        return _feed.getTrendingTracks(period: 'week', pageSize: 24, category: cat);
       case 'hot_release':
-        return _feed.getHotReleases(days: 14, pageSize: 24);
+        return _feed.getHotReleases(days: 14, pageSize: 24, category: cat);
       case 'top_chart':
-        return _feed.getTopCharts(period: 'all', pageSize: 24);
+        return _feed.getTopCharts(period: 'all', pageSize: 24, category: cat);
       case 'new_release':
-        return _feed.getNewReleases(days: 30, pageSize: 24);
+        return _feed.getNewReleases(days: 30, pageSize: 24, category: cat);
       default:
-        return _feed.getTrendingTracks(period: 'week', pageSize: 24);
+        return _feed.getTrendingTracks(period: 'week', pageSize: 24, category: cat);
     }
   }
 
@@ -617,7 +684,11 @@ class HomeProvider extends ChangeNotifier {
         final items = await _feed.getSpotlight(take: 5);
         return items.map(SpotlightItem.fromSpotlightDto).toList(growable: false);
       case 'most_gifted':
-        final items = await _feed.getMostGifted(period: 'week', pageSize: 10);
+        final items = await _feed.getMostGifted(
+          period: 'week',
+          pageSize: 10,
+          category: _creatorCategory,
+        );
         return items.map(SpotlightItem.fromMostGiftedDto).toList(growable: false);
       case 'top_giver':
         final items = await _feed.getTopGivers(period: 'week', pageSize: 10);

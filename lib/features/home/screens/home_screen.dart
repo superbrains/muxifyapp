@@ -358,6 +358,14 @@ class _HomeScreenState extends State<HomeScreen> {
     final followedLoading = homeProvider.isLoadingFollowed;
     final showFollowed = followedLoading || followed.isNotEmpty;
 
+    // Video sections that share the same _creatorCategory filter — so a
+    // creator's audio AND video output appears under their tab. Each section
+    // is shown only when there's something to render (no loading skeletons,
+    // since the music sections already provide that affordance).
+    final categoryVideos = homeProvider.videosForCategory(_selectedCategoryId);
+    final popularReleaseVideos = homeProvider.popularReleaseVideos;
+    final followedVideos = homeProvider.followedVideos;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -381,13 +389,17 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         if (showTrendingArtists) 30.column,
 
-        // Category tabs that drive the section directly below.
+        // Category tabs that drive the sections directly below. Both the
+        // music category cards AND the Trending-videos grid filter on this
+        // same Trending/Hot/Top/New selection.
         CategoryTabsSection(
           categories: _categoryTabs,
           selectedCategoryId: _selectedCategoryId,
           onCategoryChanged: (categoryId) {
             setState(() => _selectedCategoryId = categoryId);
-            context.read<HomeProvider>().loadCategoryTab(categoryId);
+            final home = context.read<HomeProvider>();
+            home.loadCategoryTab(categoryId);
+            home.loadVideoCategoryTab(categoryId);
           },
         ),
         24.column,
@@ -407,6 +419,16 @@ class _HomeScreenState extends State<HomeScreen> {
             },
           ),
         if (showCategorySection) 20.column,
+
+        // Trending-videos grid for the same Trending/Hot/Top/New selection,
+        // narrowed to the active creator-category (Artist / DJ / Podcaster).
+        if (categoryVideos.isNotEmpty) ...[
+          TrendingVideosSection(
+            items: categoryVideos,
+            onItemTap: _openVideoItem,
+          ),
+          30.column,
+        ],
 
         // Curated featured playlists (always-on, below the category-driven cards).
         if (showFeaturedSection) ...[
@@ -435,6 +457,14 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         if (showPopular) 32.column,
 
+        if (popularReleaseVideos.isNotEmpty) ...[
+          VideoPopularNewReleasesSection(
+            items: popularReleaseVideos,
+            onItemTap: _openVideoItem,
+          ),
+          32.column,
+        ],
+
         SpotlightSection(
           tabs: _spotlightTabs,
           selectedTabId: _selectedSpotlightTabId,
@@ -457,6 +487,15 @@ class _HomeScreenState extends State<HomeScreen> {
             onItemTap: _openFollowed,
           ),
         if (showFollowed) 32.column,
+
+        if (followedVideos.isNotEmpty) ...[
+          VideoFollowedSection(
+            title: 'Videos from those you follow',
+            items: followedVideos,
+            onItemTap: _openVideoItem,
+          ),
+          32.column,
+        ],
       ],
     );
   }
@@ -588,12 +627,47 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildDjMixContent(HomeProvider homeProvider) {
-    return _buildMusicContent(homeProvider);
+  // DJ Mix and Podcast reuse the music layout — the difference between the
+  // tabs comes from the creator-category filter set on HomeProvider when the
+  // tab is selected (see HomeHeader.onTabChanged below).
+  Widget _buildDjMixContent(HomeProvider homeProvider) =>
+      _buildMusicContent(homeProvider);
+
+  Widget _buildPodcastContent(HomeProvider homeProvider) =>
+      _buildMusicContent(homeProvider);
+
+  String? _creatorCategoryForTab(String tab) {
+    switch (tab) {
+      case 'Music':
+        return 'artist';
+      case 'DJ Mix':
+        return 'dj';
+      case 'Podcast':
+        return 'podcaster';
+      case 'Videos':
+        return 'creator';
+      default:
+        return null;
+    }
   }
 
-  Widget _buildPodcastContent(HomeProvider homeProvider) {
-    return _buildMusicContent(homeProvider);
+  /// Re-fires every category-scoped loader (audio + video) after a tab switch.
+  /// Music/DJ Mix/Podcast tabs render both audio and video sections from
+  /// [_buildMusicContent], and the Videos tab re-uses the same video loaders
+  /// from [_buildVideosContent], so we kick all of them off regardless of
+  /// which tab is now active.
+  void _reloadAllSectionsForCurrentTab(HomeProvider home) {
+    home.loadRecentlyPlayed();
+    home.loadTrendingArtists();
+    home.loadFeaturedPlaylists();
+    home.loadPopularNewReleases();
+    home.loadFollowed();
+    home.loadCategoryTab(_selectedCategoryId);
+    home.loadSpotlightTab(_selectedSpotlightTabId);
+    home.loadVideoCategoryTab(_selectedCategoryId);
+    home.loadPopularReleaseVideos();
+    home.loadFollowedVideos();
+    home.loadVideoSpotlightTab(_selectedVideoSpotlightTabId);
   }
 
   @override
@@ -611,6 +685,12 @@ class _HomeScreenState extends State<HomeScreen> {
             toggleOptions: _toggleOptions,
             onTabChanged: (tab) {
               setState(() => _selectedTab = tab);
+              final category = _creatorCategoryForTab(tab);
+              if (category == null) return; // Videos tab: nothing to switch.
+              final home = context.read<HomeProvider>();
+              if (home.creatorCategory == category) return;
+              home.setCreatorCategory(category);
+              _reloadAllSectionsForCurrentTab(home);
             },
           ),
           Expanded(

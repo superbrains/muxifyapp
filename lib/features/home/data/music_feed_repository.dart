@@ -15,6 +15,7 @@ class MusicFeedRepository {
   Future<List<FeedTrackDto>> getTrendingTracks({
     String? period,
     String? genre,
+    String? category,
     int page = 1,
     int pageSize = 20,
   }) {
@@ -24,6 +25,7 @@ class MusicFeedRepository {
     };
     if (period != null && period.trim().isNotEmpty) query['period'] = period;
     if (genre != null && genre.trim().isNotEmpty) query['genre'] = genre;
+    if (category != null && category.trim().isNotEmpty) query['category'] = category;
     return _list(
       ApiConstants.feedTrendingTracksPath,
       FeedTrackDto.fromJson,
@@ -33,6 +35,7 @@ class MusicFeedRepository {
 
   Future<List<FeedTrackDto>> getHotReleases({
     String? genre,
+    String? category,
     int days = 14,
     int page = 1,
     int pageSize = 20,
@@ -43,6 +46,7 @@ class MusicFeedRepository {
       'pageSize': pageSize.toString(),
     };
     if (genre != null && genre.trim().isNotEmpty) query['genre'] = genre;
+    if (category != null && category.trim().isNotEmpty) query['category'] = category;
     return _list(
       ApiConstants.feedHotReleasesPath,
       FeedTrackDto.fromJson,
@@ -53,6 +57,7 @@ class MusicFeedRepository {
   Future<List<FeedTrackDto>> getTopCharts({
     String? period,
     String? genre,
+    String? category,
     int page = 1,
     int pageSize = 20,
   }) {
@@ -62,6 +67,7 @@ class MusicFeedRepository {
     };
     if (period != null && period.trim().isNotEmpty) query['period'] = period;
     if (genre != null && genre.trim().isNotEmpty) query['genre'] = genre;
+    if (category != null && category.trim().isNotEmpty) query['category'] = category;
     return _list(
       ApiConstants.feedTopChartsPath,
       FeedTrackDto.fromJson,
@@ -71,6 +77,7 @@ class MusicFeedRepository {
 
   Future<List<FeedTrackDto>> getNewReleases({
     String? genre,
+    String? category,
     int days = 30,
     int page = 1,
     int pageSize = 20,
@@ -81,6 +88,7 @@ class MusicFeedRepository {
       'pageSize': pageSize.toString(),
     };
     if (genre != null && genre.trim().isNotEmpty) query['genre'] = genre;
+    if (category != null && category.trim().isNotEmpty) query['category'] = category;
     return _list(
       ApiConstants.feedNewReleasesPath,
       FeedTrackDto.fromJson,
@@ -89,13 +97,19 @@ class MusicFeedRepository {
   }
 
   Future<List<FeedTrackDto>> getFromFollowing({
+    String? category,
     int page = 1,
     int pageSize = 20,
   }) {
+    final query = <String, dynamic>{
+      'page': page.toString(),
+      'pageSize': pageSize.toString(),
+    };
+    if (category != null && category.trim().isNotEmpty) query['category'] = category;
     return _list(
       ApiConstants.feedFromFollowingPath,
       FeedTrackDto.fromJson,
-      {'page': page.toString(), 'pageSize': pageSize.toString()},
+      query,
     );
   }
 
@@ -123,6 +137,7 @@ class MusicFeedRepository {
 
   Future<List<MostGiftedTrackDto>> getMostGifted({
     String? period,
+    String? category,
     int page = 1,
     int pageSize = 10,
   }) {
@@ -131,6 +146,7 @@ class MusicFeedRepository {
       'pageSize': pageSize.toString(),
     };
     if (period != null && period.trim().isNotEmpty) query['period'] = period;
+    if (category != null && category.trim().isNotEmpty) query['category'] = category;
     return _list(
       ApiConstants.feedMostGiftedPath,
       MostGiftedTrackDto.fromJson,

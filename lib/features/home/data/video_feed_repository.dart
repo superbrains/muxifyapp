@@ -15,6 +15,7 @@ class VideoFeedRepository {
   Future<List<FeedVideoDto>> getTrendingVideos({
     String? videoType,
     String? period,
+    String? category,
     int page = 1,
     int pageSize = 20,
   }) {
@@ -26,6 +27,7 @@ class VideoFeedRepository {
       query['videoType'] = videoType;
     }
     if (period != null && period.trim().isNotEmpty) query['period'] = period;
+    if (category != null && category.trim().isNotEmpty) query['category'] = category;
     return _list(
       ApiConstants.feedTrendingVideosPath,
       FeedVideoDto.fromJson,
@@ -35,6 +37,7 @@ class VideoFeedRepository {
 
   Future<List<FeedVideoDto>> getHotReleaseVideos({
     String? videoType,
+    String? category,
     int days = 14,
     int page = 1,
     int pageSize = 20,
@@ -47,6 +50,7 @@ class VideoFeedRepository {
     if (videoType != null && videoType.trim().isNotEmpty) {
       query['videoType'] = videoType;
     }
+    if (category != null && category.trim().isNotEmpty) query['category'] = category;
     return _list(
       ApiConstants.feedHotReleaseVideosPath,
       FeedVideoDto.fromJson,
@@ -57,6 +61,7 @@ class VideoFeedRepository {
   Future<List<FeedVideoDto>> getTopChartVideos({
     String? videoType,
     String? period,
+    String? category,
     int page = 1,
     int pageSize = 20,
   }) {
@@ -68,6 +73,7 @@ class VideoFeedRepository {
       query['videoType'] = videoType;
     }
     if (period != null && period.trim().isNotEmpty) query['period'] = period;
+    if (category != null && category.trim().isNotEmpty) query['category'] = category;
     return _list(
       ApiConstants.feedTopChartVideosPath,
       FeedVideoDto.fromJson,
@@ -77,6 +83,7 @@ class VideoFeedRepository {
 
   Future<List<FeedVideoDto>> getNewReleaseVideos({
     String? videoType,
+    String? category,
     int days = 30,
     int page = 1,
     int pageSize = 20,
@@ -89,6 +96,7 @@ class VideoFeedRepository {
     if (videoType != null && videoType.trim().isNotEmpty) {
       query['videoType'] = videoType;
     }
+    if (category != null && category.trim().isNotEmpty) query['category'] = category;
     return _list(
       ApiConstants.feedNewReleaseVideosPath,
       FeedVideoDto.fromJson,
@@ -98,6 +106,7 @@ class VideoFeedRepository {
 
   Future<List<FeedVideoDto>> getVideosFromFollowing({
     String? videoType,
+    String? category,
     int page = 1,
     int pageSize = 20,
   }) {
@@ -108,6 +117,7 @@ class VideoFeedRepository {
     if (videoType != null && videoType.trim().isNotEmpty) {
       query['videoType'] = videoType;
     }
+    if (category != null && category.trim().isNotEmpty) query['category'] = category;
     return _list(
       ApiConstants.feedVideosFromFollowingPath,
       FeedVideoDto.fromJson,
@@ -128,6 +138,7 @@ class VideoFeedRepository {
 
   Future<List<MostGiftedVideoDto>> getMostGiftedVideos({
     String? period,
+    String? category,
     int page = 1,
     int pageSize = 10,
   }) {
@@ -136,6 +147,7 @@ class VideoFeedRepository {
       'pageSize': pageSize.toString(),
     };
     if (period != null && period.trim().isNotEmpty) query['period'] = period;
+    if (category != null && category.trim().isNotEmpty) query['category'] = category;
     return _list(
       ApiConstants.feedMostGiftedVideosPath,
       MostGiftedVideoDto.fromJson,
