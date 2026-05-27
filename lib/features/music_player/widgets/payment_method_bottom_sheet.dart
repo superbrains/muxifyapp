@@ -42,6 +42,7 @@ class PaymentMethodBottomSheet extends StatefulWidget {
 class _PaymentMethodBottomSheetState extends State<PaymentMethodBottomSheet> {
   final _api = WalletApiService();
   List<CollectionMethod>? _methods;
+  String _providerName = '';
   String? _loadError;
   CollectionMethod? _initiatingMethod;
 
@@ -57,9 +58,12 @@ class _PaymentMethodBottomSheetState extends State<PaymentMethodBottomSheet> {
       _methods = null;
     });
     try {
-      final methods = await _api.fetchPaymentMethods(currency: 'NGN');
+      final envelope = await _api.fetchPaymentMethodsEnvelope(currency: 'NGN');
       if (!mounted) return;
-      setState(() => _methods = methods);
+      setState(() {
+        _methods = envelope.methods;
+        _providerName = envelope.providerName;
+      });
     } catch (_) {
       if (!mounted) return;
       setState(() => _loadError = 'Could not load payment methods. Try again.');
@@ -279,7 +283,9 @@ class _PaymentMethodBottomSheetState extends State<PaymentMethodBottomSheet> {
                   ),
                   2.column,
                   Text(
-                    'Funded by Brij',
+                    _providerName.isEmpty
+                        ? 'Secure checkout'
+                        : 'Secured by $_providerName',
                     style: AppTextStyles.bodySmall.copyWith(
                       color: AppColors.text.withValues(alpha: 0.55),
                       fontSize: 11.font,

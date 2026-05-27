@@ -87,13 +87,27 @@ class WalletApiService {
   Future<List<CollectionMethod>> fetchPaymentMethods({
     String currency = 'NGN',
   }) async {
+    final envelope = await fetchPaymentMethodsEnvelope(currency: currency);
+    return envelope.methods;
+  }
+
+  /// Returns the full methods envelope including the active provider name —
+  /// used to render the "Secured by …" label dynamically without hard-coding
+  /// the gateway in the UI.
+  Future<PaymentMethodsEnvelope> fetchPaymentMethodsEnvelope({
+    String currency = 'NGN',
+  }) async {
     final envelope = await _requester.getJson<_CollectionMethodsEnvelope>(
       '/api/v1/payments/collections/methods',
       _CollectionMethodsEnvelope.fromJson,
       queryParameters: {'currency': currency},
       authenticate: true,
     );
-    return envelope.methods;
+    return PaymentMethodsEnvelope(
+      currency: envelope.currency,
+      providerName: envelope.providerName,
+      methods: envelope.methods,
+    );
   }
 
   Future<SendOtpResult> sendPaymentOtp({required String customerContact}) async {
@@ -372,7 +386,11 @@ class CollectionMethod {
 }
 
 class _CollectionMethodsEnvelope {
-  const _CollectionMethodsEnvelope({required this.currency, required this.methods});
+  const _CollectionMethodsEnvelope({
+    required this.currency,
+    required this.providerName,
+    required this.methods,
+  });
   factory _CollectionMethodsEnvelope.fromJson(Map<String, dynamic> json) {
     final raw = json['methods'];
     final list = raw is List
@@ -383,10 +401,27 @@ class _CollectionMethodsEnvelope {
         : const <CollectionMethod>[];
     return _CollectionMethodsEnvelope(
       currency: (json['currency'] as String?) ?? 'NGN',
+      providerName: (json['providerName'] as String?) ?? '',
       methods: list,
     );
   }
   final String currency;
+  final String providerName;
+  final List<CollectionMethod> methods;
+}
+
+/// Public-facing envelope returned by [WalletApiService.fetchPaymentMethodsEnvelope].
+/// Carries the active gateway name so the UI can render a dynamic
+/// "Secured by …" label instead of hard-coding the provider.
+class PaymentMethodsEnvelope {
+  const PaymentMethodsEnvelope({
+    required this.currency,
+    required this.providerName,
+    required this.methods,
+  });
+
+  final String currency;
+  final String providerName;
   final List<CollectionMethod> methods;
 }
 
