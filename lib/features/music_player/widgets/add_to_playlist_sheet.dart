@@ -1,12 +1,11 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:muxify/core/constants/api_constants.dart';
 import 'package:muxify/core/constants/app_colors.dart';
 import 'package:muxify/core/constants/app_sizes.dart';
 import 'package:muxify/core/constants/app_text_styles.dart';
 import 'package:muxify/core/utils/app_toast.dart';
 import 'package:muxify/features/music_player/models/playlist_summary.dart';
 import 'package:muxify/features/music_player/providers/music_player_interaction_provider.dart';
+import 'package:muxify/shared/widgets/auth_network_image.dart';
 
 /// Modal bottom sheet that lets the user pick one of their playlists to add
 /// the current track to, or create a new playlist that's seeded with the
@@ -348,13 +347,13 @@ class _AddToPlaylistSheetState extends State<AddToPlaylistSheet> {
       return _wrapCover(fallback);
     }
     return _wrapCover(
-      CachedNetworkImage(
-        imageUrl: ApiConstants.resolvePublicUrl(url),
+      AuthNetworkImage(
+        path: url,
         fit: BoxFit.cover,
-        placeholder: (_, __) => Container(
+        placeholder: Container(
           color: AppColors.modalCancelButtonBackground,
         ),
-        errorWidget: (_, __, ___) => fallback,
+        errorWidget: fallback,
       ),
     );
   }

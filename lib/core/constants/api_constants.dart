@@ -11,17 +11,6 @@ class ApiConstants {
     return baseUrl;
   }
 
-  /// On by default while payment integration is pending. When true, the
-  /// unlock & gift confirm UIs hide the "insufficient coins" error and
-  /// "Get Coins" CTA, and call the unlock/gift endpoints directly. The
-  /// backend must also have `Features:DemoMode=true` for these calls to
-  /// succeed (also defaulted to true). Override via
-  /// `--dart-define=DEMO_MODE=false` once real payments ship.
-  static const bool demoMode = bool.fromEnvironment(
-    'DEMO_MODE',
-    defaultValue: true,
-  );
-
   static String resolvePublicUrl(String pathOrUrl) {
     final t = pathOrUrl.trim();
     if (t.isEmpty) return t;

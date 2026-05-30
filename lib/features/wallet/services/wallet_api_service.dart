@@ -213,6 +213,27 @@ class CoinRate {
 
   final int coinsPerNairaMajor;
   final String currency;
+
+  /// Naira (major unit) value of [coins] at the current rate. Mirrors the
+  /// integer division the wallet screen uses so every screen converts the same
+  /// way (see [WalletApiService.fetchCoinRate]).
+  int nairaFor(int coins) =>
+      coinsPerNairaMajor <= 0 ? 0 : coins ~/ coinsPerNairaMajor;
+
+  /// Secondary line shown under a coin amount, e.g. "≈ ₦1,234 value".
+  String nairaLabel(int coins) => '≈ ₦${groupThousands(nairaFor(coins))} value';
+
+  /// Inserts thousands separators (e.g. `100250` → `100,250`). Shared so coin
+  /// and Naira figures across the unlock/gift screens render identically.
+  static String groupThousands(int value) {
+    final digits = value.abs().toString();
+    final buffer = StringBuffer();
+    for (var i = 0; i < digits.length; i++) {
+      if (i > 0 && (digits.length - i) % 3 == 0) buffer.write(',');
+      buffer.write(digits[i]);
+    }
+    return value < 0 ? '-$buffer' : buffer.toString();
+  }
 }
 
 enum WalletTxDirection { credit, debit }

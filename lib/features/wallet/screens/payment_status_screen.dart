@@ -510,11 +510,12 @@ class _SuccessCard extends StatelessWidget {
             width: double.infinity,
             child: ElevatedButton(
               onPressed: () {
-                final ctx = context;
-                while (ctx.canPop()) {
-                  ctx.pop(true);
-                }
-                ctx.go(AppRouter.walletPayment);
+                // Reset to Home, then push the wallet on top so its Back button
+                // returns to Home. Using go() alone would replace the whole
+                // stack and leave the wallet page with nothing to pop back to.
+                final router = GoRouter.of(context);
+                router.go(AppRouter.home);
+                router.push(AppRouter.walletPayment);
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.buttonColor,

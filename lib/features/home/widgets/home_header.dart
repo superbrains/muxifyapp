@@ -8,6 +8,7 @@ import 'package:muxify/core/router/app_router.dart';
 import 'package:muxify/features/auth/providers/auth_provider.dart';
 import 'package:muxify/features/home/models/tab_option.dart';
 import 'package:muxify/features/home/widgets/tab_option_button.dart';
+import 'package:muxify/features/wallet/providers/wallet_balance_provider.dart';
 import 'package:muxify/shared/widgets/user_avatar.dart';
 import 'package:provider/provider.dart';
 
@@ -46,7 +47,7 @@ class HomeHeader extends StatelessWidget {
             padding: EdgeInsets.only(left: 26.padding, right: 21.padding),
             child: Row(
               children: [
-                _buildWalletBrand(),
+                _buildWalletBrand(context),
                 const Spacer(),
                 _buildHeaderIcons(context),
               ],
@@ -59,36 +60,64 @@ class HomeHeader extends StatelessWidget {
     );
   }
 
-  Widget _buildWalletBrand() {
-    return Row(
-      children: [
-        Image.asset(
-          'assets/pngs/Bitcoin_musixfy.png',
-          height: 40.buttonHeight,
-          width: 40.buttonHeight,
-        ),
-        4.row,
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'm100,250',
-              style: AppTextStyles.bodyMedium.copyWith(
-                fontWeight: FontWeight.w600,
-                fontSize: 15.font,
+  Widget _buildWalletBrand(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () {
+        HapticFeedback.lightImpact();
+        // Push (not go) so the wallet page can pop back to Home.
+        context.push(AppRouter.walletPayment);
+      },
+      child: Consumer<WalletBalanceProvider>(
+        builder: (context, wallet, _) {
+          // Lazily load the real balance the first time the header appears.
+          if (!wallet.loaded) {
+            WidgetsBinding.instance
+                .addPostFrameCallback((_) => wallet.ensureLoaded());
+          }
+          return Row(
+            children: [
+              Image.asset(
+                'assets/pngs/Bitcoin_musixfy.png',
+                height: 40.buttonHeight,
+                width: 40.buttonHeight,
               ),
-            ),
-            Text(
-              'Wallet Balance',
-              style: AppTextStyles.bodyMedium.copyWith(
-                fontWeight: FontWeight.w400,
-                fontSize: 12.font,
+              4.row,
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    wallet.loaded ? 'm${_formatBalance(wallet.balance)}' : 'm—',
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 15.font,
+                    ),
+                  ),
+                  Text(
+                    'Wallet Balance',
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      fontWeight: FontWeight.w400,
+                      fontSize: 12.font,
+                    ),
+                  ),
+                ],
               ),
-            ),
-          ],
-        ),
-      ],
+            ],
+          );
+        },
+      ),
     );
+  }
+
+  static String _formatBalance(int n) {
+    final s = n.toString();
+    final buf = StringBuffer();
+    for (var i = 0; i < s.length; i++) {
+      buf.write(s[i]);
+      final remaining = s.length - i - 1;
+      if (remaining > 0 && remaining % 3 == 0) buf.write(',');
+    }
+    return buf.toString();
   }
 
   Widget _buildToggleButtons() {

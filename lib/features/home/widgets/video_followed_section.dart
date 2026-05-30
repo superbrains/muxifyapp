@@ -6,6 +6,7 @@ import 'package:muxify/core/constants/app_text_styles.dart';
 import 'package:muxify/features/home/models/video_item.dart';
 import 'package:muxify/features/home/widgets/section_header.dart';
 import 'package:muxify/features/home/widgets/video_cover_image.dart';
+import 'package:muxify/shared/widgets/auth_network_image.dart';
 
 class _CreatorAvatar extends StatelessWidget {
   final String url;
@@ -15,22 +16,35 @@ class _CreatorAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = url.trim();
-    if (t.isEmpty) {
-      return CircleAvatar(
-        radius: radius,
-        backgroundColor: AppColors.text.withValues(alpha: 0.15),
-        child: Icon(
-          Icons.person,
-          size: radius * 1.2,
-          color: AppColors.text.withValues(alpha: 0.45),
-        ),
-      );
-    }
-    final isNetwork = t.startsWith('http://') || t.startsWith('https://');
-    return CircleAvatar(
+    final fallback = CircleAvatar(
       radius: radius,
       backgroundColor: AppColors.text.withValues(alpha: 0.15),
-      backgroundImage: isNetwork ? NetworkImage(t) : AssetImage(t) as ImageProvider,
+      child: Icon(
+        Icons.person,
+        size: radius * 1.2,
+        color: AppColors.text.withValues(alpha: 0.45),
+      ),
+    );
+    if (t.isEmpty) return fallback;
+    final d = radius * 2;
+    if (t.startsWith('assets/')) {
+      return ClipOval(
+        child: Image.asset(t, width: d, height: d, fit: BoxFit.cover),
+      );
+    }
+    return ClipOval(
+      child: SizedBox(
+        width: d,
+        height: d,
+        child: AuthNetworkImage(
+          path: t,
+          width: d,
+          height: d,
+          fit: BoxFit.cover,
+          placeholder: fallback,
+          errorWidget: fallback,
+        ),
+      ),
     );
   }
 }

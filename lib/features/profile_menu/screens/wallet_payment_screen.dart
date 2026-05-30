@@ -5,9 +5,10 @@ import 'package:muxify/core/constants/app_colors.dart';
 import 'package:muxify/core/constants/app_sizes.dart';
 import 'package:muxify/core/constants/app_text_styles.dart';
 import 'package:muxify/core/router/app_router.dart';
-import 'package:muxify/features/profile_menu/services/profile_menu_api_service.dart';
+import 'package:muxify/features/wallet/providers/wallet_balance_provider.dart';
 import 'package:muxify/features/wallet/services/wallet_api_service.dart';
 import 'package:muxify/shared/widgets/profile_section_scaffold.dart';
+import 'package:provider/provider.dart';
 
 class WalletPaymentScreen extends StatefulWidget {
   const WalletPaymentScreen({super.key});
@@ -43,12 +44,15 @@ class _WalletPaymentScreenState extends State<WalletPaymentScreen> {
         _api.fetchCoinRate(),
       ]);
       if (!mounted) return;
+      final summary = results[0] as WalletSummary;
       setState(() {
-        _summary = results[0] as WalletSummary;
+        _summary = summary;
         _transactions = results[1] as List<WalletTransaction>;
         _rate = results[2] as CoinRate;
         _loading = false;
       });
+      // Keep the shared balance (home header) in sync with the wallet page.
+      context.read<WalletBalanceProvider>().setBalance(summary.balance);
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -272,9 +276,7 @@ class _BalanceCard extends StatelessWidget {
           ),
           4.column,
           Text(
-            loading
-                ? ' '
-                : '≈ ₦${_format((summary?.balance ?? 0) ~/ rate.coinsPerNairaMajor)} value',
+            loading ? ' ' : rate.nairaLabel(summary?.balance ?? 0),
             style: AppTextStyles.bodyMedium.copyWith(
               fontSize: 12.font,
               color: AppColors.text.withValues(alpha: 0.7),

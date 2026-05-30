@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:cached_network_image/cached_network_image.dart';
-import 'package:muxify/core/constants/api_constants.dart';
 import 'package:muxify/core/constants/app_colors.dart';
 import 'package:muxify/core/constants/app_sizes.dart';
 import 'package:muxify/core/constants/app_text_styles.dart';
 import 'package:muxify/features/home/models/recently_played_item.dart';
+import 'package:muxify/shared/widgets/auth_network_image.dart';
 
 class RecentlyPlayedCard extends StatelessWidget {
   final RecentlyPlayedItem item;
@@ -58,11 +57,11 @@ class RecentlyPlayedCard extends StatelessWidget {
           fit: StackFit.expand,
           children: [
             if (hasImage)
-              CachedNetworkImage(
-                imageUrl: ApiConstants.resolvePublicUrl(imageUrl),
+              AuthNetworkImage(
+                path: imageUrl,
                 fit: BoxFit.cover,
-                placeholder: (context, _) => _fallbackArtwork(),
-                errorWidget: (context, _, __) => _fallbackArtwork(),
+                placeholder: _fallbackArtwork(),
+                errorWidget: _fallbackArtwork(),
               )
             else
               _fallbackArtwork(),

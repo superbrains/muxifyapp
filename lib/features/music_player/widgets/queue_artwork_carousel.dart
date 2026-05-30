@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:muxify/core/constants/api_constants.dart';
 import 'package:muxify/core/constants/app_colors.dart';
 import 'package:muxify/core/constants/app_sizes.dart';
 import 'package:muxify/features/audio_playback/models/track.dart';
 import 'package:muxify/features/audio_playback/providers/audio_provider.dart';
 import 'package:muxify/features/music_player/widgets/muxify_branded_background.dart';
+import 'package:muxify/shared/widgets/auth_network_image.dart';
 
 /// Horizontal artwork carousel for the player queue. Each page is a queue
 /// track's cover art; the centered page is the currently playing track.
@@ -112,13 +112,14 @@ class _QueueArtworkCarouselState extends State<QueueArtworkCarousel> {
       child: const MuxifyBrandedBackground(),
     );
     if (cover.isEmpty) return fallback;
-    // resolvePublicUrl handles absolute URLs as-is and resolves anything
-    // else (with or without a leading slash) against the API base, so we
-    // can route every non-empty cover through Image.network.
-    return Image.network(
-      ApiConstants.resolvePublicUrl(cover),
+    // AuthNetworkImage resolves the path against the API base and attaches the
+    // JWT, so the authenticated /api/v1/media/cover/* proxy returns the art
+    // instead of 401. Absolute CDN URLs pass through untouched.
+    return AuthNetworkImage(
+      path: cover,
       fit: BoxFit.cover,
-      errorBuilder: (_, _, _) => fallback,
+      placeholder: fallback,
+      errorWidget: fallback,
     );
   }
 }

@@ -11,6 +11,11 @@ class Track {
   final String? audioUrl;
   final bool isUnlocked;
 
+  /// Coins required to unlock this track. Carried on the queue item so the
+  /// player's unlock modal reads the real per-track price instead of a
+  /// hard-coded default. 0 means free / unknown.
+  final int unlockCostCoins;
+
   /// Synchronized lyrics in LRC format (with `[mm:ss.xx]` timestamps), null
   /// when unavailable. Populated only when this Track is built from a fully
   /// hydrated detail response — list/queue items typically leave it null.
@@ -29,6 +34,7 @@ class Track {
     this.artworkUrl,
     this.audioUrl,
     this.isUnlocked = true,
+    this.unlockCostCoins = 0,
     this.lrcContent,
     this.lrcSource,
   });
@@ -37,6 +43,7 @@ class Track {
     String? audioUrl,
     String? artworkUrl,
     bool? isUnlocked,
+    int? unlockCostCoins,
     String? lrcContent,
     String? lrcSource,
   }) {
@@ -49,6 +56,7 @@ class Track {
       artworkUrl: artworkUrl ?? this.artworkUrl,
       audioUrl: audioUrl ?? this.audioUrl,
       isUnlocked: isUnlocked ?? this.isUnlocked,
+      unlockCostCoins: unlockCostCoins ?? this.unlockCostCoins,
       lrcContent: lrcContent ?? this.lrcContent,
       lrcSource: lrcSource ?? this.lrcSource,
     );

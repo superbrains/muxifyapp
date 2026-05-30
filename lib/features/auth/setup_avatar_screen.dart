@@ -8,6 +8,7 @@ import 'package:muxify/core/constants/app_colors.dart';
 import 'package:muxify/core/constants/app_sizes.dart';
 import 'package:muxify/core/constants/app_text_styles.dart';
 import 'package:muxify/core/router/app_router.dart';
+import 'package:muxify/core/services/local_storage_service.dart';
 import 'package:muxify/core/utils/app_toast.dart';
 import 'package:muxify/features/auth/providers/auth_provider.dart';
 import 'package:muxify/features/auth/providers/onboarding_provider.dart';
@@ -436,32 +437,55 @@ class _SetupAvatarScreenState extends State<SetupAvatarScreen> {
           ),
         ),
         child: ClipOval(
-          child: CachedNetworkImage(
-            imageUrl: imageUrl,
-            fit: BoxFit.cover,
-            width: double.infinity,
-            height: double.infinity,
-            fadeInDuration: const Duration(milliseconds: 200),
-            memCacheWidth: 256,
-            memCacheHeight: 256,
-            progressIndicatorBuilder: (_, __, _) {
-              final base = const Color(0xFF161616);
-              final highlight = const Color(0xFF2C2C2C);
-              return Shimmer.fromColors(
-                baseColor: base,
-                highlightColor: highlight,
-                period: const Duration(milliseconds: 1400),
-                child: const ColoredBox(color: Color(0xFF808080)),
-              );
-            },
-            errorWidget: (_, __, ___) {
-              return ColoredBox(
-                color: AppColors.glassyDark,
-                child: Icon(
-                  Icons.broken_image_outlined,
-                  size: 36,
-                  color: AppColors.text.withValues(alpha: 0.4),
-                ),
+          // Preset avatars resolve to the Muxify API host; attach the JWT so
+          // any authenticated route serving them returns the image (200) rather
+          // than 401. Keeps the shimmer/memCache tuning that AuthNetworkImage
+          // does not expose.
+          child: FutureBuilder<String?>(
+            future: LocalStorageService.getAccessToken(),
+            builder: (context, snapshot) {
+              // Don't fetch the JWT-gated preset until the token has loaded; a
+              // header-less first frame would 401 and poison the URL cache so
+              // the authed rebuild (same URL key) never re-requests.
+              if (snapshot.connectionState != ConnectionState.done) {
+                return const ColoredBox(color: Color(0xFF161616));
+              }
+              final token = snapshot.data?.trim() ?? '';
+              final headers = token.isEmpty
+                  ? const <String, String>{}
+                  : {
+                      ApiConstants.authorization:
+                          '${ApiConstants.bearer} $token',
+                    };
+              return CachedNetworkImage(
+                imageUrl: imageUrl,
+                httpHeaders: headers,
+                fit: BoxFit.cover,
+                width: double.infinity,
+                height: double.infinity,
+                fadeInDuration: const Duration(milliseconds: 200),
+                memCacheWidth: 256,
+                memCacheHeight: 256,
+                progressIndicatorBuilder: (_, __, _) {
+                  final base = const Color(0xFF161616);
+                  final highlight = const Color(0xFF2C2C2C);
+                  return Shimmer.fromColors(
+                    baseColor: base,
+                    highlightColor: highlight,
+                    period: const Duration(milliseconds: 1400),
+                    child: const ColoredBox(color: Color(0xFF808080)),
+                  );
+                },
+                errorWidget: (_, __, ___) {
+                  return ColoredBox(
+                    color: AppColors.glassyDark,
+                    child: Icon(
+                      Icons.broken_image_outlined,
+                      size: 36,
+                      color: AppColors.text.withValues(alpha: 0.4),
+                    ),
+                  );
+                },
               );
             },
           ),

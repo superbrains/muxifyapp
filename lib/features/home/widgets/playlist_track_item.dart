@@ -1,11 +1,10 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:muxify/core/constants/api_constants.dart';
 import 'package:muxify/core/constants/app_colors.dart';
 import 'package:muxify/core/constants/app_sizes.dart';
 import 'package:muxify/core/constants/app_text_styles.dart';
 import 'package:muxify/features/home/models/track_item.dart';
+import 'package:muxify/shared/widgets/auth_network_image.dart';
 
 class PlaylistTrackItem extends StatelessWidget {
   final TrackItem track;
@@ -88,13 +87,13 @@ class PlaylistTrackItem extends StatelessWidget {
   Widget _buildThumbnail() {
     final url = track.imageUrl?.trim() ?? '';
     if (url.isEmpty) return _placeholderGradient();
-    return CachedNetworkImage(
-      imageUrl: ApiConstants.resolvePublicUrl(url),
+    return AuthNetworkImage(
+      path: url,
       fit: BoxFit.cover,
       width: double.infinity,
       height: double.infinity,
-      placeholder: (_, __) => _placeholderGradient(),
-      errorWidget: (_, __, ___) => _placeholderGradient(),
+      placeholder: _placeholderGradient(),
+      errorWidget: _placeholderGradient(),
     );
   }
 

@@ -16,7 +16,8 @@ class UnlockConfirmBottomSheet extends StatelessWidget {
   // Premium unlock mode
   final bool isPremiumMode;
   final String? unlockTitle; // "Unlock Song" or "Unlock Video"
-  final String? coinCost; // "-100,250"
+  final String? coinCost; // grouped coin amount, e.g. "100,250"
+  final String? nairaLabel; // "≈ ₦2,005 value"
   final bool showInsufficientCoinsError;
   final VoidCallback? onGetCoins;
 
@@ -31,6 +32,7 @@ class UnlockConfirmBottomSheet extends StatelessWidget {
     this.isPremiumMode = false,
     this.unlockTitle,
     this.coinCost,
+    this.nairaLabel,
     this.showInsufficientCoinsError = false,
     this.onGetCoins,
   });
@@ -115,37 +117,53 @@ class UnlockConfirmBottomSheet extends StatelessWidget {
               ],
             )
           else
-            Row(
+            Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Image.asset(
-                  'assets/pngs/Bitcoin_musixfy.png',
-                  width: 35.icon,
-                  height: 35.icon,
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Image.asset(
+                      'assets/pngs/Bitcoin_musixfy.png',
+                      width: 35.icon,
+                      height: 35.icon,
+                    ),
+                    10.row,
+                    RichText(
+                      text: TextSpan(
+                        children: [
+                          TextSpan(
+                            text: 'm',
+                            style: AppTextStyles.displayText.copyWith(
+                              color: AppColors.text,
+                              fontSize: 10.font,
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
+                          TextSpan(
+                            text: coinCost ?? '0',
+                            style: AppTextStyles.displayText.copyWith(
+                              color: AppColors.text,
+                              fontSize: 18.font,
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-                10.row,
-                RichText(
-                  text: TextSpan(
-                    children: [
-                      TextSpan(
-                        text: 'm',
-                        style: AppTextStyles.displayText.copyWith(
-                          color: AppColors.text,
-                          fontSize: 10.font,
-                          fontWeight: FontWeight.w400,
-                        ),
-                      ),
-                      TextSpan(
-                        text: coinCost ?? '100,250',
-                        style: AppTextStyles.displayText.copyWith(
-                          color: AppColors.text,
-                          fontSize: 18.font,
-                          fontWeight: FontWeight.w400,
-                        ),
-                      ),
-                    ],
+                if ((nairaLabel ?? '').isNotEmpty) ...[
+                  6.column,
+                  Text(
+                    nairaLabel!,
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: AppColors.text.withValues(alpha: 0.6),
+                      fontSize: 11.font,
+                      fontWeight: FontWeight.w400,
+                    ),
                   ),
-                ),
+                ],
               ],
             ),
           const Spacer(),
@@ -200,8 +218,9 @@ class UnlockConfirmBottomSheet extends StatelessWidget {
             ),
           ),
           27.column,
-          // Show either Get Coins button or Unlock button
-          if (isPremiumMode && onGetCoins != null)
+          // Show Get Coins only when the wallet is short; otherwise the
+          // primary Unlock/confirm action.
+          if (isPremiumMode && showInsufficientCoinsError && onGetCoins != null)
             GestureDetector(
               onTap: onGetCoins,
               child: Container(

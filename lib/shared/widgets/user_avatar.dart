@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:muxify/shared/widgets/auth_network_image.dart';
 
-/// Renders the signed-in user's avatar from a remote URL.
+/// Renders the signed-in user's avatar from a remote URL or API proxy path.
 ///
 /// Falls back to the brand placeholder asset when [avatar] is null, empty,
-/// not an http(s) URL, or fails to load.
+/// or fails to load.
 class UserAvatar extends StatelessWidget {
   const UserAvatar({
     super.key,
@@ -28,28 +29,22 @@ class UserAvatar extends StatelessWidget {
       fit: fit,
     );
 
-    if (url != null &&
-        url.isNotEmpty &&
-        (url.startsWith('http://') || url.startsWith('https://'))) {
-      return ClipOval(
-        child: Image.network(
-          url,
-          width: size,
-          height: size,
-          fit: fit,
-          errorBuilder: (_, __, ___) => placeholder,
-          loadingBuilder: (context, child, progress) {
-            if (progress == null) return child;
-            return SizedBox(
-              width: size,
-              height: size,
-              child: placeholder,
-            );
-          },
-        ),
-      );
+    if (url == null || url.isEmpty) {
+      return ClipOval(child: placeholder);
     }
 
-    return ClipOval(child: placeholder);
+    // Avatars are usually served by the JWT-gated media proxy
+    // (`/api/v1/media/cover/avatars/...`). AuthNetworkImage resolves the path,
+    // attaches the bearer for Muxify-hosted URLs, and passes public URLs through.
+    return ClipOval(
+      child: AuthNetworkImage(
+        path: url,
+        width: size,
+        height: size,
+        fit: fit,
+        placeholder: placeholder,
+        errorWidget: placeholder,
+      ),
+    );
   }
 }

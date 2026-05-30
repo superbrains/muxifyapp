@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:muxify/core/constants/app_colors.dart';
 import 'package:muxify/core/constants/app_sizes.dart';
 import 'package:muxify/core/constants/app_text_styles.dart';
+import 'package:muxify/shared/widgets/auth_network_image.dart';
 
 class FanProfileSection extends StatelessWidget {
   final String username;
@@ -35,12 +36,17 @@ class FanProfileSection extends StatelessWidget {
                 ClipRRect(
                   borderRadius: BorderRadius.circular(100.radius),
                   child: hasNetworkAvatar
-                      ? Image.network(
-                          avatarUrl!,
+                      ? AuthNetworkImage(
+                          path: avatarUrl!,
                           width: 100.maxWidth,
                           height: 100.maxHeight,
                           fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => Image.asset(
+                          placeholder: Image.asset(
+                            fallbackProfileImagePath,
+                            width: 100.maxWidth,
+                            height: 100.maxHeight,
+                          ),
+                          errorWidget: Image.asset(
                             fallbackProfileImagePath,
                             width: 100.maxWidth,
                             height: 100.maxHeight,

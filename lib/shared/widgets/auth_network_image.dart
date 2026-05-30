@@ -28,6 +28,13 @@ class AuthNetworkImage extends StatelessWidget {
     this.errorWidget,
   });
 
+  static bool _targetsMuxifyApi(String url) {
+    final target = Uri.tryParse(url);
+    if (target == null || !target.hasAuthority) return false;
+    final apiHost = Uri.tryParse(ApiConstants.resolvedBaseUrl)?.host;
+    return apiHost != null && apiHost.isNotEmpty && target.host == apiHost;
+  }
+
   @override
   Widget build(BuildContext context) {
     final trimmed = path.trim();
@@ -40,12 +47,24 @@ class AuthNetworkImage extends StatelessWidget {
     return FutureBuilder<String?>(
       future: LocalStorageService.getAccessToken(),
       builder: (context, snapshot) {
+        // Wait for the async token read to finish before constructing
+        // CachedNetworkImage. The media proxy (/api/v1/media/cover/...) is
+        // JWT-gated; firing during the `waiting` frame sends the request with
+        // no Authorization header -> 401. Because the image cache is keyed by
+        // URL (not headers), that unauthed failure is then reused even after
+        // the token resolves, so the cover never loads. Mirrors the web's
+        // useAuthedImageSrc, which renders nothing until the authed fetch is ready.
+        if (snapshot.connectionState != ConnectionState.done) {
+          return placeholder ?? const SizedBox.shrink();
+        }
+
         final token = snapshot.data?.trim() ?? '';
-        final headers = token.isEmpty
+        // Only attach the JWT when the image is served by the Muxify API host;
+        // sending the bearer to a third-party/CDN image URL would leak it.
+        final headers = (token.isEmpty || !_targetsMuxifyApi(resolvedUrl))
             ? const <String, String>{}
             : {
-                ApiConstants.authorization:
-                    '${ApiConstants.bearer} $token',
+                ApiConstants.authorization: '${ApiConstants.bearer} $token',
               };
 
         return CachedNetworkImage(

@@ -114,6 +114,12 @@ class HomeProvider extends ChangeNotifier {
   List<RecentlyPlayedItem> get recentlyPlayedVideos =>
       _recentlyPlayed.where((it) => it.type == 'video').toList(growable: false);
 
+  /// Recently-played music (audio tracks only) for the Music/DJ Mix/Podcast
+  /// tabs. The request is already type-filtered server-side; this guards
+  /// against any non-track item slipping into the audio tabs.
+  List<RecentlyPlayedItem> get recentlyPlayedMusic =>
+      _recentlyPlayed.where((it) => it.type == 'track').toList(growable: false);
+
   // Per-section state — modeled exactly on the music sections above.
   // Keyed by "$_videoFilter::$_categoryId" for the category-driven section
   // (Trending / Hot Release / Top Chart / New Release).
@@ -166,10 +172,18 @@ class HomeProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
+      // Music / DJ Mix / Podcast tabs play audio (tracks); the Videos tab
+      // ("creator" category) plays videos. Filter server-side so each tab
+      // gets a full page of its own media type.
+      final mediaType = _creatorCategory == 'creator' ? 'video' : 'track';
       final response = await _requester.getJson(
         ApiConstants.feedRecentlyPlayedPath,
         (json) => json,
-        queryParameters: {'pageSize': '5', 'category': _creatorCategory},
+        queryParameters: {
+          'pageSize': '5',
+          'category': _creatorCategory,
+          'type': mediaType,
+        },
         authenticate: true,
       );
 
@@ -190,8 +204,9 @@ class HomeProvider extends ChangeNotifier {
       _hasLoadedRecentlyPlayed = true;
     } catch (e, st) {
       Logger.error('loadRecentlyPlayed failed', e, st);
-      _recentlyPlayed = const [];
-      _hasLoadedRecentlyPlayed = true;
+      // Leave retryable (cold backend / transient error): don't cache an empty
+      // result behind the loaded flag, and keep any previously loaded data.
+      _hasLoadedRecentlyPlayed = false;
     } finally {
       _isLoadingRecentlyPlayed = false;
       notifyListeners();
@@ -237,8 +252,8 @@ class HomeProvider extends ChangeNotifier {
       _hasLoadedTrendingArtists = true;
     } catch (e, st) {
       Logger.error('loadTrendingArtists failed', e, st);
-      _trendingArtists = const [];
-      _hasLoadedTrendingArtists = true;
+      // Leave retryable; don't cache an empty result behind the loaded flag.
+      _hasLoadedTrendingArtists = false;
     } finally {
       _isLoadingTrendingArtists = false;
       notifyListeners();
@@ -259,8 +274,8 @@ class HomeProvider extends ChangeNotifier {
       _hasLoadedFeaturedPlaylists = true;
     } catch (e, st) {
       Logger.error('loadFeaturedPlaylists failed', e, st);
-      _featuredPlaylists = const [];
-      _hasLoadedFeaturedPlaylists = true;
+      // Leave retryable; don't cache an empty result behind the loaded flag.
+      _hasLoadedFeaturedPlaylists = false;
     } finally {
       _isLoadingFeaturedPlaylists = false;
       notifyListeners();
@@ -285,8 +300,8 @@ class HomeProvider extends ChangeNotifier {
       _hasLoadedPopularNewReleases = true;
     } catch (e, st) {
       Logger.error('loadPopularNewReleases failed', e, st);
-      _popularNewReleases = const [];
-      _hasLoadedPopularNewReleases = true;
+      // Leave retryable; don't cache an empty result behind the loaded flag.
+      _hasLoadedPopularNewReleases = false;
     } finally {
       _isLoadingPopularNewReleases = false;
       notifyListeners();
@@ -310,8 +325,8 @@ class HomeProvider extends ChangeNotifier {
       _hasLoadedFollowed = true;
     } catch (e, st) {
       Logger.error('loadFollowed failed', e, st);
-      _followed = const [];
-      _hasLoadedFollowed = true;
+      // Leave retryable; don't cache an empty result behind the loaded flag.
+      _hasLoadedFollowed = false;
     } finally {
       _isLoadingFollowed = false;
       notifyListeners();
@@ -339,7 +354,7 @@ class HomeProvider extends ChangeNotifier {
       _categoryCardsByTab[tabId] = _groupTracksByGenre(tabId, tracks);
     } catch (e, st) {
       Logger.error('loadCategoryTab($tabId) failed', e, st);
-      _categoryCardsByTab[tabId] = const [];
+      // Don't cache the empty result — leave the tab retryable on next access.
     } finally {
       _loadingCategoryTabs.remove(tabId);
       notifyListeners();
@@ -365,7 +380,7 @@ class HomeProvider extends ChangeNotifier {
       _spotlightByTab[tabId] = items;
     } catch (e, st) {
       Logger.error('loadSpotlightTab($tabId) failed', e, st);
-      _spotlightByTab[tabId] = const [];
+      // Don't cache the empty result — leave the tab retryable on next access.
     } finally {
       _loadingSpotlightTabs.remove(tabId);
       notifyListeners();
@@ -466,7 +481,7 @@ class HomeProvider extends ChangeNotifier {
           dtos.map(VideoItem.fromFeedVideo).toList(growable: false);
     } catch (e, st) {
       Logger.error('loadVideoCategoryTab($tabId, $_videoFilter) failed', e, st);
-      _videosByCategoryTab[key] = const [];
+      // Don't cache the empty result — leave the tab retryable on next access.
     } finally {
       _loadingVideoCategoryTabs.remove(key);
       notifyListeners();
@@ -492,8 +507,8 @@ class HomeProvider extends ChangeNotifier {
       _hasLoadedPopularReleaseVideos = true;
     } catch (e, st) {
       Logger.error('loadPopularReleaseVideos failed', e, st);
-      _popularReleaseVideos = const [];
-      _hasLoadedPopularReleaseVideos = true;
+      // Leave retryable; don't cache an empty result behind the loaded flag.
+      _hasLoadedPopularReleaseVideos = false;
     } finally {
       _isLoadingPopularReleaseVideos = false;
       notifyListeners();
@@ -518,8 +533,8 @@ class HomeProvider extends ChangeNotifier {
       _hasLoadedFollowedVideos = true;
     } catch (e, st) {
       Logger.error('loadFollowedVideos failed', e, st);
-      _followedVideos = const [];
-      _hasLoadedFollowedVideos = true;
+      // Leave retryable; don't cache an empty result behind the loaded flag.
+      _hasLoadedFollowedVideos = false;
     } finally {
       _isLoadingFollowedVideos = false;
       notifyListeners();
@@ -545,7 +560,7 @@ class HomeProvider extends ChangeNotifier {
       _videoSpotlightByTab[tabId] = items;
     } catch (e, st) {
       Logger.error('loadVideoSpotlightTab($tabId) failed', e, st);
-      _videoSpotlightByTab[tabId] = const [];
+      // Don't cache the empty result — leave the tab retryable on next access.
     } finally {
       _loadingVideoSpotlightTabs.remove(tabId);
       notifyListeners();

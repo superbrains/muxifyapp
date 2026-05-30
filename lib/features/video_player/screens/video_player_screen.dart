@@ -11,9 +11,11 @@ import 'package:muxify/core/network/api_requester.dart';
 import 'package:muxify/core/providers/unlocked_content_provider.dart';
 import 'package:muxify/core/router/app_router.dart';
 import 'package:muxify/core/utils/logger.dart';
+import 'package:muxify/core/utils/app_toast.dart';
 import 'package:provider/provider.dart';
+import 'package:muxify/features/artist_profile/providers/artist_profile_provider.dart';
 import 'package:muxify/features/home/widgets/video_cover_image.dart';
-import 'package:muxify/features/statistics/models/gift_item.dart';
+import 'package:muxify/features/wallet/services/wallet_api_service.dart';
 import 'package:muxify/shared/widgets/circular_icon_button.dart';
 import 'package:muxify/shared/widgets/gift_box_modal.dart';
 import 'package:muxify/shared/widgets/glass_button_widget.dart';
@@ -32,6 +34,7 @@ class VideoPlayerScreen extends StatefulWidget {
   final String? artistId;
   final String? thumbnailUrl;
   final bool isUnlocked;
+  final int? unlockCostCoins;
 
   const VideoPlayerScreen({
     super.key,
@@ -41,6 +44,7 @@ class VideoPlayerScreen extends StatefulWidget {
     this.artistId,
     this.thumbnailUrl,
     this.isUnlocked = true,
+    this.unlockCostCoins,
   });
 
   @override
@@ -57,45 +61,12 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   String? _streamError;
   bool _playRecorded = false;
 
-  // Mock gift items for the gift box modal — replaced with real data
-  // when the gifts feature ships its own provider.
-  final List<GiftItem> _giftItems = [
-    GiftItem(
-      id: '1',
-      name: 'Big Box',
-      backgroundImage: 'assets/pngs/gift_bg1.png',
-      emojiImage: 'assets/pngs/emoj1.png',
-      stickerText: 'X20',
-      count: 20,
-      amount: 100250,
-    ),
-    GiftItem(
-      id: '2',
-      name: 'Big Box',
-      backgroundImage: 'assets/pngs/gift_bg2.png',
-      emojiImage: 'assets/pngs/emoj4.png',
-      stickerText: 'X20',
-      count: 20,
-      amount: 100250,
-    ),
-    GiftItem(
-      id: '3',
-      name: 'Big Box',
-      backgroundImage: 'assets/pngs/gift_bg3.png',
-      emojiImage: 'assets/pngs/emoj3.png',
-      stickerText: 'X20',
-      count: 20,
-      amount: 100250,
-    ),
-    GiftItem(
-      id: '4',
-      name: 'Big Box',
-      backgroundImage: 'assets/pngs/gift_bg4.png',
-      emojiImage: 'assets/pngs/emoj6.png',
-      stickerText: 'X20',
-      count: 20,
-    ),
-  ];
+  // Wallet snapshot used to drive the unlock sheet's affordability + ≈₦ value.
+  final WalletApiService _wallet = WalletApiService();
+  int _walletBalance = 0;
+  CoinRate _coinRate = CoinRate.fallback();
+
+  int get _unlockCost => widget.unlockCostCoins ?? 0;
 
   @override
   void initState() {
@@ -109,8 +80,23 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
         setState(() => _isUnlocked = true);
         _initializePlayback();
       }
+      // Warm the gift catalogue + wallet snapshot for the gift/unlock sheets.
+      context.read<ArtistProfileProvider>().loadGiftTypes();
+      _hydrateWallet();
     });
     if (_isUnlocked) _initializePlayback();
+  }
+
+  Future<void> _hydrateWallet() async {
+    final results = await Future.wait([
+      _wallet.fetchWalletSummary(),
+      _wallet.fetchCoinRate(),
+    ]);
+    if (!mounted) return;
+    setState(() {
+      _walletBalance = (results[0] as WalletSummary).balance;
+      _coinRate = results[1] as CoinRate;
+    });
   }
 
   @override
@@ -599,7 +585,8 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
             BorderRadius.vertical(top: Radius.circular(20.radius)),
       ),
       builder: (context) {
-        final isDemo = ApiConstants.demoMode;
+        final cost = _unlockCost;
+        final canAfford = _walletBalance >= cost;
         return UnlockConfirmBottomSheet(
           title: widget.title.isEmpty ? 'This video' : widget.title,
           subtitle: widget.artistName,
@@ -607,7 +594,9 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
           primaryButtonText: 'Unlock Video',
           isPremiumMode: true,
           unlockTitle: 'Unlock Video',
-          showInsufficientCoinsError: !isDemo,
+          coinCost: CoinRate.groupThousands(cost),
+          nairaLabel: cost > 0 ? _coinRate.nairaLabel(cost) : null,
+          showInsufficientCoinsError: cost > 0 && !canAfford,
           onClose: () => Navigator.of(context).pop(),
           onConfirm: () async {
             Navigator.of(context).pop();
@@ -617,12 +606,10 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
             _initializePlayback();
             _showSuccessDialog();
           },
-          onGetCoins: isDemo
-              ? null
-              : () {
-                  Navigator.of(context).pop();
-                  context.push(AppRouter.getCoins);
-                },
+          onGetCoins: () {
+            Navigator.of(context).pop();
+            context.push(AppRouter.getCoins);
+          },
         );
       },
     );
@@ -643,7 +630,6 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
           .read<UnlockedContentProvider>()
           .markUnlocked(widget.videoId);
     } catch (e, st) {
-      // Demo mode silently allows unlock; in production this should bubble up.
       Logger.error('VideoPlayerScreen.unlockOnBackend failed', e, st);
     }
   }
@@ -653,8 +639,8 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
       context: context,
       barrierDismissible: true,
       builder: (_) => UnlockSuccessDialog(
-        heading: 'Congratulation!',
-        message: 'You have a unlocked',
+        heading: 'Congratulations!',
+        message: 'You have unlocked',
         mediaTitle: widget.title.isEmpty ? 'This video' : widget.title,
         mediaSubtitle: widget.artistName,
         imagePath: widget.thumbnailUrl ?? 'assets/pngs/sabinus.png',
@@ -667,18 +653,36 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   }
 
   void _showGiftBoxModal() {
+    final provider = context.read<ArtistProfileProvider>();
+    final artistId = (widget.artistId ?? '').trim();
+    if (artistId.isEmpty) {
+      AppToast.showError('We could not identify the artist to gift.');
+      return;
+    }
+    if (provider.isLoadingGifts) {
+      AppToast.showInfo('Loading gifts...');
+      return;
+    }
+    if (provider.gifts.isEmpty) {
+      provider.loadGiftTypes();
+      AppToast.showError('No gifts available right now. Try again.');
+      return;
+    }
+
+    final videoId = widget.videoId.trim();
     showDialog(
       context: context,
       barrierDismissible: true,
-      builder: (BuildContext context) {
+      builder: (BuildContext dialogContext) {
         return GiftBoxModal(
           headerText: 'GIFTBOX',
           subHeaderText: 'Tap to send gift',
-          giftItems: _giftItems,
+          giftItems: provider.gifts,
+          recipientArtistId: artistId,
+          videoId: videoId.isEmpty ? null : videoId,
           onClose: () {
-            Navigator.of(context).pop();
+            Navigator.of(dialogContext).pop();
           },
-          onGiftSelected: (GiftItem gift) {},
         );
       },
     );

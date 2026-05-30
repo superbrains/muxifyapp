@@ -5,6 +5,7 @@ import 'package:muxify/core/constants/app_colors.dart';
 import 'package:muxify/core/constants/app_sizes.dart';
 import 'package:muxify/core/constants/app_text_styles.dart';
 import 'package:muxify/features/statistics/models/gift_item.dart';
+import 'package:muxify/features/wallet/services/wallet_api_service.dart';
 import 'package:muxify/shared/widgets/sticker_text.dart';
 
 class GiftItemWidget extends StatelessWidget {
@@ -138,7 +139,7 @@ class GiftItemWidget extends StatelessWidget {
               ),
               8.row,
               Text(
-                "m${item.amount?.toString()}",
+                'm${CoinRate.groupThousands((item.amount ?? 0).toInt())}',
                 style: AppTextStyles.bodySmall.copyWith(
                   fontSize: 8.font,
                   fontWeight: FontWeight.w500,

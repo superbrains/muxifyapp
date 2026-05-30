@@ -16,7 +16,6 @@ import 'package:muxify/features/artist_profile/models/new_release_item.dart';
 import 'package:muxify/features/artist_profile/providers/artist_profile_provider.dart';
 import 'package:muxify/features/artist_profile/utils/release_playback_helper.dart';
 import 'package:muxify/features/artist_profile/widgets/albums_section_widget.dart';
-import 'package:muxify/features/statistics/models/gift_item.dart';
 import 'package:muxify/shared/widgets/glass_button_widget.dart';
 import 'package:muxify/features/artist_profile/widgets/latest_release_banner_widget.dart';
 import 'package:muxify/features/artist_profile/widgets/navigation_buttons_widget.dart';
@@ -491,31 +490,9 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen> {
           headerText: 'GIFTBOX',
           subHeaderText: 'Tap to send gift',
           giftItems: provider.gifts,
+          recipientArtistId: provider.artistProfile?.id ?? widget.artist.id,
           onClose: () {
             Navigator.of(dialogContext).pop();
-          },
-          onGiftSelected: (GiftItem gift) {},
-          onSendGift: (GiftItem gift) async {
-            Navigator.of(dialogContext).pop();
-            if (gift.id.isEmpty) {
-              await AppToast.showError('Invalid gift selection.');
-              return;
-            }
-            try {
-              final response = await provider.sendGift(
-                artistId: widget.artist.id,
-                giftType: gift.id,
-              );
-              if (response != null && response.success) {
-                await AppToast.showInfo(
-                  response.message?.isNotEmpty == true
-                      ? response.message!
-                      : 'Gift sent!',
-                );
-              }
-            } catch (e) {
-              await AppToast.showError(e.toString());
-            }
           },
         );
       },

@@ -1,14 +1,11 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:muxify/core/constants/api_constants.dart';
 import 'package:muxify/core/constants/app_colors.dart';
 import 'package:muxify/core/constants/app_sizes.dart';
 import 'package:muxify/core/constants/app_text_styles.dart';
-import 'package:muxify/core/services/local_storage_service.dart';
-import 'package:muxify/core/utils/logger.dart';
 import 'package:muxify/features/artist_profile/models/new_release_item.dart';
 import 'package:muxify/features/artist_profile/widgets/play_button_widget.dart';
+import 'package:muxify/shared/widgets/auth_network_image.dart';
 import 'package:muxify/shared/widgets/unlock_button.dart';
 
 class ReleaseCardWidget extends StatelessWidget {
@@ -25,7 +22,6 @@ class ReleaseCardWidget extends StatelessWidget {
 
   Widget _buildCoverImage() {
     final t = release.coverImageUrl.trim();
-    Logger.debug('Release image raw URL/path: $t');
     if (t.isEmpty) {
       return Container(
         color: AppColors.text.withValues(alpha: 0.1),
@@ -36,56 +32,26 @@ class ReleaseCardWidget extends StatelessWidget {
       );
     }
 
-    // Backend returns relative proxy paths like `/api/v1/media/cover/...`.
-    // Treat those as network URLs and include JWT headers.
+    // Backend returns proxy paths like `/api/v1/media/cover/...` (and sometimes
+    // absolute URLs). AuthNetworkImage resolves both and attaches the JWT once
+    // the token has loaded, so the gated proxy never gets a header-less 401.
     if (_isNetworkImagePath(t)) {
-      final resolvedUrl = ApiConstants.resolvePublicUrl(t);
-      Logger.debug('Release image resolved URL: $resolvedUrl');
-      return FutureBuilder<String?>(
-        future: LocalStorageService.getAccessToken(),
-        builder: (context, snapshot) {
-          final token = snapshot.data?.trim() ?? '';
-          Logger.debug('Release image auth token present: ${token.isNotEmpty}');
-          final headers = token.isEmpty
-              ? const <String, String>{}
-              : {ApiConstants.authorization: '${ApiConstants.bearer} $token'};
-
-          return CachedNetworkImage(
-            imageUrl: resolvedUrl,
-            fit: BoxFit.cover,
-            httpHeaders: headers,
-            placeholder: (context, url) => Container(
-              color: AppColors.text.withValues(alpha: 0.1),
-              child: const Center(
-                child: CircularProgressIndicator(strokeWidth: 2),
-              ),
-            ),
-            errorWidget: (context, url, error) => Container(
-              color: AppColors.text.withValues(alpha: 0.1),
-              child: const Icon(Icons.error),
-            ),
-          );
-        },
-      );
-    }
-
-    final lower = t.toLowerCase();
-    if (lower.startsWith('http://') || lower.startsWith('https://')) {
-      Logger.debug('Release image absolute URL: ${ApiConstants.resolvePublicUrl(t)}');
-      return CachedNetworkImage(
-        imageUrl: ApiConstants.resolvePublicUrl(t),
+      return AuthNetworkImage(
+        path: t,
         fit: BoxFit.cover,
-        placeholder: (context, url) => Container(
+        placeholder: Container(
           color: AppColors.text.withValues(alpha: 0.1),
-          child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+          child: const Center(
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
         ),
-        errorWidget: (context, url, error) => Container(
+        errorWidget: Container(
           color: AppColors.text.withValues(alpha: 0.1),
           child: const Icon(Icons.error),
         ),
       );
     }
-    Logger.debug('Release image treated as local asset: $t');
+
     return Image.asset(
       t,
       fit: BoxFit.cover,

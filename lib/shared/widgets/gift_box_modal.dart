@@ -11,23 +11,30 @@ class GiftBoxModal extends StatelessWidget {
   final String? headerText;
   final String? subHeaderText;
   final List<GiftItem> giftItems;
-  final VoidCallback? onClose;
-  final Function(GiftItem)? onGiftSelected;
 
-  /// When provided, the inner SendGiftBottomSheet's primary CTA in demo mode
-  /// becomes "Send Gift" and invokes this callback with the selected gift.
-  /// Wire this from screens that have a real artist context (e.g. artist
-  /// profile) so the gift is actually sent to the backend.
-  final Function(GiftItem)? onSendGift;
+  /// Artist who receives the gift. Required for the send flow inside the
+  /// [SendGiftBottomSheet]; when null the sheet shows a non-sendable preview.
+  final String? recipientArtistId;
+
+  /// Optional content context the gift is associated with.
+  final String? trackId;
+  final String? videoId;
+
+  final VoidCallback? onClose;
+
+  /// Fired after a gift is successfully sent so callers can refresh balances.
+  final Function(GiftItem)? onGiftSent;
 
   const GiftBoxModal({
     super.key,
     this.headerText,
     this.subHeaderText,
     required this.giftItems,
+    this.recipientArtistId,
+    this.trackId,
+    this.videoId,
     this.onClose,
-    this.onGiftSelected,
-    this.onSendGift,
+    this.onGiftSent,
   });
 
   @override
@@ -140,18 +147,19 @@ class GiftBoxModal extends StatelessWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (BuildContext context) {
+      builder: (BuildContext sheetContext) {
         return SendGiftBottomSheet(
           giftItem: giftItem,
+          recipientArtistId: recipientArtistId,
+          trackId: trackId,
+          videoId: videoId,
           onClose: () {
-            Navigator.of(context).pop();
+            Navigator.of(sheetContext).pop();
           },
-          onGetCoins: () {
-            Navigator.of(context).pop();
+          onSent: () {
+            Navigator.of(sheetContext).pop();
+            onGiftSent?.call(giftItem);
           },
-          onSendGift: onSendGift == null
-              ? null
-              : () => onSendGift!(giftItem),
         );
       },
     );

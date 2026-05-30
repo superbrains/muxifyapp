@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
 import 'package:muxify/core/constants/app_colors.dart';
 import 'package:muxify/core/constants/app_sizes.dart';
 import 'package:muxify/core/constants/app_text_styles.dart';
+import 'package:muxify/core/router/app_router.dart';
 import 'package:muxify/core/utils/app_toast.dart';
 import 'package:muxify/features/music_player/providers/music_player_interaction_provider.dart';
+import 'package:muxify/features/wallet/services/wallet_api_service.dart';
 
 /// Coin-cost confirmation modal shown when the user taps the lock icon on a
 /// premium track. Calls the existing
@@ -16,6 +19,10 @@ class UnlockConfirmModal extends StatefulWidget {
   final String trackTitle;
   final String artistName;
   final int unlockCostCoins;
+
+  /// Coins per ₦1, used to show the Naira equivalent of the coin cost. Defaults
+  /// to the platform fallback (50 coins = ₦1) when not supplied.
+  final int coinsPerNairaMajor;
   final MusicPlayerInteractionProvider interaction;
   final VoidCallback? onUnlocked;
 
@@ -26,6 +33,7 @@ class UnlockConfirmModal extends StatefulWidget {
     required this.artistName,
     required this.unlockCostCoins,
     required this.interaction,
+    this.coinsPerNairaMajor = 50,
     this.onUnlocked,
   });
 
@@ -36,6 +44,7 @@ class UnlockConfirmModal extends StatefulWidget {
     required String artistName,
     required int unlockCostCoins,
     required MusicPlayerInteractionProvider interaction,
+    int coinsPerNairaMajor = 50,
     VoidCallback? onUnlocked,
   }) {
     return showDialog<void>(
@@ -47,6 +56,7 @@ class UnlockConfirmModal extends StatefulWidget {
         artistName: artistName,
         unlockCostCoins: unlockCostCoins,
         interaction: interaction,
+        coinsPerNairaMajor: coinsPerNairaMajor,
         onUnlocked: onUnlocked,
       ),
     );
@@ -57,7 +67,36 @@ class UnlockConfirmModal extends StatefulWidget {
 }
 
 class _UnlockConfirmModalState extends State<UnlockConfirmModal> {
+  final WalletApiService _wallet = WalletApiService();
+
   bool _busy = false;
+  bool _loading = true;
+  int _balance = 0;
+
+  bool get _canAfford => _balance >= widget.unlockCostCoins;
+
+  @override
+  void initState() {
+    super.initState();
+    _hydrate();
+  }
+
+  // The coin/Naira rate is passed in by the caller; here we only need the
+  // wallet balance to decide between the Unlock and Get Coins actions.
+  Future<void> _hydrate() async {
+    final summary = await _wallet.fetchWalletSummary();
+    if (!mounted) return;
+    setState(() {
+      _balance = summary.balance;
+      _loading = false;
+    });
+  }
+
+  void _getCoins() {
+    HapticFeedback.lightImpact();
+    Navigator.of(context).pop();
+    context.push(AppRouter.getCoins);
+  }
 
   Future<void> _confirm() async {
     if (_busy) return;
@@ -83,9 +122,57 @@ class _UnlockConfirmModalState extends State<UnlockConfirmModal> {
     return raw.replaceFirst(RegExp(r'^[^:]+:\s*'), '');
   }
 
+  Widget _buildPrimaryButton(int cost) {
+    final mustTopUp = cost > 0 && !_loading && !_canAfford;
+    if (mustTopUp) {
+      return FilledButton(
+        onPressed: _getCoins,
+        style: FilledButton.styleFrom(
+          backgroundColor: AppColors.buttonColor,
+          foregroundColor: AppColors.text,
+          padding: EdgeInsets.symmetric(vertical: 14.padding),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20.radius),
+          ),
+        ),
+        child: const Text(
+          'Get Coins',
+          style: TextStyle(fontWeight: FontWeight.w600),
+        ),
+      );
+    }
+    return FilledButton(
+      onPressed: (_busy || _loading) ? null : _confirm,
+      style: FilledButton.styleFrom(
+        backgroundColor: AppColors.buttonColor,
+        foregroundColor: AppColors.text,
+        disabledBackgroundColor: AppColors.buttonColor.withValues(alpha: 0.5),
+        padding: EdgeInsets.symmetric(vertical: 14.padding),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20.radius),
+        ),
+      ),
+      child: (_busy || _loading)
+          ? SizedBox(
+              width: 18.icon,
+              height: 18.icon,
+              child: const CircularProgressIndicator(
+                strokeWidth: 2,
+                color: Colors.white,
+              ),
+            )
+          : const Text(
+              'Unlock',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final cost = widget.unlockCostCoins;
+    final rate = widget.coinsPerNairaMajor > 0 ? widget.coinsPerNairaMajor : 50;
+    final nairaEquivalent = cost > 0 ? (cost / rate).round() : 0;
     return Dialog(
       backgroundColor: Colors.transparent,
       insetPadding: EdgeInsets.symmetric(horizontal: 24.padding),
@@ -159,7 +246,7 @@ class _UnlockConfirmModalState extends State<UnlockConfirmModal> {
                   ),
                   10.row,
                   Text(
-                    cost > 0 ? '$cost coins' : 'Free',
+                    cost > 0 ? '${CoinRate.groupThousands(cost)} coins' : 'Free',
                     style: AppTextStyles.bodyLarge.copyWith(
                       color: AppColors.text,
                       fontWeight: FontWeight.w600,
@@ -168,6 +255,15 @@ class _UnlockConfirmModalState extends State<UnlockConfirmModal> {
                 ],
               ),
             ),
+            if (cost > 0) ...[
+              8.column,
+              Text(
+                '≈ ₦${CoinRate.groupThousands(nairaEquivalent)} value',
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: AppColors.text.withValues(alpha: 0.6),
+                ),
+              ),
+            ],
             24.column,
             Row(
               children: [
@@ -191,30 +287,7 @@ class _UnlockConfirmModalState extends State<UnlockConfirmModal> {
                 ),
                 12.row,
                 Expanded(
-                  child: FilledButton(
-                    onPressed: _busy ? null : _confirm,
-                    style: FilledButton.styleFrom(
-                      backgroundColor: AppColors.buttonColor,
-                      foregroundColor: AppColors.text,
-                      padding: EdgeInsets.symmetric(vertical: 14.padding),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20.radius),
-                      ),
-                    ),
-                    child: _busy
-                        ? SizedBox(
-                            width: 18.icon,
-                            height: 18.icon,
-                            child: const CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
-                        : const Text(
-                            'Unlock',
-                            style: TextStyle(fontWeight: FontWeight.w600),
-                          ),
-                  ),
+                  child: _buildPrimaryButton(cost),
                 ),
               ],
             ),

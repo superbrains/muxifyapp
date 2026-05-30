@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:muxify/core/constants/api_constants.dart';
 import 'package:muxify/core/constants/app_colors.dart';
 import 'package:muxify/core/constants/app_sizes.dart';
 import 'package:muxify/core/providers/unlocked_content_provider.dart';
@@ -26,8 +25,9 @@ import 'package:muxify/features/music_player/widgets/music_progress_bar.dart';
 import 'package:muxify/features/music_player/widgets/playback_controls.dart';
 import 'package:muxify/features/music_player/widgets/send_gifts_button.dart';
 import 'package:muxify/features/music_player/widgets/unlock_confirm_modal.dart';
+import 'package:muxify/features/wallet/services/wallet_api_service.dart';
+import 'package:muxify/shared/widgets/auth_network_image.dart';
 import 'package:muxify/shared/widgets/gift_box_modal.dart';
-import 'package:muxify/features/statistics/models/gift_item.dart';
 
 class MusicPlayerScreen extends StatefulWidget {
   final String? trackId;
@@ -69,153 +69,6 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
   // the same locked index while the queue settles after the skip.
   int? _lastAutoSkippedIndex;
 
-  // Mock gift items for the gift box modal
-  final List<GiftItem> _giftItems = [
-    GiftItem(
-      id: '1',
-      name: 'Big Box',
-      backgroundImage: 'assets/pngs/gift_bg1.png',
-      emojiImage: 'assets/pngs/emoj1.png',
-      stickerText: 'X20',
-      count: 20,
-      amount: 100250,
-    ),
-    GiftItem(
-      id: '2',
-      name: 'Big Box',
-      backgroundImage: 'assets/pngs/gift_bg2.png',
-      emojiImage: 'assets/pngs/emoj4.png',
-      stickerText: 'X20',
-      count: 20,
-      amount: 100250,
-    ),
-    GiftItem(
-      id: '3',
-      name: 'Big Box',
-      backgroundImage: 'assets/pngs/gift_bg3.png',
-      emojiImage: 'assets/pngs/emoj3.png',
-      stickerText: 'X20',
-      count: 20,
-      amount: 100250,
-    ),
-    GiftItem(
-      id: '4',
-      name: 'Big Box',
-      backgroundImage: 'assets/pngs/gift_bg4.png',
-      emojiImage: 'assets/pngs/emoj6.png',
-      stickerText: 'X20',
-      count: 20,
-    ),
-    GiftItem(
-      id: '5',
-      name: 'Big Box',
-      backgroundImage: 'assets/pngs/gift_bg1.png',
-      emojiImage: 'assets/pngs/emoj7.png',
-      stickerText: 'X20',
-      count: 20,
-      amount: 100250,
-    ),
-    GiftItem(
-      id: '6',
-      name: 'Big Box',
-      backgroundImage: 'assets/pngs/gift_bg2.png',
-      emojiImage: 'assets/pngs/emoj6.png',
-      stickerText: 'X20',
-      count: 20,
-      amount: 100250,
-    ),
-    GiftItem(
-      id: '7',
-      name: 'Big Box',
-      backgroundImage: 'assets/pngs/gift_bg3.png',
-      emojiImage: 'assets/pngs/emoj1.png',
-      stickerText: 'X20',
-      count: 20,
-      amount: 100250,
-    ),
-    GiftItem(
-      id: '8',
-      name: 'Big Box',
-      backgroundImage: 'assets/pngs/gift_bg4.png',
-      emojiImage: 'assets/pngs/emoj7.png',
-      stickerText: 'X20',
-      count: 20,
-      amount: 100250,
-    ),
-    GiftItem(
-      id: '9',
-      name: 'Big Box',
-      backgroundImage: 'assets/pngs/gift_bg1.png',
-      emojiImage: 'assets/pngs/emoj7.png',
-      stickerText: 'X20',
-      count: 20,
-      amount: 100250,
-    ),
-    GiftItem(
-      id: '10',
-      name: 'Big Box',
-      backgroundImage: 'assets/pngs/gift_bg2.png',
-      emojiImage: 'assets/pngs/emoj7.png',
-      stickerText: 'X20',
-      count: 20,
-      amount: 100250,
-    ),
-    GiftItem(
-      id: '11',
-      name: 'Big Box',
-      backgroundImage: 'assets/pngs/gift_bg3.png',
-      emojiImage: 'assets/pngs/emoj7.png',
-      stickerText: 'X20',
-      count: 20,
-      amount: 100250,
-    ),
-    GiftItem(
-      id: '12',
-      name: 'Big Box',
-      backgroundImage: 'assets/pngs/gift_bg4.png',
-      emojiImage: 'assets/pngs/emoj7.png',
-      stickerText: 'X20',
-      count: 20,
-      amount: 100250,
-    ),
-    GiftItem(
-      id: '13',
-      name: 'Big Box',
-      backgroundImage: 'assets/pngs/gift_bg5.png',
-      emojiImage: 'assets/pngs/emoj7.png',
-      stickerText: 'X20',
-      count: 20,
-      amount: 100250,
-    ),
-    GiftItem(
-      id: '14',
-      name: 'Big Box',
-      backgroundImage: 'assets/pngs/gift_bg6.png',
-      emojiImage: 'assets/pngs/emoj7.png',
-      stickerText: 'X20',
-      count: 20,
-      amount: 100250,
-    ),
-    GiftItem(
-      id: '15',
-      name: 'Big Box',
-      backgroundImage: 'assets/pngs/gift_bg1.png',
-      emojiImage: 'assets/pngs/emoj7.png',
-      stickerText: 'X20',
-      count: 20,
-      amount: 100250,
-    ),
-    GiftItem(
-      id: '16',
-      name: 'Big Box',
-      backgroundImage: 'assets/pngs/gift_bg7.png',
-      emojiImage: 'assets/pngs/emoj7.png',
-      stickerText: 'X20',
-      count: 20,
-      amount: 100250,
-    ),
-  ];
-
   @override
   void initState() {
     super.initState();
@@ -223,6 +76,8 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
       if (!mounted) return;
       _hydrateAudio();
       _hydrateLikeStatus();
+      // Warm the gift catalogue so the GIFTBOX opens with real types/costs.
+      context.read<ArtistProfileProvider>().loadGiftTypes();
     });
     _resolveBackgroundFallbacks();
   }
@@ -268,6 +123,7 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
       artworkUrl: widget.backgroundImageUrl,
       audioUrl: widget.audioUrl,
       isUnlocked: widget.isUnlocked ?? true,
+      unlockCostCoins: widget.unlockCostCoins ?? 0,
     );
     await audio.playSingle(track);
   }
@@ -626,12 +482,21 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
             ? currentTrack!.artist
             : widget.artistName) ??
         '';
+    // Cost comes from the track itself: the active queue track wins, falling
+    // back to the route argument. Never a hard-coded default.
+    final unlockCost = (currentTrack?.unlockCostCoins ?? 0) > 0
+        ? currentTrack!.unlockCostCoins
+        : (widget.unlockCostCoins ?? 0);
+    // Pull the live coin/Naira rate so the modal can show the ₦ equivalent.
+    final rate = await WalletApiService().fetchCoinRate();
+    if (!mounted) return;
     await UnlockConfirmModal.show(
       context,
       trackId: id,
       trackTitle: trackTitle,
       artistName: artistName,
-      unlockCostCoins: widget.unlockCostCoins ?? 100,
+      unlockCostCoins: unlockCost,
+      coinsPerNairaMajor: rate.coinsPerNairaMajor,
       interaction: interaction,
       onUnlocked: () async {
         await unlockedContent.markUnlocked(id);
@@ -641,7 +506,26 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
 
   void _showGiftBoxModal() {
     final provider = context.read<ArtistProfileProvider>();
-    final artistId = (widget.artistId ?? '').trim();
+    final audio = context.read<AudioProvider>();
+    final artistId =
+        (audio.currentTrack?.artistId ?? widget.artistId ?? '').trim();
+    if (artistId.isEmpty) {
+      AppToast.showError('We could not identify the artist to gift.');
+      return;
+    }
+    if (provider.isLoadingGifts) {
+      AppToast.showInfo('Loading gifts...');
+      return;
+    }
+    if (provider.gifts.isEmpty) {
+      // Retry a load in case the warm-up call failed (e.g. cold start 401).
+      provider.loadGiftTypes();
+      AppToast.showError('No gifts available right now. Try again.');
+      return;
+    }
+
+    final trackId =
+        (audio.currentTrack?.id ?? widget.trackId ?? '').trim();
     showDialog(
       context: context,
       barrierDismissible: true,
@@ -649,39 +533,12 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
         return GiftBoxModal(
           headerText: 'GIFTBOX',
           subHeaderText: 'Tap to send gift',
-          giftItems: _giftItems,
+          giftItems: provider.gifts,
+          recipientArtistId: artistId,
+          trackId: trackId.isEmpty ? null : trackId,
           onClose: () {
             Navigator.of(dialogContext).pop();
           },
-          onGiftSelected: (GiftItem gift) {},
-          // Demo mode: short-circuit the coin/wallet check and call the real
-          // gift API as soon as a gift is selected. Mirrors the wiring used
-          // on the artist profile screen.
-          onSendGift: artistId.isEmpty
-              ? null
-              : (GiftItem gift) async {
-                  Navigator.of(dialogContext).pop();
-                  if (gift.id.isEmpty) {
-                    await AppToast.showError('Invalid gift selection.');
-                    return;
-                  }
-                  try {
-                    final response = await provider.sendGift(
-                      artistId: artistId,
-                      giftType: gift.id,
-                      trackId: widget.trackId,
-                    );
-                    if (response != null && response.success) {
-                      await AppToast.showInfo(
-                        response.message?.isNotEmpty == true
-                            ? response.message!
-                            : 'Gift sent!',
-                      );
-                    }
-                  } catch (e) {
-                    await AppToast.showError(e.toString());
-                  }
-                },
         );
       },
     );
@@ -716,10 +573,11 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
         lower.startsWith('https://') ||
         source.startsWith('/');
     if (isRemote) {
-      return Image.network(
-        ApiConstants.resolvePublicUrl(source),
+      return AuthNetworkImage(
+        path: source,
         fit: BoxFit.cover,
-        errorBuilder: (_, _, _) => onError(),
+        placeholder: onError(),
+        errorWidget: onError(),
       );
     }
     return Image.asset(

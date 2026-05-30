@@ -268,6 +268,7 @@ class AppRouter {
               artistId: q['artistId'],
               thumbnailUrl: q['thumbnailUrl'],
               isUnlocked: q['isUnlocked'] != 'false',
+              unlockCostCoins: int.tryParse(q['unlockCostCoins'] ?? ''),
             ),
           );
         },
@@ -368,6 +369,7 @@ class AppRouter {
               backgroundImageUrl: q['backgroundImageUrl'],
               audioUrl: q['audioUrl'],
               isUnlocked: q['isUnlocked'] == 'true',
+              unlockCostCoins: int.tryParse(q['unlockCostCoins'] ?? ''),
             ),
           );
         },

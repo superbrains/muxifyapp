@@ -3,6 +3,7 @@ import 'package:muxify/core/constants/app_colors.dart';
 import 'package:muxify/core/constants/app_sizes.dart';
 import 'package:muxify/core/constants/app_text_styles.dart';
 import 'package:muxify/features/fan_profile/models/fan_profile_models.dart';
+import 'package:muxify/shared/widgets/auth_network_image.dart';
 
 class FollowingSection extends StatelessWidget {
   const FollowingSection({
@@ -101,12 +102,18 @@ class FollowingSection extends StatelessWidget {
                             ClipRRect(
                               borderRadius: BorderRadius.circular(100.radius),
                               child: hasAvatar
-                                  ? Image.network(
-                                      artist.avatarUrl!,
+                                  ? AuthNetworkImage(
+                                      path: artist.avatarUrl!,
                                       width: 45.maxWidth,
                                       height: 45.maxHeight,
                                       fit: BoxFit.cover,
-                                      errorBuilder: (_, __, ___) => Image.asset(
+                                      placeholder: Image.asset(
+                                        'assets/pngs/fan_profile_image.png',
+                                        width: 45.maxWidth,
+                                        height: 45.maxHeight,
+                                        fit: BoxFit.cover,
+                                      ),
+                                      errorWidget: Image.asset(
                                         'assets/pngs/fan_profile_image.png',
                                         width: 45.maxWidth,
                                         height: 45.maxHeight,

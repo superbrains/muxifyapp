@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:muxify/core/constants/api_constants.dart';
 import 'package:muxify/core/constants/app_colors.dart';
 import 'package:muxify/core/constants/app_sizes.dart';
 import 'package:muxify/core/constants/app_text_styles.dart';
 import 'package:muxify/core/providers/unlocked_content_provider.dart';
 import 'package:muxify/features/audio_playback/models/track.dart';
 import 'package:muxify/features/audio_playback/providers/audio_provider.dart';
+import 'package:muxify/shared/widgets/auth_network_image.dart';
 
 /// Bottom sheet showing the player's current queue. Tap a row to jump
 /// playback to that track. Locked rows are dimmed and labelled.
@@ -205,10 +205,11 @@ class _QueueRow extends StatelessWidget {
   Widget _cover(String source) {
     final fallback = Container(color: AppColors.background);
     if (source.isEmpty) return fallback;
-    return Image.network(
-      ApiConstants.resolvePublicUrl(source),
+    return AuthNetworkImage(
+      path: source,
       fit: BoxFit.cover,
-      errorBuilder: (_, _, _) => fallback,
+      placeholder: fallback,
+      errorWidget: fallback,
     );
   }
 }

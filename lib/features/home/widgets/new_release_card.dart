@@ -1,11 +1,10 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:muxify/core/constants/api_constants.dart';
 import 'package:muxify/core/constants/app_colors.dart';
 import 'package:muxify/core/constants/app_sizes.dart';
 import 'package:muxify/core/constants/app_text_styles.dart';
 import 'package:muxify/features/home/models/new_release_item.dart';
+import 'package:muxify/shared/widgets/auth_network_image.dart';
 
 class NewReleaseCard extends StatelessWidget {
   final NewReleaseItem release;
@@ -150,11 +149,11 @@ class NewReleaseCard extends StatelessWidget {
   Widget _buildCover() {
     final url = release.imageUrl?.trim() ?? '';
     if (url.isEmpty) return _placeholderCover();
-    return CachedNetworkImage(
-      imageUrl: ApiConstants.resolvePublicUrl(url),
+    return AuthNetworkImage(
+      path: url,
       fit: BoxFit.cover,
-      placeholder: (_, __) => _placeholderCover(),
-      errorWidget: (_, __, ___) => _placeholderCover(),
+      placeholder: _placeholderCover(),
+      errorWidget: _placeholderCover(),
     );
   }
 

@@ -6,6 +6,7 @@ import 'package:muxify/core/constants/app_text_styles.dart';
 import 'package:muxify/features/artist_profile/data/artists_repository.dart';
 import 'package:muxify/features/fan_profile/data/fan_profile_repository.dart';
 import 'package:muxify/features/statistics/models/gift_item.dart';
+import 'package:muxify/features/wallet/services/wallet_api_service.dart';
 
 class GiftMeModal extends StatefulWidget {
   const GiftMeModal({
@@ -40,14 +41,24 @@ class _GiftMeModalState extends State<GiftMeModal> {
   final ArtistsRepository _artistsRepository = ArtistsRepository();
   final FanProfileRepository _fanRepository = FanProfileRepository();
 
+  final WalletApiService _wallet = WalletApiService();
+
   late Future<List<GiftItem>> _giftTypesFuture;
   int _selectedIndex = 0;
   bool _sending = false;
+  CoinRate _rate = CoinRate.fallback();
 
   @override
   void initState() {
     super.initState();
     _giftTypesFuture = _artistsRepository.getGiftTypes();
+    _loadRate();
+  }
+
+  Future<void> _loadRate() async {
+    final rate = await _wallet.fetchCoinRate();
+    if (!mounted) return;
+    setState(() => _rate = rate);
   }
 
   Future<void> _send(List<GiftItem> gifts) async {
@@ -176,6 +187,7 @@ class _GiftMeModalState extends State<GiftMeModal> {
                         final gift = gifts[index];
                         return _GiftTypeCard(
                           gift: gift,
+                          rate: _rate,
                           isSelected: _selectedIndex == index,
                           onTap: () => setState(() => _selectedIndex = index),
                         );
@@ -227,18 +239,22 @@ class _GiftMeModalState extends State<GiftMeModal> {
 class _GiftTypeCard extends StatelessWidget {
   const _GiftTypeCard({
     required this.gift,
+    required this.rate,
     required this.isSelected,
     required this.onTap,
   });
 
   final GiftItem gift;
+  final CoinRate rate;
   final bool isSelected;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final coinCost =
-        gift.amount != null ? gift.amount!.toInt().toString() : '—';
+    final costCoins = (gift.amount ?? 0).toInt();
+    final coinCost = gift.amount != null
+        ? CoinRate.groupThousands(costCoins)
+        : '—';
     return GestureDetector(
       onTap: () {
         HapticFeedback.lightImpact();
@@ -298,6 +314,17 @@ class _GiftTypeCard extends StatelessWidget {
                       fontWeight: FontWeight.w400,
                     ),
                   ),
+                  if (gift.amount != null)
+                    Text(
+                      rate.nairaLabel(costCoins),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: Colors.white.withValues(alpha: 0.5),
+                        fontSize: 9.font,
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
                 ],
               ),
             ),

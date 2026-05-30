@@ -61,6 +61,73 @@ class ApiRequester {
     }
   }
 
+  /// Backoff schedule for transient GET retries (cold-start / gateway hiccups).
+  /// Length also defines the max retry count (GET-only — reads are idempotent).
+  static const List<Duration> _getRetryBackoff = [
+    Duration(milliseconds: 400),
+    Duration(seconds: 1),
+    Duration(seconds: 2),
+  ];
+
+  /// Gateway / cold-start statuses worth retrying. Azure Container Apps (dev)
+  /// scales to zero, so the first request after idle can return one of these.
+  static const Set<int> _transientStatuses = {502, 503, 504};
+
+  /// GET with bounded retry on transient transport errors and gateway/cold-start
+  /// statuses (502/503/504), using [_getRetryBackoff]. On exhaustion it surfaces
+  /// the same friendly [ApiRequestException]s as [_guardNetwork], or returns the
+  /// last (error) response so the caller maps the status as usual.
+  Future<http.Response> _getWithRetry(
+    Future<http.Response> Function() send,
+  ) async {
+    for (var attempt = 0; ; attempt++) {
+      final isLast = attempt >= _getRetryBackoff.length;
+      try {
+        final response = await send();
+        if (!isLast && _transientStatuses.contains(response.statusCode)) {
+          await Future.delayed(_getRetryBackoff[attempt]);
+          continue;
+        }
+        return response;
+      } on TimeoutException catch (e, st) {
+        if (isLast) {
+          Logger.error('API timeout', e, st);
+          throw ApiRequestException(
+            'Request timed out. Check your connection and try again.',
+          );
+        }
+      } on SocketException catch (e, st) {
+        if (isLast) {
+          Logger.error('API socket error', e, st);
+          throw ApiRequestException(
+            'No network connection. Check Wi‑Fi or mobile data.',
+          );
+        }
+      } on http.ClientException catch (e, st) {
+        if (isLast) {
+          Logger.error('API client error', e, st);
+          throw ApiRequestException(
+            'Unable to reach the server. Check your connection.',
+          );
+        }
+      } catch (e, st) {
+        if (isLast) {
+          Logger.error('API request failed', e, st);
+          throw ApiRequestException(
+            'Unable to reach the server. Check your connection.',
+          );
+        }
+      }
+      await Future.delayed(_getRetryBackoff[attempt]);
+    }
+  }
+
+  /// Proactively rotates the access/refresh token pair so the session stays
+  /// alive (called at startup and on app resume). Best-effort: returns false
+  /// when there is no refresh token or the backend is unreachable; never throws
+  /// and never clears stored tokens.
+  Future<bool> ensureFreshAccessToken() => _tryRefreshAccessToken();
+
   /// Exchanges refresh token for new JWT pair (`POST /auth/refresh`).
   Future<bool> _tryRefreshAccessToken() async {
     if (_refreshInFlight != null) {
@@ -245,7 +312,7 @@ class ApiRequester {
     bool authenticate = false,
   }) async {
     final authHeaders = await _authHeadersIfNeeded(authenticate);
-    http.Response response = await _guardNetwork(
+    http.Response response = await _getWithRetry(
       () => _client.get(
         path,
         queryParameters: queryParameters,
@@ -257,7 +324,7 @@ class ApiRequester {
         response.statusCode == ApiConstants.statusUnauthorized &&
         await _tryRefreshAccessToken()) {
       final h2 = await _authHeadersIfNeeded(true);
-      response = await _guardNetwork(
+      response = await _getWithRetry(
         () => _client.get(
           path,
           queryParameters: queryParameters,
@@ -289,7 +356,7 @@ class ApiRequester {
     bool authenticate = false,
   }) async {
     final authHeaders = await _authHeadersIfNeeded(authenticate);
-    http.Response response = await _guardNetwork(
+    http.Response response = await _getWithRetry(
       () => _client.get(
         path,
         queryParameters: queryParameters,
@@ -301,7 +368,7 @@ class ApiRequester {
         response.statusCode == ApiConstants.statusUnauthorized &&
         await _tryRefreshAccessToken()) {
       final h2 = await _authHeadersIfNeeded(true);
-      response = await _guardNetwork(
+      response = await _getWithRetry(
         () => _client.get(
           path,
           queryParameters: queryParameters,

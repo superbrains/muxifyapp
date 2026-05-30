@@ -30,17 +30,8 @@ class ReleasePlaybackHelper {
 
     try {
       if (tryBackendStream) {
-        if (!resolvedRelease.isUnlocked && resolvedRelease.unlockCostCoins > 0) {
-          // TEMP: lock/unlock flow disabled for now.
-          // await provider.unlockTrack(resolvedRelease.id);
-          // provider.markTrackUnlocked(resolvedRelease.id);
-          // resolvedRelease = resolvedRelease.copyWith(
-          //   isUnlocked: true,
-          //   unlockCostCoins: 0,
-          // );
-          // await AppToast.showInfo('Track unlocked successfully.');
-        }
-
+        // Locked tracks still open the player; the unlock confirmation (with
+        // the real per-track coin cost) happens there via the lock icon.
         streamUrl = (await provider.getTrackStreamUrl(resolvedRelease.id)).trim();
         if (streamUrl.isEmpty) {
           await AppToast.showError('No stream URL found for this track.');
@@ -65,6 +56,7 @@ class ReleasePlaybackHelper {
         'backgroundImageUrl': resolvedRelease.coverImageUrl,
         if (streamUrl.isNotEmpty) 'audioUrl': streamUrl,
         'isUnlocked': resolvedRelease.isUnlocked.toString(),
+        'unlockCostCoins': resolvedRelease.unlockCostCoins.toString(),
       },
     );
 

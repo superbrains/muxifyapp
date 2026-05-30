@@ -1,6 +1,5 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:muxify/core/constants/api_constants.dart';
+import 'package:muxify/shared/widgets/auth_network_image.dart';
 
 /// Renders a video thumbnail. Accepts:
 ///  * a fully-qualified URL (`http://...`, `https://...`) — fetched as network image
@@ -31,17 +30,13 @@ class VideoCoverImage extends StatelessWidget {
 
     if (raw.startsWith('assets/')) return _asset(raw);
 
-    final url = (raw.startsWith('http://') || raw.startsWith('https://'))
-        ? raw
-        : ApiConstants.resolvePublicUrl(raw);
-
-    return CachedNetworkImage(
-      imageUrl: url,
+    return AuthNetworkImage(
+      path: raw,
       fit: fit,
       width: width,
       height: height,
-      placeholder: (_, __) => _asset(fallbackAsset),
-      errorWidget: (_, __, ___) => _asset(fallbackAsset),
+      placeholder: _asset(fallbackAsset),
+      errorWidget: _asset(fallbackAsset),
     );
   }
 

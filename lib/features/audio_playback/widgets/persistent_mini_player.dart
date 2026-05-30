@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'package:muxify/core/constants/api_constants.dart';
 import 'package:muxify/core/constants/app_colors.dart';
 import 'package:muxify/core/constants/app_sizes.dart';
 import 'package:muxify/core/constants/app_text_styles.dart';
 import 'package:muxify/core/router/app_router.dart';
 import 'package:muxify/features/audio_playback/models/track.dart';
 import 'package:muxify/features/audio_playback/providers/audio_provider.dart';
+import 'package:muxify/shared/widgets/auth_network_image.dart';
 
 /// Docked mini-player for the Muxify brand: glassy dark surface, brand-red
 /// progress + play button, animated equalizer + marquee while playing.
@@ -188,10 +188,11 @@ class _ArtworkImage extends StatelessWidget {
         lower.startsWith('https://') ||
         raw.startsWith('/');
     if (isRemote) {
-      return Image.network(
-        ApiConstants.resolvePublicUrl(raw),
+      return AuthNetworkImage(
+        path: raw,
         fit: BoxFit.cover,
-        errorBuilder: (_, _, _) => const _BrandedArtworkFallback(),
+        placeholder: const _BrandedArtworkFallback(),
+        errorWidget: const _BrandedArtworkFallback(),
       );
     }
     return Image.asset(

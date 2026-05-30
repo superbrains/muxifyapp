@@ -330,9 +330,10 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildMusicContent(HomeProvider homeProvider) {
+    final recentlyPlayedMusic = homeProvider.recentlyPlayedMusic;
     final showRecentlyPlayed = homeProvider.isLoadingRecentlyPlayed ||
         (homeProvider.hasLoadedRecentlyPlayed &&
-            homeProvider.recentlyPlayed.isNotEmpty);
+            recentlyPlayedMusic.isNotEmpty);
 
     final showTrendingArtists = homeProvider.isLoadingTrendingArtists ||
         (homeProvider.hasLoadedTrendingArtists &&
@@ -373,9 +374,9 @@ class _HomeScreenState extends State<HomeScreen> {
         if (homeProvider.isLoadingRecentlyPlayed)
           RecentlyPlayedSection(items: const [], isLoading: true)
         else if (homeProvider.hasLoadedRecentlyPlayed &&
-            homeProvider.recentlyPlayed.isNotEmpty)
+            recentlyPlayedMusic.isNotEmpty)
           RecentlyPlayedSection(
-            items: homeProvider.recentlyPlayed,
+            items: recentlyPlayedMusic,
             onItemTap: _openRecentlyPlayed,
           ),
         if (showRecentlyPlayed) 30.column,
