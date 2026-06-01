@@ -112,6 +112,13 @@ class AppRouter {
   /// player screen itself is popped.
   static final ValueNotifier<bool> fullPlayerVisible = ValueNotifier<bool>(false);
 
+  /// True while a screen wants the persistent mini audio player suppressed
+  /// (e.g. the video player, which owns its own playback surface and should not
+  /// have the audio bar overlaid on top of it in either orientation). Like
+  /// [fullPlayerVisible], screens flip this in initState/dispose so it stays
+  /// suppressed across any route pushed on top (e.g. the fullscreen video page).
+  static final ValueNotifier<bool> miniPlayerSuppressed = ValueNotifier<bool>(false);
+
   static final GoRouter router = GoRouter(
     initialLocation: splash,
     debugLogDiagnostics: true,

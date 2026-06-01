@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -97,6 +98,9 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   List<VideoItem> _upNext = const [];
   bool _loadingUpNext = true;
 
+  // Guards the one-shot auto-advance when the current video reaches its end.
+  bool _advanced = false;
+
   String get _displayTitle =>
       (_detail?.title.trim().isNotEmpty ?? false)
           ? _detail!.title
@@ -124,6 +128,9 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   void initState() {
     super.initState();
     _isUnlocked = widget.isUnlocked;
+    // The video screen owns its own playback surface — keep the persistent mini
+    // audio player hidden over it (portrait and fullscreen/landscape alike).
+    _setMiniPlayerSuppressed(true);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       final unlocked = context.read<UnlockedContentProvider>();
@@ -140,9 +147,29 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
 
   @override
   void dispose() {
+    // Restore the mini-player once the video screen is popped. A fullscreen
+    // route pushed on top doesn't dispose this screen, so the bar stays hidden
+    // until the player itself closes.
+    _setMiniPlayerSuppressed(false);
     _videoController?.removeListener(_onPlayerTick);
     _videoController?.dispose();
     super.dispose();
+  }
+
+  /// Flip the global [AppRouter.miniPlayerSuppressed] notifier safely. If we're
+  /// mid-frame (route transition runs inside build/layout), defer to the
+  /// post-frame callback to avoid mutating the overlay's builder mid-build;
+  /// otherwise apply immediately so the bar toggles without a one-frame flash.
+  void _setMiniPlayerSuppressed(bool suppressed) {
+    final phase = SchedulerBinding.instance.schedulerPhase;
+    if (phase == SchedulerPhase.persistentCallbacks ||
+        phase == SchedulerPhase.transientCallbacks) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        AppRouter.miniPlayerSuppressed.value = suppressed;
+      });
+    } else {
+      AppRouter.miniPlayerSuppressed.value = suppressed;
+    }
   }
 
   Future<void> _hydrateCoinRate() async {
@@ -182,15 +209,37 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
 
   Future<void> _loadUpNext() async {
     try {
-      final dtos = await _feedRepo.getTrendingVideos(pageSize: 12);
-      if (!mounted) return;
-      final items = dtos
+      // Trending first; fall back to fresh/hot releases when trending is sparse
+      // so "Up Next" reliably has something to advance to. De-dupe by id and
+      // drop the current video.
+      final items = <VideoItem>[];
+      final seen = <String>{widget.videoId};
+
+      void addAll(List<VideoItem> candidates) {
+        for (final v in candidates) {
+          if (v.id.isEmpty || !seen.add(v.id)) continue;
+          items.add(v);
+        }
+      }
+
+      addAll((await _feedRepo.getTrendingVideos(pageSize: 12))
           .map(VideoItem.fromFeedVideo)
-          .where((v) => v.id.isNotEmpty && v.id != widget.videoId)
-          .take(10)
-          .toList();
+          .toList());
+
+      if (items.length < 5) {
+        addAll((await _feedRepo.getNewReleaseVideos(pageSize: 12))
+            .map(VideoItem.fromFeedVideo)
+            .toList());
+      }
+      if (items.length < 5) {
+        addAll((await _feedRepo.getHotReleaseVideos(pageSize: 12))
+            .map(VideoItem.fromFeedVideo)
+            .toList());
+      }
+
+      if (!mounted) return;
       setState(() {
-        _upNext = items;
+        _upNext = items.take(10).toList();
         _loadingUpNext = false;
       });
     } catch (e, st) {
@@ -214,6 +263,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
     setState(() {
       _isLoadingStream = true;
       _streamError = null;
+      _advanced = false;
     });
 
     Map<String, dynamic> payload;
@@ -328,11 +378,30 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
       return;
     }
 
+    // Auto-advance to the next video when this one finishes (YouTube-style).
+    if (!_advanced &&
+        c.value.isInitialized &&
+        !c.value.isLooping &&
+        c.value.duration > Duration.zero &&
+        !c.value.isBuffering &&
+        c.value.position >= c.value.duration - const Duration(milliseconds: 350)) {
+      _advanced = true;
+      _playNextVideo();
+      return;
+    }
+
     if (_playRecorded) return;
     if (!c.value.isInitialized || !c.value.isPlaying) return;
     if (c.value.position.inMilliseconds < 250) return;
     _playRecorded = true;
     _recordPlay();
+  }
+
+  /// Navigate to the first Up Next entry when the current video ends. Does
+  /// nothing when the list is empty (the video simply stops).
+  void _playNextVideo() {
+    if (_upNext.isEmpty) return;
+    _openVideo(_upNext.first);
   }
 
   Future<void> _recoverWithProgressive() async {
@@ -357,6 +426,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
         await controller.dispose();
         return;
       }
+      _advanced = false;
       controller
         ..setLooping(false)
         ..addListener(_onPlayerTick)
@@ -553,8 +623,9 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                   18.padding,
                   16.padding,
                   18.padding,
-                  // Leave room for the persistent mini-player overlay.
-                  100.padding,
+                  // The persistent mini-player is suppressed on this screen, so
+                  // only a normal bottom inset is needed.
+                  24.padding,
                 ),
                 children: [
                   _buildTitleBlock(),
@@ -745,27 +816,15 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
         ),
         12.row,
         Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                _displayArtist,
-                style: AppTextStyles.bodyMedium.copyWith(
-                  color: AppColors.text,
-                  fontSize: 15.font,
-                  fontWeight: FontWeight.w600,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              Text(
-                'Artist',
-                style: AppTextStyles.bodySmall.copyWith(
-                  color: AppColors.text.withValues(alpha: 0.6),
-                  fontSize: 12.font,
-                ),
-              ),
-            ],
+          child: Text(
+            _displayArtist,
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: AppColors.text,
+              fontSize: 15.font,
+              fontWeight: FontWeight.w600,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ),
         if ((_artistId ?? '').isNotEmpty)

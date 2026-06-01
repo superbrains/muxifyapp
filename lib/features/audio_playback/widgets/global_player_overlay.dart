@@ -5,9 +5,11 @@ import 'package:muxify/features/audio_playback/widgets/persistent_mini_player.da
 
 /// Wraps the whole app so the [PersistentMiniPlayer] occupies its own row at
 /// the bottom of the viewport whenever a track is active. Hides while the
-/// full-screen player is mounted, driven by [AppRouter.fullPlayerVisible]
-/// which the player flips in initState/dispose — so the mini-player stays
-/// hidden even when the player opens a dialog or bottom sheet on top.
+/// full-screen player is mounted ([AppRouter.fullPlayerVisible]) or while a
+/// screen explicitly suppresses it ([AppRouter.miniPlayerSuppressed], e.g. the
+/// video player). Both flags are flipped in initState/dispose so the mini-player
+/// stays hidden even when the player opens a dialog, bottom sheet or fullscreen
+/// route on top.
 class GlobalPlayerOverlay extends StatelessWidget {
   const GlobalPlayerOverlay({super.key, required this.child});
 
@@ -24,10 +26,15 @@ class GlobalPlayerOverlay extends StatelessWidget {
           ValueListenableBuilder<bool>(
             valueListenable: AppRouter.fullPlayerVisible,
             builder: (context, fullPlayerOpen, _) {
-              if (fullPlayerOpen) {
-                return const SizedBox.shrink();
-              }
-              return const PersistentMiniPlayer();
+              return ValueListenableBuilder<bool>(
+                valueListenable: AppRouter.miniPlayerSuppressed,
+                builder: (context, suppressed, _) {
+                  if (fullPlayerOpen || suppressed) {
+                    return const SizedBox.shrink();
+                  }
+                  return const PersistentMiniPlayer();
+                },
+              );
             },
           ),
         ],
