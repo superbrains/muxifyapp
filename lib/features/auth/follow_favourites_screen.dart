@@ -1,4 +1,3 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
@@ -8,6 +7,7 @@ import 'package:muxify/core/constants/app_text_styles.dart';
 import 'package:muxify/core/models/onboarding/suggested_artist.dart';
 import 'package:muxify/core/router/app_router.dart';
 import 'package:muxify/features/auth/providers/onboarding_provider.dart';
+import 'package:muxify/shared/widgets/auth_network_image.dart';
 import 'package:muxify/shared/widgets/custom_button.dart';
 import 'package:muxify/shared/widgets/custom_input_field.dart';
 import 'package:provider/provider.dart';
@@ -381,29 +381,25 @@ class _FollowFavouritesScreenState extends State<FollowFavouritesScreen> {
       );
     }
 
-    return CachedNetworkImage(
-      imageUrl: url,
+    return AuthNetworkImage(
+      path: url,
       fit: BoxFit.cover,
       width: 80,
       height: 80,
-      memCacheWidth: 160,
-      memCacheHeight: 160,
-      progressIndicatorBuilder: (_, __, ___) => Shimmer.fromColors(
+      placeholder: Shimmer.fromColors(
         baseColor: const Color(0xFF161616),
         highlightColor: const Color(0xFF2C2C2C),
         period: const Duration(milliseconds: 1400),
         child: const ColoredBox(color: Color(0xFF808080)),
       ),
-      errorWidget: (_, __, ___) {
-        return ColoredBox(
-          color: AppColors.glassyDark,
-          child: Icon(
-            Icons.broken_image_outlined,
-            size: 32,
-            color: AppColors.text.withValues(alpha: 0.4),
-          ),
-        );
-      },
+      errorWidget: ColoredBox(
+        color: AppColors.glassyDark,
+        child: Icon(
+          Icons.broken_image_outlined,
+          size: 32,
+          color: AppColors.text.withValues(alpha: 0.4),
+        ),
+      ),
     );
   }
 
