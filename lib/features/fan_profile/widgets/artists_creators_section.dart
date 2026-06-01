@@ -110,20 +110,20 @@ class ArtistsCreatorsSection extends StatelessWidget {
                                         height: 45.maxHeight,
                                         fit: BoxFit.cover,
                                         placeholder: Image.asset(
-                                          'assets/pngs/davido.png',
+                                          'assets/pngs/fan_profile_image.png',
                                           width: 45.maxWidth,
                                           height: 45.maxHeight,
                                           fit: BoxFit.cover,
                                         ),
                                         errorWidget: Image.asset(
-                                          'assets/pngs/davido.png',
+                                          'assets/pngs/fan_profile_image.png',
                                           width: 45.maxWidth,
                                           height: 45.maxHeight,
                                           fit: BoxFit.cover,
                                         ),
                                       )
                                     : Image.asset(
-                                        'assets/pngs/davido.png',
+                                        'assets/pngs/fan_profile_image.png',
                                         width: 45.maxWidth,
                                         height: 45.maxHeight,
                                         fit: BoxFit.cover,

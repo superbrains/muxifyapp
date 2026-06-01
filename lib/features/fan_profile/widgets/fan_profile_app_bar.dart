@@ -38,46 +38,10 @@ class FanProfileHeader extends StatelessWidget {
             ),
           ),
 
+          // NOTE: The "Following" pill was removed — fan-to-fan following is not
+          // a backend concept yet. "Gift Me" (in the profile body) is the
+          // primary action on another fan's profile.
           const Spacer(),
-
-          // Following Button
-          Container(
-            constraints: BoxConstraints(
-              maxWidth: 123.maxWidth,
-              maxHeight: 48.buttonHeight,
-            ),
-            child: ElevatedButton(
-              onPressed: () {
-                HapticFeedback.lightImpact();
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.text.withValues(alpha: 0.2),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(25.radius),
-                ),
-                padding: EdgeInsets.symmetric(
-                  horizontal: 16.padding,
-                  vertical: 12.padding,
-                ),
-                elevation: 0,
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.check, color: AppColors.text, size: 24.icon),
-                  4.row,
-                  Text(
-                    'Following',
-                    style: AppTextStyles.bodySmall.copyWith(
-                      color: AppColors.text,
-                      fontSize: 14.font,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
         ],
       ),
     );

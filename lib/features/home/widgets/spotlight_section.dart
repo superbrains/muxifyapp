@@ -4,7 +4,7 @@ import 'package:muxify/features/home/models/category_tab.dart';
 import 'package:muxify/features/home/models/spotlight_tab.dart';
 import 'package:muxify/features/home/models/spotlight_item.dart';
 import 'package:muxify/features/home/widgets/category_tabs_section.dart';
-import 'package:muxify/features/home/widgets/spotlight_detail_card.dart';
+import 'package:muxify/features/home/widgets/spotlight_items_view.dart';
 import 'package:muxify/features/home/widgets/spotlight_period_toggle.dart';
 
 class SpotlightSection extends StatelessWidget {
@@ -68,23 +68,13 @@ class SpotlightSection extends StatelessWidget {
           ),
         ],
         24.column,
-        if (isLoading)
-          Container(
-            height: 200,
-            margin: EdgeInsets.only(right: 16.padding),
-            decoration: BoxDecoration(
-              color: const Color(0xFF2A2A2A),
-              borderRadius: BorderRadius.circular(12.radius),
-            ),
-          )
-        else
-          ...items.map(
-            (item) => SpotlightDetailCard(
-              item: item,
-              onTap: () => onItemTap?.call(item),
-              onUnlockTap: () => onUnlockTap?.call(item),
-            ),
-          ),
+        SpotlightItemsView(
+          items: items,
+          isLoading: isLoading,
+          isLeaderboard: selectedTabId != 'spotlight',
+          onItemTap: onItemTap,
+          onUnlockTap: onUnlockTap,
+        ),
       ],
     );
   }

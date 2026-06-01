@@ -690,21 +690,9 @@ class HomeProvider extends ChangeNotifier {
           category: _activeVideoCategory,
           pageSize: 10,
         );
-        return items.map((dto) {
-          final mapped = VideoItem.fromMostGiftedVideo(dto);
-          return SpotlightItem(
-            id: mapped.id,
-            title: mapped.title,
-            artist: mapped.creator,
-            artistId: dto.artistId,
-            playCount: mapped.views ?? '',
-            imageUrl: mapped.imageUrl,
-            isUnlocked: true,
-            isPlayable: true,
-            kind: SpotlightKind.video,
-            rank: dto.rank > 0 ? dto.rank : null,
-          );
-        }).toList(growable: false);
+        return items
+            .map(SpotlightItem.fromMostGiftedVideoDto)
+            .toList(growable: false);
       case 'top_giver':
         // Top givers scoped to the video vertical.
         final items =

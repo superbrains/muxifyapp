@@ -292,6 +292,7 @@ class FanActivity {
     this.giftType,
     this.badgeName,
     this.medalName,
+    this.relatedImageUrl,
   });
 
   final String id;
@@ -313,6 +314,11 @@ class FanActivity {
   final String? badgeName;
   final String? medalName;
 
+  /// Proxied image the backend resolved for this activity (track cover, video
+  /// thumbnail, or the involved artist's avatar). Null when nothing visual is
+  /// associated — the UI then falls back to a type icon.
+  final String? relatedImageUrl;
+
   factory FanActivity.fromJson(Map<String, dynamic> json) => FanActivity(
         id: json['id']?.toString() ?? '',
         userId: json['userId']?.toString() ?? '',
@@ -332,6 +338,7 @@ class FanActivity {
         giftType: json['giftType']?.toString(),
         badgeName: json['badgeName']?.toString(),
         medalName: json['medalName']?.toString(),
+        relatedImageUrl: json['relatedImageUrl']?.toString(),
       );
 }
 

@@ -6,13 +6,16 @@ import 'package:muxify/core/constants/app_text_styles.dart';
 import 'package:muxify/core/router/app_router.dart';
 import 'package:muxify/features/fan_profile/data/fan_profile_repository.dart';
 import 'package:muxify/features/fan_profile/models/fan_profile_models.dart';
+import 'package:muxify/features/fan_profile/widgets/achievement_icon.dart';
 import 'package:muxify/features/fan_profile/widgets/activities_section.dart';
 import 'package:muxify/features/fan_profile/widgets/artists_creators_section.dart';
 import 'package:muxify/features/fan_profile/widgets/badges_section.dart';
+import 'package:muxify/features/fan_profile/widgets/fan_artists_sheet.dart';
 import 'package:muxify/features/fan_profile/widgets/fan_profile_app_bar.dart';
 import 'package:muxify/features/fan_profile/widgets/fan_profile_section.dart';
 import 'package:muxify/features/fan_profile/widgets/following_section.dart';
 import 'package:muxify/features/fan_profile/widgets/gift_me_modal.dart';
+import 'package:muxify/features/fan_profile/widgets/medal_progress_section.dart';
 import 'package:muxify/features/fan_profile/widgets/medals_section.dart';
 import 'package:muxify/features/fan_profile/widgets/position_section.dart';
 import 'package:muxify/features/home/models/category_tab.dart';
@@ -310,7 +313,7 @@ class _FanProfileScreenState extends State<FanProfileScreen> {
               children: [
                 21.column,
                 if (_selectedTab == 'status') ..._statusTab(profile),
-                if (_selectedTab == 'achievement') ..._achievementTab(),
+                if (_selectedTab == 'achievement') ..._achievementTab(profile),
                 if (_selectedTab == 'activities') ..._activitiesTab(),
                 20.column,
               ],
@@ -339,6 +342,26 @@ class _FanProfileScreenState extends State<FanProfileScreen> {
               artistName: artist.artistName ?? 'Artist',
               avatarUrl: artist.avatarUrl,
             ),
+            onSeeAll: list.isEmpty
+                ? null
+                : () => FanArtistsSheet.show(
+                      context,
+                      title: 'Artists & Creators',
+                      artists: [
+                        for (final a in list)
+                          FanArtistRef(
+                            id: a.artistId,
+                            name: a.artistName ?? 'Artist',
+                            avatarUrl: a.avatarUrl,
+                            subtitle: 'm${a.totalGiftValue} gifted',
+                          ),
+                      ],
+                      onArtistTap: (ref) => _openArtistProfile(
+                        artistId: ref.id,
+                        artistName: ref.name,
+                        avatarUrl: ref.avatarUrl,
+                      ),
+                    ),
           );
         },
       ),
@@ -354,14 +377,35 @@ class _FanProfileScreenState extends State<FanProfileScreen> {
               artistName: artist.artistName ?? 'Artist',
               avatarUrl: artist.avatarUrl,
             ),
+            onSeeAll: list.isEmpty
+                ? null
+                : () => FanArtistsSheet.show(
+                      context,
+                      title: 'Following',
+                      artists: [
+                        for (final a in list)
+                          FanArtistRef(
+                            id: a.artistId,
+                            name: a.artistName ?? 'Artist',
+                            avatarUrl: a.avatarUrl,
+                          ),
+                      ],
+                      onArtistTap: (ref) => _openArtistProfile(
+                        artistId: ref.id,
+                        artistName: ref.name,
+                        avatarUrl: ref.avatarUrl,
+                      ),
+                    ),
           );
         },
       ),
     ];
   }
 
-  List<Widget> _achievementTab() {
+  List<Widget> _achievementTab(FanPublicProfile profile) {
     return [
+      MedalProgressSection(totalGiftValue: profile.totalGiftValue),
+      15.column,
       FutureBuilder<UserMedalList>(
         future: _medalsFuture,
         builder: (context, snapshot) {
@@ -387,10 +431,7 @@ class _FanProfileScreenState extends State<FanProfileScreen> {
         future: _activityFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState != ConnectionState.done) {
-            return Padding(
-              padding: EdgeInsets.symmetric(vertical: 32.padding),
-              child: const Center(child: CircularProgressIndicator()),
-            );
+            return const ActivitiesSkeleton();
           }
           final list = snapshot.data?.activities ?? const <FanActivity>[];
           return ActivitiesSection(activities: list);
@@ -400,42 +441,26 @@ class _FanProfileScreenState extends State<FanProfileScreen> {
   }
 
   Widget _buildFeaturedBadgeStrip(List<UserBadge> featuredBadges) {
-    const fallbackAssets = <String>[
-      'assets/pngs/badge_1.png',
-      'assets/pngs/badge_2.png',
-      'assets/pngs/badge_3.png',
-      'assets/pngs/badge_4.png',
-    ];
+    // Only render the badges the fan has actually earned (no empty placeholder
+    // slots). Each renders as the real icon if available, else a colored
+    // medallion built from the badge's color.
+    if (featuredBadges.isEmpty) return const SizedBox.shrink();
 
-    // Always render four slots: real badge icon if available, else asset
-    // fallback in the same position so the row keeps its established layout.
+    final shown = featuredBadges.take(4).toList();
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
-      children: List.generate(4, (index) {
-        final fallback = fallbackAssets[index % fallbackAssets.length];
-        final hasBadge = index < featuredBadges.length &&
-            featuredBadges[index].icon.trim().isNotEmpty;
-        final widget = hasBadge
-            ? Image.network(
-                featuredBadges[index].icon,
-                width: 33.icon,
-                height: 33.icon,
-                errorBuilder: (_, __, ___) => Image.asset(
-                  fallback,
-                  width: 33.icon,
-                  height: 33.icon,
-                ),
-              )
-            : Image.asset(
-                fallback,
-                width: 33.icon,
-                height: 33.icon,
-              );
-        return Padding(
-          padding: EdgeInsets.symmetric(horizontal: 6.padding),
-          child: widget,
-        );
-      }),
+      children: [
+        for (final badge in shown)
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 6.padding),
+            child: AchievementIcon(
+              icon: badge.icon,
+              color: badge.color,
+              size: 33.icon,
+              glyph: Icons.military_tech,
+            ),
+          ),
+      ],
     );
   }
 

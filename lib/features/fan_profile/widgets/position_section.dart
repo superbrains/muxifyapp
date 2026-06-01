@@ -8,10 +8,14 @@ class PositionSection extends StatelessWidget {
     super.key,
     this.giftsRecord,
     this.leaderboardRank,
+    this.onGiftsTap,
+    this.onLeaderboardTap,
   });
 
   final int? giftsRecord;
   final int? leaderboardRank;
+  final VoidCallback? onGiftsTap;
+  final VoidCallback? onLeaderboardTap;
 
   String get giftsRecordValue {
     final value = giftsRecord;
@@ -47,22 +51,8 @@ class PositionSection extends StatelessWidget {
           children: [
             // Gifts Record Card
             Expanded(
-              child: Container(
-                padding: EdgeInsets.all(18.padding),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(14.radius),
-                  border: Border.all(
-                    color: AppColors.text.withValues(alpha: 0.1),
-                  ),
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      AppColors.text.withValues(alpha: 0.1),
-                      AppColors.background.withValues(alpha: 0.2),
-                    ],
-                  ),
-                ),
+              child: _TappableCard(
+                onTap: onGiftsTap,
                 child: Row(
                   children: [
                     Image.asset(
@@ -127,22 +117,8 @@ class PositionSection extends StatelessWidget {
             10.row,
             // Leaderboard Card
             Expanded(
-              child: Container(
-                padding: EdgeInsets.all(18.padding),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(14.radius),
-                  border: Border.all(
-                    color: AppColors.text.withValues(alpha: 0.1),
-                  ),
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      AppColors.text.withValues(alpha: 0.1),
-                      AppColors.background.withValues(alpha: 0.2),
-                    ],
-                  ),
-                ),
+              child: _TappableCard(
+                onTap: onLeaderboardTap,
                 child: Row(
                   children: [
                     Container(
@@ -195,6 +171,47 @@ class PositionSection extends StatelessWidget {
           ],
         ),
       ],
+    );
+  }
+}
+
+/// A Position card. When [onTap] is provided it becomes tappable (ripple +
+/// a chevron affordance) so the user can drill into the full leaderboard /
+/// gift history; otherwise it renders as a static stat card.
+class _TappableCard extends StatelessWidget {
+  const _TappableCard({required this.child, this.onTap});
+
+  final Widget child;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final content = Container(
+      padding: EdgeInsets.all(18.padding),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(14.radius),
+        border: Border.all(color: AppColors.text.withValues(alpha: 0.1)),
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            AppColors.text.withValues(alpha: 0.1),
+            AppColors.background.withValues(alpha: 0.2),
+          ],
+        ),
+      ),
+      child: child,
+    );
+
+    if (onTap == null) return content;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14.radius),
+        child: content,
+      ),
     );
   }
 }

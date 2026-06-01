@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:muxify/core/constants/app_colors.dart';
 import 'package:muxify/core/constants/app_sizes.dart';
-import 'package:muxify/core/providers/unlocked_content_provider.dart';
 import 'package:muxify/core/router/app_router.dart';
+import 'package:muxify/features/audio_playback/models/track.dart';
+import 'package:muxify/features/audio_playback/providers/audio_provider.dart';
 import 'package:muxify/features/featured_playlist/models/genre_song_item.dart';
 import 'package:muxify/features/home/data/feed_dtos.dart';
 import 'package:muxify/features/home/data/music_feed_repository.dart';
@@ -11,7 +14,6 @@ import 'package:muxify/features/home/models/category_tab.dart';
 import 'package:muxify/shared/widgets/content_header.dart';
 import 'package:muxify/shared/widgets/genre_song_item_widget.dart';
 import 'package:muxify/shared/widgets/gradient_header_with_tabs.dart';
-import 'package:muxify/shared/widgets/unlock_all_songs_modal.dart';
 import 'package:muxify/shared/widgets/unlock_button.dart';
 import 'package:provider/provider.dart';
 
@@ -75,6 +77,8 @@ class _FeaturedPlaylistScreenState extends State<FeaturedPlaylistScreen> {
               artist: t.artistName,
               albumArtUrl: t.coverArtUrl ?? '',
               isUnlocked: t.isUnlocked,
+              unlockCostCoins: t.unlockCostCoins,
+              artistId: t.artistId,
             ),
           )
           .toList(growable: false);
@@ -114,8 +118,11 @@ class _FeaturedPlaylistScreenState extends State<FeaturedPlaylistScreen> {
           'trackId': song.id,
           'title': song.title,
           'artistName': song.artist,
+          if (song.artistId != null && song.artistId!.isNotEmpty)
+            'artistId': song.artistId!,
           if (song.albumArtUrl.isNotEmpty) 'backgroundImageUrl': song.albumArtUrl,
           'isUnlocked': '${song.isUnlocked}',
+          'unlockCostCoins': '${song.unlockCostCoins}',
         },
       ).toString(),
     );
@@ -163,7 +170,7 @@ class _FeaturedPlaylistScreenState extends State<FeaturedPlaylistScreen> {
           UnlockButton(
             width: 104.maxWidth,
             height: 42.buttonHeight,
-            onTap: songs.isEmpty ? null : _showUnlockAllSongsModal,
+            onTap: songs.isEmpty ? null : () => _playAll(songs),
             text: 'Play All',
             iconPath: 'assets/pngs/shuffle.png',
             backgroundColor: AppColors.toggleSelected,
@@ -223,14 +230,10 @@ class _FeaturedPlaylistScreenState extends State<FeaturedPlaylistScreen> {
         return GenreSongItemWidget(
           item: song,
           onTap: () => _openPlayer(song),
-          onPlayUnlockTap: () {
-            if (song.isUnlocked ||
-                context.read<UnlockedContentProvider>().isUnlocked(song.id)) {
-              _openPlayer(song);
-            } else {
-              _showUnlockModal(song);
-            }
-          },
+          // Always open the player. Unlocked tracks play immediately; locked
+          // tracks get the real unlock confirmation (with the per-track coin
+          // cost) via the player's lock icon — same flow as the album screen.
+          onPlayUnlockTap: () => _openPlayer(song),
         );
       },
     );
@@ -260,51 +263,31 @@ class _FeaturedPlaylistScreenState extends State<FeaturedPlaylistScreen> {
     return 'Today, ${now.day} ${months[now.month - 1]}';
   }
 
-  void _showUnlockAllSongsModal() {
-    showDialog(
-      context: context,
-      barrierDismissible: true,
-      builder: (BuildContext context) {
-        return UnlockAllSongsModal(
-          onClose: () => Navigator.of(context).pop(),
-          onUnlockPremium: () => Navigator.of(context).pop(),
-          onUnlockFree: () => Navigator.of(context).pop(),
-        );
-      },
-    );
-  }
+  /// Loads every track on the current tab into the player queue and starts
+  /// playing. The player resolves stream URLs in the background and skips any
+  /// locked tracks (they prompt the real unlock when reached). Mirrors
+  /// `home_screen._openCategoryPlaylist`.
+  void _playAll(List<GenreSongItem> songs) {
+    if (songs.isEmpty) return;
+    final queue = songs
+        .map(
+          (s) => Track(
+            id: s.id,
+            title: s.title,
+            artist: s.artist,
+            artistId: s.artistId,
+            artworkUrl: s.albumArtUrl.isEmpty ? null : s.albumArtUrl,
+            isUnlocked: s.isUnlocked || s.unlockCostCoins == 0,
+            unlockCostCoins: s.unlockCostCoins,
+          ),
+        )
+        .toList(growable: false);
 
-  void _showUnlockModal(GenreSongItem song) {
-    showDialog(
-      context: context,
-      barrierDismissible: true,
-      builder: (BuildContext context) {
-        return UnlockAllSongsModal(
-          onClose: () => Navigator.of(context).pop(),
-          onUnlockPremium: () {
-            Navigator.of(context).pop();
-            _markSongUnlocked(song);
-          },
-          onUnlockFree: () {
-            Navigator.of(context).pop();
-            _markSongUnlocked(song);
-          },
-        );
-      },
-    );
-  }
-
-  void _markSongUnlocked(GenreSongItem song) {
-    final list = _songsByTab[_selectedTab];
-    if (list == null) return;
-    final index = list.indexWhere((s) => s.id == song.id);
-    if (index < 0) return;
-    setState(() {
-      _songsByTab[_selectedTab] = [
-        ...list.take(index),
-        list[index].copyWith(isUnlocked: true),
-        ...list.skip(index + 1),
-      ];
-    });
+    // Open the player immediately so the user sees the branded loader while
+    // audio resolves in the background.
+    _openPlayer(songs.first);
+    if (mounted) {
+      unawaited(context.read<AudioProvider>().loadAndPlay(queue));
+    }
   }
 }

@@ -3,18 +3,12 @@ import 'package:muxify/core/constants/app_colors.dart';
 import 'package:muxify/core/constants/app_sizes.dart';
 import 'package:muxify/core/constants/app_text_styles.dart';
 import 'package:muxify/features/fan_profile/models/fan_profile_models.dart';
+import 'package:muxify/features/fan_profile/widgets/achievement_icon.dart';
 
 class BadgesSection extends StatelessWidget {
   const BadgesSection({super.key, required this.badges});
 
   final List<UserBadge> badges;
-
-  static const List<String> _fallbackBadgeAssets = [
-    'assets/pngs/badge_1.png',
-    'assets/pngs/badge_2.png',
-    'assets/pngs/badge_3.png',
-    'assets/pngs/badge_4.png',
-  ];
 
   @override
   Widget build(BuildContext context) {
@@ -32,17 +26,40 @@ class BadgesSection extends StatelessWidget {
           ),
           10.column,
           Container(
-            padding: EdgeInsets.all(16.padding),
+            width: double.infinity,
+            padding: EdgeInsets.symmetric(
+              horizontal: 16.padding,
+              vertical: 24.padding,
+            ),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(14.radius),
               border: Border.all(color: AppColors.text.withValues(alpha: 0.1)),
             ),
-            child: Text(
-              'No badges earned yet.',
-              style: AppTextStyles.bodySmall.copyWith(
-                color: AppColors.text.withValues(alpha: 0.6),
-                fontSize: 12.font,
-              ),
+            child: Column(
+              children: [
+                Icon(
+                  Icons.military_tech,
+                  color: AppColors.text.withValues(alpha: 0.4),
+                  size: 32.icon,
+                ),
+                8.column,
+                Text(
+                  'No badges yet',
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: AppColors.text,
+                    fontSize: 14.font,
+                  ),
+                ),
+                4.column,
+                Text(
+                  'Send gifts, follow artists and unlock content to earn badges.',
+                  textAlign: TextAlign.center,
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: AppColors.text.withValues(alpha: 0.6),
+                    fontSize: 12.font,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -74,12 +91,10 @@ class BadgesSection extends StatelessWidget {
           itemCount: badges.length,
           itemBuilder: (context, index) {
             final badge = badges[index];
-            final fallbackAsset =
-                _fallbackBadgeAssets[index % _fallbackBadgeAssets.length];
-            final hasIcon = badge.icon.trim().isNotEmpty;
 
             return Container(
               alignment: Alignment.center,
+              padding: EdgeInsets.all(8.padding),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(14.radius),
                 border: Border.all(
@@ -97,16 +112,11 @@ class BadgesSection extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  SizedBox(
-                    width: 67.maxWidth,
-                    height: 70.maxHeight,
-                    child: hasIcon
-                        ? Image.network(
-                            badge.icon,
-                            errorBuilder: (_, __, ___) =>
-                                Image.asset(fallbackAsset),
-                          )
-                        : Image.asset(fallbackAsset),
+                  AchievementIcon(
+                    icon: badge.icon,
+                    color: badge.color,
+                    size: 62.maxWidth,
+                    glyph: Icons.military_tech,
                   ),
                   8.column,
                   Text(

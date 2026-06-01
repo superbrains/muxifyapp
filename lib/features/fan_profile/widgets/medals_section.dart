@@ -3,14 +3,13 @@ import 'package:muxify/core/constants/app_colors.dart';
 import 'package:muxify/core/constants/app_sizes.dart';
 import 'package:muxify/core/constants/app_text_styles.dart';
 import 'package:muxify/features/fan_profile/models/fan_profile_models.dart';
+import 'package:muxify/features/fan_profile/widgets/achievement_icon.dart';
 import 'package:muxify/features/fan_profile/widgets/medal_info_modal.dart';
 
 class MedalsSection extends StatelessWidget {
   const MedalsSection({super.key, required this.medals});
 
   final List<UserMedal> medals;
-
-  static const String _fallbackAsset = 'assets/pngs/earned_badge.png';
 
   @override
   Widget build(BuildContext context) {
@@ -45,7 +44,8 @@ class MedalsSection extends StatelessWidget {
               ? Padding(
                   padding: EdgeInsets.symmetric(horizontal: 16.padding),
                   child: Text(
-                    'No medals earned yet.',
+                    'No medals yet — gift coins to climb the tiers (Iron → Diamond).',
+                    textAlign: TextAlign.center,
                     style: AppTextStyles.bodySmall.copyWith(
                       color: AppColors.text.withValues(alpha: 0.6),
                       fontSize: 12.font,
@@ -67,22 +67,14 @@ class MedalsSection extends StatelessWidget {
                           medalName: medal.name,
                           medalDescription: medal.description,
                           medalImagePath:
-                              hasIcon ? medal.icon : _fallbackAsset,
+                              hasIcon ? medal.icon : 'assets/pngs/earned_badge.png',
                         );
                       },
-                      child: SizedBox(
-                        width: 57.maxWidth,
-                        height: 61.maxHeight,
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(100.radius),
-                          child: hasIcon
-                              ? Image.network(
-                                  medal.icon,
-                                  errorBuilder: (_, __, ___) =>
-                                      Image.asset(_fallbackAsset),
-                                )
-                              : Image.asset(_fallbackAsset),
-                        ),
+                      child: AchievementIcon(
+                        icon: medal.icon,
+                        color: medal.color,
+                        size: 57.maxWidth,
+                        glyph: Icons.workspace_premium,
                       ),
                     );
                   },

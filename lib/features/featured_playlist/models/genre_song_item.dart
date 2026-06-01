@@ -6,6 +6,11 @@ class GenreSongItem {
   final bool isUnlocked;
   final bool isPlaying;
 
+  /// Coins required to unlock this track (0 = free / unknown). Carried so the
+  /// player's real unlock modal reads the per-track price instead of a default.
+  final int unlockCostCoins;
+  final String? artistId;
+
   const GenreSongItem({
     required this.id,
     required this.title,
@@ -13,6 +18,8 @@ class GenreSongItem {
     required this.albumArtUrl,
     required this.isUnlocked,
     this.isPlaying = false,
+    this.unlockCostCoins = 0,
+    this.artistId,
   });
 
   GenreSongItem copyWith({
@@ -22,6 +29,8 @@ class GenreSongItem {
     String? albumArtUrl,
     bool? isUnlocked,
     bool? isPlaying,
+    int? unlockCostCoins,
+    String? artistId,
   }) {
     return GenreSongItem(
       id: id ?? this.id,
@@ -30,6 +39,8 @@ class GenreSongItem {
       albumArtUrl: albumArtUrl ?? this.albumArtUrl,
       isUnlocked: isUnlocked ?? this.isUnlocked,
       isPlaying: isPlaying ?? this.isPlaying,
+      unlockCostCoins: unlockCostCoins ?? this.unlockCostCoins,
+      artistId: artistId ?? this.artistId,
     );
   }
 }
