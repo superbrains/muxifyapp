@@ -10,6 +10,10 @@ class SongInfoOverlay extends StatelessWidget {
   final String songTitle;
   final String artistName;
   final bool isUnlocked;
+
+  /// Real per-track unlock price in coins. A locked track with a cost of 0 is
+  /// effectively free, so the "Unlock Song" button is suppressed for it.
+  final int unlockCostCoins;
   final bool isLiked;
   final bool isAdded;
   final VoidCallback onToggleLike;
@@ -23,6 +27,7 @@ class SongInfoOverlay extends StatelessWidget {
     required this.songTitle,
     required this.artistName,
     required this.isUnlocked,
+    this.unlockCostCoins = 0,
     required this.isLiked,
     required this.isAdded,
     required this.onToggleLike,
@@ -80,8 +85,9 @@ class SongInfoOverlay extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.end,
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Unlock Song button for locked songs
-            if (!isUnlocked) ...[
+            // Unlock Song button for locked songs that actually cost coins.
+            // A locked track priced at 0 is free, so no unlock is needed.
+            if (!isUnlocked && unlockCostCoins > 0) ...[
               UnlockButton(
                 backgroundColor: AppColors.text.withValues(alpha: 0.75),
                 height: 44.buttonHeight,

@@ -24,7 +24,7 @@ class GiftItem {
       id: (json['type'] as String?) ?? (json['id'] as String?) ?? '',
       name: json['name'] as String? ?? '',
       backgroundImage:
-          json['backgroundImage'] as String? ?? 'assets/pngs/gift_bg_1.png',
+          json['backgroundImage'] as String? ?? 'assets/pngs/gift_bg1.png',
       emojiImage:
           (json['icon'] as String?) ??
           (json['imageUrl'] as String?) ??

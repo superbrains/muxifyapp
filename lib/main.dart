@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:audio_session/audio_session.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:just_audio_background/just_audio_background.dart';
@@ -35,6 +36,12 @@ void main() async {
     androidNotificationChannelName: 'Muxify Playback',
     androidNotificationOngoing: true,
   );
+
+  // Configure the OS audio session as a music app so playback reliably grabs
+  // audio focus and the player can react to interruptions (calls, other apps)
+  // and headphone unplug. AudioPlayerService wires the event streams.
+  final audioSession = await AudioSession.instance;
+  await audioSession.configure(const AudioSessionConfiguration.music());
 
   await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
 

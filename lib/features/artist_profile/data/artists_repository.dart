@@ -1,6 +1,7 @@
 import 'package:muxify/core/constants/api_constants.dart';
 import 'package:muxify/core/models/artists/artist_follow_response.dart';
 import 'package:muxify/core/models/gifts/send_gift_response.dart';
+import 'package:muxify/core/network/api_exceptions.dart';
 import 'package:muxify/core/network/api_requester.dart';
 import 'package:muxify/core/utils/logger.dart';
 import 'package:muxify/features/artist_profile/models/artist_albums_response.dart';
@@ -118,13 +119,24 @@ class ArtistsRepository {
   }
 
   Future<String> getTrackStreamUrl(String trackId) async {
-    final response = await _requester.getJson(
-      ApiConstants.trackStreamPath(trackId),
-      (json) => json,
-      authenticate: true,
-    );
+    Map<String, dynamic> response;
+    try {
+      response = await _requester.getJson(
+        ApiConstants.trackStreamPath(trackId),
+        (json) => json,
+        authenticate: true,
+      );
+    } on ApiRequestException catch (e) {
+      // Log exactly what the backend said so intermittent "can't play" cases
+      // are diagnosable: HTTP status + server message (e.g. 403 locked, 5xx
+      // cold-start, 401 expired token, 504 timeout).
+      Logger.warning(
+        'Track stream HTTP failure for $trackId: status=${e.statusCode} message="${e.message}"',
+      );
+      rethrow;
+    }
 
-    Logger.debug('Track stream response for $trackId: $response');
+    Logger.info('Track stream response for $trackId: $response');
     final candidates = _collectUrlCandidates(response);
     Logger.debug('Track stream URL candidates for $trackId: $candidates');
 
@@ -136,7 +148,9 @@ class ArtistsRepository {
       }
     }
 
-    Logger.warning('No playable stream URL found for track: $trackId');
+    Logger.warning(
+      'Track stream returned 200 but no playable URL for $trackId — body=$response',
+    );
     return '';
   }
 

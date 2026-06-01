@@ -13,6 +13,14 @@ class NewReleaseItem {
   final String coverImageUrl;
   final int unlockCostCoins;
   final DateTime? releaseDate;
+
+  /// Album this track belongs to (empty for albums/videos/standalone tracks).
+  /// Lets the album-details screen pull its songs from the loaded track list.
+  final String albumId;
+
+  /// Real play count from the backend. Surfaced on the "Most Played" card.
+  final int playCount;
+
   bool isUnlocked;
 
   NewReleaseItem({
@@ -24,6 +32,8 @@ class NewReleaseItem {
     this.unlockCostCoins = 0,
     this.isUnlocked = false,
     this.releaseDate,
+    this.albumId = '',
+    this.playCount = 0,
   });
 
   factory NewReleaseItem.fromArtistNewReleaseItem(
@@ -55,6 +65,8 @@ class NewReleaseItem {
       releaseDate: item.releaseDate,
       unlockCostCoins: 0,
       isUnlocked: false,
+      albumId: item.id,
+      playCount: item.playCount,
     );
   }
 
@@ -71,6 +83,8 @@ class NewReleaseItem {
       releaseDate: item.releaseDate,
       unlockCostCoins: item.unlockCostCoins,
       isUnlocked: item.isUnlocked,
+      albumId: item.albumId,
+      playCount: item.playCount,
     );
   }
 
@@ -96,7 +110,7 @@ class NewReleaseItem {
       title: title,
       artist: artist,
       albumArtUrl: coverImageUrl,
-      isUnlocked: isUnlocked,
+      isUnlocked: isUnlocked || unlockCostCoins == 0,
     );
   }
 
@@ -107,6 +121,7 @@ class NewReleaseItem {
       artist: artist,
       giftCount: giftCount,
       albumArtUrl: coverImageUrl,
+      playCount: playCount,
     );
   }
 
@@ -119,6 +134,8 @@ class NewReleaseItem {
     int? unlockCostCoins,
     bool? isUnlocked,
     DateTime? releaseDate,
+    String? albumId,
+    int? playCount,
   }) {
     return NewReleaseItem(
       id: id ?? this.id,
@@ -129,6 +146,8 @@ class NewReleaseItem {
       unlockCostCoins: unlockCostCoins ?? this.unlockCostCoins,
       isUnlocked: isUnlocked ?? this.isUnlocked,
       releaseDate: releaseDate ?? this.releaseDate,
+      albumId: albumId ?? this.albumId,
+      playCount: playCount ?? this.playCount,
     );
   }
 }

@@ -6,6 +6,7 @@ import 'package:muxify/core/constants/app_text_styles.dart';
 import 'package:muxify/features/statistics/models/gift_item.dart';
 import 'package:muxify/features/statistics/widgets/gift_item_widget.dart';
 import 'package:muxify/features/music_player/widgets/send_gift_bottom_sheet.dart';
+import 'package:muxify/shared/widgets/gift_celebration_overlay.dart';
 
 class GiftBoxModal extends StatelessWidget {
   final String? headerText;
@@ -116,10 +117,13 @@ class GiftBoxModal extends StatelessWidget {
                   padding: EdgeInsets.only(bottom: 42.padding),
                   // physics: const NeverScrollableScrollPhysics(),
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 4,
+                    crossAxisCount: 3,
                     crossAxisSpacing: 12,
                     mainAxisSpacing: 16,
-                    childAspectRatio: 0.5,
+                    // 3-per-row makes each cell wider, so raise the aspect ratio
+                    // to keep cell height sensible while still leaving room for a
+                    // two-line gift name (e.g. "Music Note") without overflow.
+                    childAspectRatio: 0.62,
                   ),
                   itemCount: giftItems.length,
                   itemBuilder: (context, index) {
@@ -157,8 +161,18 @@ class GiftBoxModal extends StatelessWidget {
             Navigator.of(sheetContext).pop();
           },
           onSent: () {
+            // Close the confirmation sheet right away.
             Navigator.of(sheetContext).pop();
-            onGiftSent?.call(giftItem);
+            // Play a celebratory firework splash over everything, then dismiss
+            // the GIFTBOX dialog and notify the caller to refresh balances.
+            GiftCelebrationOverlay.show(
+              context,
+              gift: giftItem,
+              onComplete: () {
+                onGiftSent?.call(giftItem);
+                onClose?.call();
+              },
+            );
           },
         );
       },

@@ -104,15 +104,17 @@ class AppRouter {
   /// `/payments/collections/{intentId}` until terminal.
   static const String paymentStatus = '/payment-status';
 
-  /// Live name of the topmost route. The mini-player listens to this so it
-  /// can hide itself while `/music-player` is on top, without depending on
-  /// each screen to flip a flag in initState/dispose.
-  static final ValueNotifier<String?> topRouteName = ValueNotifier<String?>(null);
+  /// True while the full-screen `MusicPlayerScreen` is mounted. The screen
+  /// flips this in initState/dispose, and the mini-player listens so it can
+  /// hide itself behind the full player. A lifecycle flag (rather than a route
+  /// observer) keeps the mini-player hidden even when the player pushes a
+  /// dialog or bottom sheet on top of itself — `dispose` only fires when the
+  /// player screen itself is popped.
+  static final ValueNotifier<bool> fullPlayerVisible = ValueNotifier<bool>(false);
 
   static final GoRouter router = GoRouter(
     initialLocation: splash,
     debugLogDiagnostics: true,
-    observers: [_MiniPlayerRouteObserver()],
     routes: [
       GoRoute(
         path: splash,
@@ -350,8 +352,20 @@ class AppRouter {
       GoRoute(
         path: albumDetails,
         name: 'album-details',
-        pageBuilder: (context, state) =>
-            MaterialPage(key: state.pageKey, child: const AlbumDetailsScreen()),
+        pageBuilder: (context, state) {
+          final q = state.uri.queryParameters;
+          return MaterialPage(
+            key: state.pageKey,
+            child: AlbumDetailsScreen(
+              albumId: q['albumId'] ?? '',
+              title: q['title'] ?? '',
+              artistName: q['artistName'] ?? '',
+              artistId: q['artistId'] ?? '',
+              coverImageUrl: q['coverImageUrl'],
+              year: q['year'],
+            ),
+          );
+        },
       ),
       GoRoute(
         path: musicPlayer,
@@ -506,28 +520,4 @@ class AppRouter {
     errorBuilder: (context, state) =>
         Scaffold(body: Center(child: Text('Page not found: ${state.uri}'))),
   );
-}
-
-/// Tracks the topmost route via Navigator lifecycle callbacks. Push/pop/replace
-/// all fire here, so [AppRouter.topRouteName] always reflects what's on top.
-class _MiniPlayerRouteObserver extends NavigatorObserver {
-  @override
-  void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
-    AppRouter.topRouteName.value = route.settings.name;
-  }
-
-  @override
-  void didPop(Route<dynamic> route, Route<dynamic>? previousRoute) {
-    AppRouter.topRouteName.value = previousRoute?.settings.name;
-  }
-
-  @override
-  void didReplace({Route<dynamic>? newRoute, Route<dynamic>? oldRoute}) {
-    AppRouter.topRouteName.value = newRoute?.settings.name;
-  }
-
-  @override
-  void didRemove(Route<dynamic> route, Route<dynamic>? previousRoute) {
-    AppRouter.topRouteName.value = previousRoute?.settings.name;
-  }
 }

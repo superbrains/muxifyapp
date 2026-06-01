@@ -24,7 +24,7 @@ import 'package:muxify/shared/widgets/menu_item_model.dart';
 import 'package:muxify/shared/widgets/unlock_all_songs_modal.dart';
 import 'package:muxify/shared/widgets/unlock_button.dart';
 import 'package:muxify/shared/widgets/unlock_confirm_bottom_sheet.dart';
-import 'package:muxify/shared/widgets/unlock_success_dialog.dart';
+import 'package:muxify/shared/widgets/unlock_celebration_overlay.dart';
 import 'package:video_player/video_player.dart';
 
 class VideoPlayerScreen extends StatefulWidget {
@@ -568,7 +568,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
             if (!mounted) return;
             setState(() => _isUnlocked = true);
             _initializePlayback();
-            _showSuccessDialog();
+            _showUnlockCelebration();
           },
         );
       },
@@ -604,7 +604,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
             if (!mounted) return;
             setState(() => _isUnlocked = true);
             _initializePlayback();
-            _showSuccessDialog();
+            _showUnlockCelebration();
           },
           onGetCoins: () {
             Navigator.of(context).pop();
@@ -634,21 +634,17 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
     }
   }
 
-  void _showSuccessDialog() {
-    showDialog(
-      context: context,
-      barrierDismissible: true,
-      builder: (_) => UnlockSuccessDialog(
-        heading: 'Congratulations!',
-        message: 'You have unlocked',
-        mediaTitle: widget.title.isEmpty ? 'This video' : widget.title,
-        mediaSubtitle: widget.artistName,
-        imagePath: widget.thumbnailUrl ?? 'assets/pngs/sabinus.png',
-        primaryButtonText: 'Play Now',
-        onPrimary: () {
-          Navigator.of(context).pop();
-        },
-      ),
+  void _showUnlockCelebration() {
+    if (!mounted) return;
+    // Celebrate the unlock with the same firework splash as gifting. Uses the
+    // State context (valid here) rather than the already-popped sheet context;
+    // the overlay lives in the root overlay so it survives the sheet teardown.
+    UnlockCelebrationOverlay.show(
+      context,
+      coverImage: widget.thumbnailUrl ?? '',
+      title: widget.title.isEmpty ? 'This video' : widget.title,
+      subtitle: widget.artistName,
+      caption: 'Video unlocked',
     );
   }
 

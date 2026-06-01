@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:muxify/core/constants/app_colors.dart';
 import 'package:muxify/core/constants/app_sizes.dart';
 import 'package:muxify/core/constants/app_text_styles.dart';
@@ -8,14 +9,16 @@ import 'package:muxify/features/home/models/album_item.dart';
 class AlbumsSectionWidget extends StatelessWidget {
   final List<AlbumItem> albums;
   final VoidCallback onTap;
-  final VoidCallback onGiftCountTap;
+  final VoidCallback onPlay;
+  final int totalPlays;
   final String? mediaType;
 
   const AlbumsSectionWidget({
     super.key,
     required this.albums,
     required this.onTap,
-    required this.onGiftCountTap,
+    required this.onPlay,
+    this.totalPlays = 0,
     this.mediaType,
   });
 
@@ -23,7 +26,7 @@ class AlbumsSectionWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       height: 430.maxHeight,
-      width: 365.maxWidth,
+      width: double.infinity,
       padding: EdgeInsets.symmetric(
         horizontal: 20.padding,
         vertical: 21.padding,
@@ -62,22 +65,22 @@ class AlbumsSectionWidget extends StatelessWidget {
               ),
 
               Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    'm24,000,250',
+                    NumberFormat.compact().format(totalPlays),
                     style: AppTextStyles.bodyLarge.copyWith(
-                      fontSize: 12.font,
+                      fontSize: 14.font,
                       fontWeight: FontWeight.w800,
                       color: AppColors.text,
                     ),
                   ),
                   Text(
-                    'Received Gifts',
+                    'Total Plays',
                     style: AppTextStyles.bodyLarge.copyWith(
                       fontSize: 10.font,
                       fontWeight: FontWeight.w400,
-                      color: AppColors.text,
+                      color: AppColors.text.withValues(alpha: 0.7),
                     ),
                   ),
                 ],
@@ -97,7 +100,6 @@ class AlbumsSectionWidget extends StatelessWidget {
                 return AlbumItemWidget(
                   item: albums[index],
                   onTap: onTap,
-                  onGiftCountTap: onGiftCountTap,
                 );
               },
               separatorBuilder: (context, index) => 17.column,
@@ -105,79 +107,39 @@ class AlbumsSectionWidget extends StatelessWidget {
           ),
           32.column,
 
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _buildPlayButton(
-                52.maxHeight,
-                52.maxWidth,
-                26.icon,
-                26.icon,
-                onTap,
-                AppColors.text.withValues(alpha: 0.16),
+          // Full-width "Play All" button — plays the artist's whole track list.
+          GestureDetector(
+            onTap: onPlay,
+            child: Container(
+              width: double.infinity,
+              height: 52.maxHeight,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: AppColors.buttonColor,
+                borderRadius: BorderRadius.circular(35.radius),
               ),
-
-              Container(
-                width: 150.maxWidth,
-                height: 52.maxHeight,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: AppColors.text.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(35.radius),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Image.asset(
-                      'assets/pngs/gift.png',
-                      width: 28.icon,
-                      height: 28.icon,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Image.asset(
+                    'assets/pngs/play.png',
+                    width: 22.icon,
+                    height: 22.icon,
+                  ),
+                  10.row,
+                  Text(
+                    'Play All',
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      fontSize: 18.font,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.text,
                     ),
-                    8.row,
-                    Text(
-                      'Share Gift',
-                      style: AppTextStyles.bodyMedium.copyWith(
-                        fontSize: 18.font,
-                        fontWeight: FontWeight.w500,
-                        color: AppColors.text,
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildPlayButton(
-    double contheight,
-    double contwidth,
-    double imgheight,
-    double imgwidth,
-    VoidCallback onTap,
-    Color? color,
-  ) {
-    return GestureDetector(
-      onTap: () {
-        // Play action
-        onTap();
-      },
-      child: Container(
-        height: contheight,
-        width: contwidth,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: color ?? AppColors.buttonColor,
-          shape: BoxShape.circle,
-        ),
-        child: Image.asset(
-          'assets/pngs/play.png',
-          height: imgheight,
-          width: imgwidth,
-        ),
       ),
     );
   }

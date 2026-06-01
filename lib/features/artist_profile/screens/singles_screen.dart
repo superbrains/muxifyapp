@@ -139,6 +139,7 @@ class _SinglesScreenState extends State<SinglesScreen> {
                   context,
                   release: sourceTrack,
                   albumName: 'Singles',
+                  artistId: widget.artistId,
                   tryBackendStream: true,
                 );
                 if (!mounted) return;

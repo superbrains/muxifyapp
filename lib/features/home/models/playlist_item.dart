@@ -50,6 +50,7 @@ class PlaylistItem {
             artistId: t.artistId,
             imageUrl: t.coverArtUrl,
             isUnlocked: t.isUnlocked,
+            unlockCostCoins: t.unlockCostCoins,
           ),
         )
         .toList();

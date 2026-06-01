@@ -6,6 +6,7 @@ import 'package:muxify/core/constants/app_sizes.dart';
 import 'package:muxify/core/constants/app_text_styles.dart';
 import 'package:muxify/features/statistics/models/gift_item.dart';
 import 'package:muxify/features/wallet/services/wallet_api_service.dart';
+import 'package:muxify/shared/widgets/auth_network_image.dart';
 import 'package:muxify/shared/widgets/sticker_text.dart';
 
 class GiftItemWidget extends StatelessWidget {
@@ -23,23 +24,25 @@ class GiftItemWidget extends StatelessWidget {
     final t = pathOrUrl.trim();
     if (t.isEmpty) return const SizedBox.shrink();
 
-    final isNetwork =
-        t.toLowerCase().startsWith('http://') ||
-        t.toLowerCase().startsWith('https://');
-
-    if (isNetwork) {
-      return CachedNetworkImage(
-        imageUrl: t,
-        width: width,
-        height: height,
-        fit: fit,
-        placeholder: (context, url) =>
-            const Center(child: CircularProgressIndicator(strokeWidth: 2)),
-        errorWidget: (context, url, error) => const Icon(Icons.error),
-      );
+    // Bundled assets (e.g. 'assets/pngs/...') render directly.
+    if (t.toLowerCase().startsWith('assets/')) {
+      return Image.asset(t, width: width, height: height, fit: fit);
     }
 
-    return Image.asset(t, width: width, height: height, fit: fit);
+    // Gift images are served via the JWT-gated media proxy
+    // (/api/v1/media/cover/gift-images/...) or an absolute URL. AuthNetworkImage
+    // resolves relative proxy paths against the API base and attaches the bearer
+    // token when the target is the Muxify API host.
+    return AuthNetworkImage(
+      path: t,
+      width: width,
+      height: height,
+      fit: fit,
+      placeholder: const Center(
+        child: CircularProgressIndicator(strokeWidth: 2),
+      ),
+      errorWidget: const Icon(Icons.card_giftcard, color: Colors.white70),
+    );
   }
 
   DecorationImage? _buildDecorationImage(String pathOrUrl) {
@@ -50,14 +53,21 @@ class GiftItemWidget extends StatelessWidget {
         t.toLowerCase().startsWith('http://') ||
         t.toLowerCase().startsWith('https://');
 
+    // The background is purely decorative — never let a missing/bad image throw
+    // or spam the console; just fall back to no background.
     if (isNetwork) {
       return DecorationImage(
         image: CachedNetworkImageProvider(t),
         fit: BoxFit.fill,
+        onError: (_, __) {},
       );
     }
 
-    return DecorationImage(image: AssetImage(t), fit: BoxFit.fill);
+    return DecorationImage(
+      image: AssetImage(t),
+      fit: BoxFit.fill,
+      onError: (_, __) {},
+    );
   }
 
   @override
@@ -92,7 +102,9 @@ class GiftItemWidget extends StatelessWidget {
               Positioned(
                 bottom: -11.padding, // Negative bottom to extend outside
                 child: StickerText(
-                  text: item.stickerText,
+                  // Show the actual gift name on the sticker instead of a
+                  // generic "GIFT" label.
+                  text: item.name.toUpperCase(),
                   fontSize: 16.font,
                   textColor: Colors.white,
                   strokeColor: Colors.black,
@@ -102,8 +114,10 @@ class GiftItemWidget extends StatelessWidget {
               ),
             ],
           ),
-          13.column,
-          // Gift name
+          10.column,
+          // Gift name. Kept as a plain (non-Flexible) Text so the widget also
+          // lays out safely inside unbounded-height parents (e.g. the send-gift
+          // sheet). The GIFTBOX grid gives it enough height via childAspectRatio.
           Text(
             item.name,
             style: AppTextStyles.bodySmall.copyWith(

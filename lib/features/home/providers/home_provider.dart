@@ -102,11 +102,33 @@ class HomeProvider extends ChangeNotifier {
   String _creatorCategory = 'artist';
   String get creatorCategory => _creatorCategory;
 
-  /// Mobile-side filter applied to all video feeds.
-  /// "music"  -> MusicVideo + LyricVideo + Visualizer
-  /// "content"-> BehindTheScenes + LivePerformance + Interview + Other
-  String _videoFilter = 'content';
-  String get videoFilter => _videoFilter;
+  /// Uploader-role filter for the two Videos sub-tabs. Unlike [_creatorCategory]
+  /// (which the top tab drives for both audio and video), this is set only by
+  /// the Content/Music sub-tab toggle and applies exclusively to the video
+  /// feeds when [_onVideosTab] is true:
+  /// "creator" -> Content Videos (UserRole.Creator uploads)
+  /// "artist"  -> Music Videos   (UserRole.Artist uploads)
+  /// No VideoType constraint is applied, so all of the role's video types show.
+  String _videoCreatorCategory = 'creator';
+  String get videoCreatorCategory => _videoCreatorCategory;
+
+  /// True while the "Videos" top tab is active. The video loaders use
+  /// [_videoCreatorCategory] for their `category` only on this tab; under the
+  /// Music/DJ/Podcast tabs the embedded video sections keep following the audio
+  /// [_creatorCategory] so they still show that creator's videos.
+  bool _onVideosTab = false;
+  bool get onVideosTab => _onVideosTab;
+
+  /// Category string passed to the video feeds: the sub-tab role on the Videos
+  /// tab, otherwise the audio creator-category from the active top tab.
+  String get _activeVideoCategory =>
+      _onVideosTab ? _videoCreatorCategory : _creatorCategory;
+
+  void setOnVideosTab(bool value) {
+    if (_onVideosTab == value) return;
+    _onVideosTab = value;
+    notifyListeners();
+  }
 
   /// Recently-played videos are derived locally from [recentlyPlayed]
   /// (the /feed/recently-played endpoint returns both tracks and videos
@@ -121,7 +143,7 @@ class HomeProvider extends ChangeNotifier {
       _recentlyPlayed.where((it) => it.type == 'track').toList(growable: false);
 
   // Per-section state — modeled exactly on the music sections above.
-  // Keyed by "$_videoFilter::$_categoryId" for the category-driven section
+  // Keyed by "$_activeVideoCategory::$_categoryId" for the category-driven section
   // (Trending / Hot Release / Top Chart / New Release).
   final Map<String, List<VideoItem>> _videosByCategoryTab = {};
   final Set<String> _loadingVideoCategoryTabs = {};
@@ -158,7 +180,7 @@ class HomeProvider extends ChangeNotifier {
   List<SpotlightItem> videoSpotlightForTab(String tabId) =>
       _videoSpotlightByTab[tabId] ?? const [];
 
-  String _videoCategoryKey(String tabId) => '$_videoFilter::$tabId';
+  String _videoCategoryKey(String tabId) => '$_activeVideoCategory::$tabId';
 
   // ===========================================================================
   // Loaders
@@ -444,19 +466,23 @@ class HomeProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Switches the global Music/Content filter and clears cached video lists
-  /// so they re-fetch with the new filter on next access.
-  void setVideoFilter(String filter) {
-    final next = filter.trim().toLowerCase();
-    if (next != 'music' && next != 'content') return;
-    if (next == _videoFilter) return;
-    _videoFilter = next;
-    // Per-category-tab caches are filter-scoped via _videoCategoryKey, so
-    // they don't need clearing. The non-keyed caches do.
+  /// Switches the Videos sub-tab uploader-role filter ("creator" = Content,
+  /// "artist" = Music) and clears cached video lists so they re-fetch under the
+  /// new role on next access. Does NOT touch [_creatorCategory] or any audio
+  /// cache.
+  void setVideoCreatorCategory(String category) {
+    final next = category.trim().toLowerCase();
+    if (next != 'creator' && next != 'artist') return;
+    if (next == _videoCreatorCategory) return;
+    _videoCreatorCategory = next;
+    // Per-category-tab caches are role-scoped via _videoCategoryKey, so they
+    // don't need clearing. The non-keyed caches do.
     _popularReleaseVideos = const [];
     _hasLoadedPopularReleaseVideos = false;
     _followedVideos = const [];
     _hasLoadedFollowedVideos = false;
+    _videoSpotlightByTab.clear();
+    _loadingVideoSpotlightTabs.clear();
     notifyListeners();
   }
 
@@ -480,7 +506,8 @@ class HomeProvider extends ChangeNotifier {
       _videosByCategoryTab[key] =
           dtos.map(VideoItem.fromFeedVideo).toList(growable: false);
     } catch (e, st) {
-      Logger.error('loadVideoCategoryTab($tabId, $_videoFilter) failed', e, st);
+      Logger.error(
+          'loadVideoCategoryTab($tabId, $_activeVideoCategory) failed', e, st);
       // Don't cache the empty result — leave the tab retryable on next access.
     } finally {
       _loadingVideoCategoryTabs.remove(key);
@@ -497,8 +524,8 @@ class HomeProvider extends ChangeNotifier {
 
     try {
       final dtos = await _videoFeed.getNewReleaseVideos(
-        videoType: _videoFilter,
-        category: _creatorCategory,
+        videoType: null,
+        category: _activeVideoCategory,
         days: 30,
         pageSize: 10,
       );
@@ -524,8 +551,8 @@ class HomeProvider extends ChangeNotifier {
 
     try {
       final dtos = await _videoFeed.getVideosFromFollowing(
-        videoType: _videoFilter,
-        category: _creatorCategory,
+        videoType: null,
+        category: _activeVideoCategory,
         pageSize: 12,
       );
       _followedVideos =
@@ -568,39 +595,39 @@ class HomeProvider extends ChangeNotifier {
   }
 
   Future<List<FeedVideoDto>> _fetchVideosForCategory(String tabId) async {
-    final cat = _creatorCategory;
+    final cat = _activeVideoCategory;
     switch (tabId) {
       case 'trending':
         return _videoFeed.getTrendingVideos(
-          videoType: _videoFilter,
+          videoType: null,
           category: cat,
           period: 'week',
           pageSize: 24,
         );
       case 'hot_release':
         return _videoFeed.getHotReleaseVideos(
-          videoType: _videoFilter,
+          videoType: null,
           category: cat,
           days: 14,
           pageSize: 24,
         );
       case 'top_chart':
         return _videoFeed.getTopChartVideos(
-          videoType: _videoFilter,
+          videoType: null,
           category: cat,
           period: 'all',
           pageSize: 24,
         );
       case 'new_release':
         return _videoFeed.getNewReleaseVideos(
-          videoType: _videoFilter,
+          videoType: null,
           category: cat,
           days: 30,
           pageSize: 24,
         );
       default:
         return _videoFeed.getTrendingVideos(
-          videoType: _videoFilter,
+          videoType: null,
           category: cat,
           period: 'week',
           pageSize: 24,
@@ -618,7 +645,7 @@ class HomeProvider extends ChangeNotifier {
       case 'most_gifted':
         final items = await _videoFeed.getMostGiftedVideos(
           period: 'week',
-          category: _creatorCategory,
+          category: _activeVideoCategory,
           pageSize: 10,
         );
         return items.map((dto) {

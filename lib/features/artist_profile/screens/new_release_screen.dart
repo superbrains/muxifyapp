@@ -139,6 +139,7 @@ class _NewReleaseScreenState extends State<NewReleaseScreen> {
                   context,
                   release: release,
                   albumName: 'New Release',
+                  artistId: widget.artistId,
                   tryBackendStream: true,
                 );
               },

@@ -1,22 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
 import 'package:muxify/core/constants/app_colors.dart';
 import 'package:muxify/core/constants/app_sizes.dart';
 import 'package:muxify/core/constants/app_text_styles.dart';
 import 'package:muxify/features/home/models/album_item.dart';
 import 'package:muxify/shared/widgets/auth_network_image.dart';
-import 'package:muxify/shared/widgets/gift_worth_widget.dart';
 
 class AlbumItemWidget extends StatelessWidget {
   final AlbumItem item;
   final VoidCallback? onTap;
-  final VoidCallback? onGiftCountTap;
 
   const AlbumItemWidget({
     super.key,
     required this.item,
     this.onTap,
-    this.onGiftCountTap,
   });
 
   @override
@@ -69,23 +67,48 @@ class AlbumItemWidget extends StatelessWidget {
               ],
             ),
           ),
-          // Gift Count Section
-          GestureDetector(
-            onTap: () {
-              HapticFeedback.lightImpact();
-              onGiftCountTap?.call();
-            },
-            child: GiftWorthWidget(
-              amount: item.giftCount,
-              label: 'Received Gifts',
-              iconSize: 22.icon,
-              amountFontSize: 16.font,
-              labelFontSize: 10.font,
-            ),
+          // Play Count Section
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Image.asset(
+                'assets/pngs/play.png',
+                width: 14.icon,
+                height: 14.icon,
+              ),
+              8.row,
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    _formatPlays(item.playCount),
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      fontSize: 16.font,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.text,
+                    ),
+                  ),
+                  Text(
+                    'Plays',
+                    style: AppTextStyles.bodySmall.copyWith(
+                      fontSize: 10.font,
+                      fontWeight: FontWeight.w400,
+                      color: AppColors.text.withValues(alpha: 0.6),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
         ],
       ),
     );
+  }
+
+  String _formatPlays(int count) {
+    if (count <= 0) return '0';
+    return NumberFormat.compact().format(count);
   }
 
   Widget _buildAlbumArt(String? url) {

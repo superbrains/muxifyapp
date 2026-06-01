@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:muxify/core/router/app_router.dart';
 import 'package:muxify/shared/widgets/auth_network_image.dart';
 import 'package:muxify/shared/widgets/gift_box_modal.dart';
@@ -10,8 +12,9 @@ import 'package:provider/provider.dart';
 import 'package:muxify/core/constants/app_colors.dart';
 import 'package:muxify/core/constants/app_sizes.dart';
 import 'package:muxify/core/constants/app_text_styles.dart';
-import 'package:muxify/core/providers/unlocked_content_provider.dart';
 import 'package:muxify/core/utils/app_toast.dart';
+import 'package:muxify/features/audio_playback/models/track.dart';
+import 'package:muxify/features/audio_playback/providers/audio_provider.dart';
 import 'package:muxify/features/artist_profile/models/new_release_item.dart';
 import 'package:muxify/features/artist_profile/providers/artist_profile_provider.dart';
 import 'package:muxify/features/artist_profile/utils/release_playback_helper.dart';
@@ -20,6 +23,7 @@ import 'package:muxify/shared/widgets/glass_button_widget.dart';
 import 'package:muxify/features/artist_profile/widgets/latest_release_banner_widget.dart';
 import 'package:muxify/features/artist_profile/widgets/navigation_buttons_widget.dart';
 import 'package:muxify/features/artist_profile/widgets/play_button_widget.dart';
+import 'package:muxify/features/artist_profile/widgets/search_container_widget.dart';
 import 'package:muxify/features/artist_profile/widgets/songs_list_widget.dart';
 import 'package:muxify/features/artist_profile/widgets/top_icons_widget.dart';
 import 'package:muxify/features/home/models/trending_artist.dart';
@@ -39,9 +43,12 @@ class ArtistProfileScreen extends StatefulWidget {
 
 class _ArtistProfileScreenState extends State<ArtistProfileScreen> {
   final NumberFormat _followerFormat = NumberFormat.decimalPattern();
+  final TextEditingController _searchController = TextEditingController();
 
   late bool _isFollowing;
   bool _isVideoMode = false;
+  bool _isSearching = false;
+  String _searchQuery = '';
 
   @override
   void initState() {
@@ -52,6 +59,32 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen> {
       if (!mounted) return;
       _loadAll(forceRefresh: false);
     });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _toggleSearch() {
+    setState(() {
+      _isSearching = !_isSearching;
+      if (!_isSearching) {
+        _searchController.clear();
+        _searchQuery = '';
+      }
+    });
+  }
+
+  /// Filters a track list by the current search query (case-insensitive on
+  /// title). Returns the list unchanged when not searching / query is empty.
+  List<NewReleaseItem> _filterTracks(List<NewReleaseItem> tracks) {
+    final q = _searchQuery.trim().toLowerCase();
+    if (!_isSearching || q.isEmpty) return tracks;
+    return tracks
+        .where((t) => t.title.toLowerCase().contains(q))
+        .toList(growable: false);
   }
 
   Future<void> _loadAll({required bool forceRefresh}) async {
@@ -153,7 +186,22 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen> {
   void _openRelease(NewReleaseItem release) {
     final type = release.type.toLowerCase();
     if (type == 'album') {
-      context.push(AppRouter.albumDetails);
+      final albumId = release.id.trim();
+      if (albumId.isEmpty) return;
+      final year = release.releaseDate?.year;
+      final uri = Uri(
+        path: AppRouter.albumDetails,
+        queryParameters: {
+          'albumId': albumId,
+          'title': release.title,
+          'artistName': release.artist,
+          'artistId': widget.artist.id,
+          if (release.coverImageUrl.trim().isNotEmpty)
+            'coverImageUrl': release.coverImageUrl.trim(),
+          if (year != null && year > 1) 'year': '$year',
+        },
+      );
+      context.push(uri.toString());
       return;
     }
     if (type == 'video') {
@@ -179,6 +227,21 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen> {
       context,
       release: release,
       albumName: 'Latest Release',
+      artistId: widget.artist.id,
+    );
+  }
+
+  /// "See All" under Most Popular → the artist's full Singles list (or All
+  /// Videos in video mode). Mirrors the NavigationButtonsWidget routes.
+  void _openSeeAll(String artistName) {
+    if (_isVideoMode) {
+      context.push(AppRouter.allVideos);
+      return;
+    }
+    final id = widget.artist.id.trim();
+    context.push(
+      '${AppRouter.singles}?artistId=$id'
+      '&artistName=${Uri.encodeComponent(artistName)}',
     );
   }
 
@@ -258,8 +321,8 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen> {
                 context.go(AppRouter.home);
               }
             },
-            onSearchTap: () {},
-            onMenuTap: () {},
+            onSearchTap: _toggleSearch,
+            onMenuTap: _showArtistMenu,
           ),
         ],
       ),
@@ -414,7 +477,7 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen> {
                                 width: 53.maxWidth,
                                 iconHeight: 17.icon,
                                 iconWidth: 20.icon,
-                                onTap: _playFirstAvailable,
+                                onTap: _playAllTracks,
                                 color: AppColors.buttonColor,
                               ),
                             ],
@@ -452,23 +515,59 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen> {
     );
   }
 
-  Future<void> _playFirstAvailable() async {
+  /// Plays the artist's whole track list as one queue. Used by both the top
+  /// play button (after "Gift Me") and the play button inside "Most Played".
+  Future<void> _playAllTracks() async {
     final provider = context.read<ArtistProfileProvider>();
     final list = _isVideoMode ? provider.videos : provider.tracks;
     if (list.isEmpty) {
       await AppToast.showInfo('Nothing to play yet.');
       return;
     }
-    final first = list.first;
+
+    // Videos don't share the audio queue; open the first one in its player.
     if (_isVideoMode) {
-      _openRelease(first);
+      _openRelease(list.first);
       return;
     }
-    await ReleasePlaybackHelper.openFromRelease(
-      context,
-      release: first,
-      albumName: 'Most Popular',
+
+    final tracks = list
+        .map(
+          (r) => Track(
+            id: r.id,
+            title: r.title,
+            artist: r.artist,
+            artistId: widget.artist.id,
+            albumName: 'Most Popular',
+            artworkUrl: r.coverImageUrl,
+            isUnlocked: r.isUnlocked || r.unlockCostCoins == 0,
+            unlockCostCoins: r.unlockCostCoins,
+          ),
+        )
+        .toList(growable: false);
+
+    final first = list.first;
+    // Open the player immediately so the branded loader shows while the
+    // queue's stream URLs resolve in the background (mirrors HomeScreen).
+    final uri = Uri(
+      path: AppRouter.musicPlayer,
+      queryParameters: {
+        'trackId': first.id,
+        'title': first.title,
+        'artistName': first.artist,
+        'artistId': widget.artist.id,
+        'albumName': 'Most Popular',
+        'backgroundImageUrl': first.coverImageUrl,
+        'isUnlocked':
+            (first.isUnlocked || first.unlockCostCoins == 0).toString(),
+        'unlockCostCoins': first.unlockCostCoins.toString(),
+      },
     );
+    context.push(uri.toString());
+
+    // Fire-and-forget: the player hydrates from the global AudioProvider and
+    // shows the branded loader until the first source is ready.
+    unawaited(context.read<AudioProvider>().loadAndPlay(tracks));
   }
 
   void _showGiftBoxModal() {
@@ -497,6 +596,77 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen> {
         );
       },
     );
+  }
+
+  void _showArtistMenu() {
+    final provider = context.read<ArtistProfileProvider>();
+    final name = _displayName(provider);
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: AppColors.modalBackground,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24.radius)),
+      ),
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Padding(
+            padding: EdgeInsets.symmetric(vertical: 12.padding),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 40.maxWidth,
+                  height: 4.maxHeight,
+                  margin: EdgeInsets.only(bottom: 12.padding),
+                  decoration: BoxDecoration(
+                    color: AppColors.text.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(2.radius),
+                  ),
+                ),
+                ListTile(
+                  leading: Icon(Icons.share_outlined, color: AppColors.text),
+                  title: Text(
+                    'Share artist',
+                    style: AppTextStyles.bodyLarge.copyWith(
+                      fontSize: 16.font,
+                      color: AppColors.text,
+                    ),
+                  ),
+                  onTap: () {
+                    Navigator.of(sheetContext).pop();
+                    _shareArtist(name);
+                  },
+                ),
+                ListTile(
+                  leading: Icon(
+                    _isFollowing
+                        ? Icons.person_remove_outlined
+                        : Icons.person_add_outlined,
+                    color: AppColors.text,
+                  ),
+                  title: Text(
+                    _isFollowing ? 'Unfollow' : 'Follow',
+                    style: AppTextStyles.bodyLarge.copyWith(
+                      fontSize: 16.font,
+                      color: AppColors.text,
+                    ),
+                  ),
+                  onTap: () {
+                    Navigator.of(sheetContext).pop();
+                    _toggleFollow();
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _shareArtist(String name) async {
+    final displayName = name.trim().isEmpty ? 'this artist' : name.trim();
+    await Share.share('Check out $displayName on Muxify 🎵');
   }
 
   Widget _buildProfileContent() {
@@ -543,6 +713,7 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen> {
                 items: albums,
                 isLoading: isLoadingAlbums,
                 error: albumsError,
+                totalPlays: provider.artistProfile?.totalPlays ?? 0,
               ),
               41.column,
               Text(
@@ -553,17 +724,28 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen> {
                   color: AppColors.text,
                 ),
               ),
+              if (_isSearching) ...[
+                15.column,
+                SearchContainerWidget(
+                  controller: _searchController,
+                  hintText: 'Search ${_displayName(provider)}\'s songs',
+                  onChanged: (value) => setState(() => _searchQuery = value),
+                ),
+              ],
               15.column,
               _buildTracksList(
-                items: tracks,
+                items: _filterTracks(tracks),
                 isLoading: isLoadingTracks,
                 error: tracksError,
+                emptyMessage: _isSearching && _searchQuery.trim().isNotEmpty
+                    ? 'No songs match "${_searchQuery.trim()}".'
+                    : null,
               ),
               18.column,
-              if (tracks.length > 4)
+              if (!_isSearching && tracks.length > 4)
                 Center(
                   child: GestureDetector(
-                    onTap: () {},
+                    onTap: () => _openSeeAll(_displayName(provider)),
                     child: Container(
                       width: 104.maxWidth,
                       height: 52.maxHeight,
@@ -604,6 +786,7 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen> {
     required List<NewReleaseItem> items,
     required bool isLoading,
     required String? error,
+    int totalPlays = 0,
   }) {
     if (isLoading && items.isEmpty) {
       return SizedBox(
@@ -642,7 +825,8 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen> {
       child: AlbumsSectionWidget(
         albums: albumItems,
         onTap: () => _openRelease(items.first),
-        onGiftCountTap: () {},
+        onPlay: _playAllTracks,
+        totalPlays: totalPlays,
         mediaType: widget.mediaType,
       ),
     );
@@ -652,6 +836,7 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen> {
     required List<NewReleaseItem> items,
     required bool isLoading,
     required String? error,
+    String? emptyMessage,
   }) {
     if (isLoading && items.isEmpty) {
       return Column(
@@ -701,7 +886,7 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen> {
 
     if (items.isEmpty) {
       return _buildEmptyCard(
-        message: error ?? 'No releases yet.',
+        message: emptyMessage ?? error ?? 'No releases yet.',
         height: 120.maxHeight,
       );
     }
@@ -739,35 +924,18 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen> {
             ),
     );
 
-    if (!release.isUnlocked && release.unlockCostCoins > 0) {
-      try {
-        if (_isVideoMode) {
-          await provider.unlockVideo(release.id);
-        } else {
-          await provider.unlockTrack(release.id);
-        }
-        provider.markTrackUnlocked(release.id);
-        if (mounted) {
-          await context
-              .read<UnlockedContentProvider>()
-              .markUnlocked(release.id);
-        }
-        await AppToast.showInfo('Unlocked!');
-      } catch (e) {
-        await AppToast.showError(e.toString());
-        return;
-      }
-    }
-
-    if (!mounted) return;
     if (_isVideoMode) {
       _openRelease(release);
       return;
     }
+    // Open the player with the track's real unlock state. Locked tracks show
+    // the player's per-track unlock confirmation (real coin cost + ₦ value);
+    // coins are only spent there, after the user confirms.
     await ReleasePlaybackHelper.openFromRelease(
       context,
-      release: release.copyWith(isUnlocked: true),
+      release: release,
       albumName: 'Most Popular',
+      artistId: widget.artist.id,
     );
   }
 

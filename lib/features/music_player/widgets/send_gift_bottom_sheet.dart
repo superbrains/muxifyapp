@@ -60,22 +60,37 @@ class _SendGiftBottomSheetState extends State<SendGiftBottomSheet> {
   }
 
   Future<void> _hydrate() async {
-    final results = await Future.wait([
-      _wallet.fetchWalletSummary(),
-      _wallet.fetchCoinRate(),
-    ]);
-    if (!mounted) return;
-    setState(() {
-      _balance = (results[0] as WalletSummary).balance;
-      _rate = results[1] as CoinRate;
-      _loading = false;
-    });
+    try {
+      final results = await Future.wait([
+        _wallet.fetchWalletSummary(),
+        _wallet.fetchCoinRate(),
+      ]);
+      if (!mounted) return;
+      setState(() {
+        _balance = (results[0] as WalletSummary).balance;
+        _rate = results[1] as CoinRate;
+        _loading = false;
+      });
+    } catch (e) {
+      // Never leave the button stuck on "Please wait…": unblock it even when the
+      // wallet/rate fetch fails. We keep the fallback rate + a 0 balance.
+      debugPrint('[SendGift] _hydrate failed: $e');
+      if (!mounted) return;
+      setState(() => _loading = false);
+    }
+  }
+
+  /// Fire-and-forget toast that can never block or throw into the send flow.
+  void _toast(Future<void> Function() show) {
+    show().catchError((_) {});
   }
 
   Future<void> _send() async {
     if (_sending || !_canSend) return;
     setState(() => _sending = true);
     HapticFeedback.lightImpact();
+    debugPrint('[SendGift] _send start: gift=${widget.giftItem.id} '
+        'artist=${widget.recipientArtistId}');
     try {
       final response = await context.read<ArtistProfileProvider>().sendGift(
             artistId: widget.recipientArtistId!.trim(),
@@ -84,17 +99,22 @@ class _SendGiftBottomSheetState extends State<SendGiftBottomSheet> {
             videoId: widget.videoId,
           );
       if (!mounted) return;
+      debugPrint('[SendGift] response success=${response?.success}');
       if (response == null || !response.success) {
         setState(() => _sending = false);
-        await AppToast.showError('Could not send gift. Please try again.');
+        _toast(() => AppToast.showError('Could not send gift. Please try again.'));
         return;
       }
-      await AppToast.showInfo('Sent ${widget.giftItem.name}!');
+      // Trigger the celebration immediately — do NOT let the (possibly broken)
+      // toast plugin gate it.
+      debugPrint('[SendGift] success → firing onSent (celebration)');
+      _toast(() => AppToast.showInfo('Sent ${widget.giftItem.name}!'));
       widget.onSent?.call();
     } catch (e) {
+      debugPrint('[SendGift] _send error: $e');
       if (!mounted) return;
       setState(() => _sending = false);
-      await AppToast.showError(_humanise(e));
+      _toast(() => AppToast.showError(_humanise(e)));
     }
   }
 

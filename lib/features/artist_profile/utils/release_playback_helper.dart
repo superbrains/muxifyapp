@@ -17,6 +17,7 @@ class ReleasePlaybackHelper {
     BuildContext context, {
     required NewReleaseItem release,
     required String albumName,
+    String? artistId,
     bool tryBackendStream = true,
   }) async {
     if (release.id.trim().isEmpty) {
@@ -46,12 +47,14 @@ class ReleasePlaybackHelper {
     }
 
     if (!context.mounted) return;
+    final resolvedArtistId = (artistId ?? '').trim();
     final uri = Uri(
       path: AppRouter.musicPlayer,
       queryParameters: {
         'trackId': resolvedRelease.id,
         'title': resolvedRelease.title,
         'artistName': resolvedRelease.artist,
+        if (resolvedArtistId.isNotEmpty) 'artistId': resolvedArtistId,
         'albumName': albumName,
         'backgroundImageUrl': resolvedRelease.coverImageUrl,
         if (streamUrl.isNotEmpty) 'audioUrl': streamUrl,

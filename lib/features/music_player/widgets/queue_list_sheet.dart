@@ -7,13 +7,20 @@ import 'package:muxify/core/providers/unlocked_content_provider.dart';
 import 'package:muxify/features/audio_playback/models/track.dart';
 import 'package:muxify/features/audio_playback/providers/audio_provider.dart';
 import 'package:muxify/shared/widgets/auth_network_image.dart';
+import 'package:muxify/shared/widgets/unlock_button.dart';
 
 /// Bottom sheet showing the player's current queue. Tap a row to jump
-/// playback to that track. Locked rows are dimmed and labelled.
+/// playback to that track. Locked rows are dimmed and offer an Unlock CTA.
 class QueueListSheet extends StatelessWidget {
-  const QueueListSheet({super.key});
+  /// Invoked with the locked track when its Unlock CTA is tapped.
+  final void Function(Track track)? onUnlockTrack;
 
-  static Future<void> show(BuildContext context) {
+  const QueueListSheet({super.key, this.onUnlockTrack});
+
+  static Future<void> show(
+    BuildContext context, {
+    void Function(Track track)? onUnlockTrack,
+  }) {
     return showModalBottomSheet<void>(
       context: context,
       backgroundColor: AppColors.background,
@@ -23,7 +30,7 @@ class QueueListSheet extends StatelessWidget {
           top: Radius.circular(20.radius),
         ),
       ),
-      builder: (_) => const QueueListSheet(),
+      builder: (_) => QueueListSheet(onUnlockTrack: onUnlockTrack),
     );
   }
 
@@ -108,6 +115,12 @@ class QueueListSheet extends StatelessWidget {
                             audio.seekToIndex(index);
                             Navigator.of(context).pop();
                           },
+                          onUnlock: onUnlockTrack == null
+                              ? null
+                              : () {
+                                  Navigator.of(context).pop();
+                                  onUnlockTrack!(t);
+                                },
                         );
                       },
                     ),
@@ -125,12 +138,14 @@ class _QueueRow extends StatelessWidget {
   final bool isCurrent;
   final bool isUnlocked;
   final VoidCallback onTap;
+  final VoidCallback? onUnlock;
 
   const _QueueRow({
     required this.track,
     required this.isCurrent,
     required this.isUnlocked,
     required this.onTap,
+    this.onUnlock,
   });
 
   @override
@@ -185,10 +200,19 @@ class _QueueRow extends StatelessWidget {
             ),
             12.row,
             if (!isUnlocked)
-              Icon(
-                Icons.lock_outline,
-                color: AppColors.text.withValues(alpha: 0.7),
-                size: 20.icon,
+              UnlockButton(
+                text: 'Unlock',
+                iconPath: 'assets/pngs/Bitcoin_musixfy.png',
+                onTap: onUnlock,
+                backgroundColor: AppColors.toggleSelected,
+                iconColor: AppColors.buttonColor,
+                iconSize: 14.icon,
+                fontSize: 12.font,
+                borderRadius: 16.radius,
+                padding: EdgeInsets.symmetric(
+                  horizontal: 10.padding,
+                  vertical: 6.padding,
+                ),
               )
             else if (isCurrent)
               Icon(

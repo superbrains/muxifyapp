@@ -104,6 +104,9 @@ class PersistentMiniPlayer extends StatelessWidget {
       'artistName': track.artist,
       'isUnlocked': track.isUnlocked.toString(),
     };
+    if (track.unlockCostCoins > 0) {
+      params['unlockCostCoins'] = track.unlockCostCoins.toString();
+    }
     final artistId = (track.artistId ?? '').trim();
     if (artistId.isNotEmpty) params['artistId'] = artistId;
     final albumName = (track.albumName ?? '').trim();

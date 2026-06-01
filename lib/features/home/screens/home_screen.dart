@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -133,6 +135,7 @@ class _HomeScreenState extends State<HomeScreen> {
     String? artistId,
     String? coverUrl,
     bool isUnlocked = true,
+    int? unlockCostCoins,
   }) {
     final id = trackId.trim();
     if (id.isEmpty) return;
@@ -147,6 +150,8 @@ class _HomeScreenState extends State<HomeScreen> {
         if (artist != null && artist.isNotEmpty) 'artistId': artist,
         if (cover != null && cover.isNotEmpty) 'backgroundImageUrl': cover,
         'isUnlocked': '$isUnlocked',
+        if (unlockCostCoins != null)
+          'unlockCostCoins': '$unlockCostCoins',
       },
     );
     context.push(uri.toString());
@@ -180,6 +185,8 @@ class _HomeScreenState extends State<HomeScreen> {
       artistName: item.artistName,
       artistId: item.artistId,
       coverUrl: item.imageUrl,
+      isUnlocked: item.isUnlocked,
+      unlockCostCoins: item.unlockCostCoins,
     );
   }
 
@@ -202,6 +209,8 @@ class _HomeScreenState extends State<HomeScreen> {
       artistName: track.artist,
       artistId: track.artistId,
       coverUrl: track.imageUrl,
+      isUnlocked: track.isUnlocked,
+      unlockCostCoins: track.unlockCostCoins,
     );
   }
 
@@ -292,13 +301,14 @@ class _HomeScreenState extends State<HomeScreen> {
                 ? t.imageUrl
                 : fallbackCover,
             isUnlocked: t.isUnlocked,
+            unlockCostCoins: t.unlockCostCoins,
           ),
         )
         .toList();
 
-    await context.read<AudioProvider>().loadAndPlay(tracks);
-    if (!mounted) return;
-
+    // Open the player immediately so the user sees the branded loader while
+    // audio resolves in the background — navigation is no longer blocked
+    // behind stream-URL resolution for the whole queue.
     final first = source.first;
     _openPlayer(
       trackId: first.id,
@@ -307,7 +317,12 @@ class _HomeScreenState extends State<HomeScreen> {
       artistId: first.artistId,
       coverUrl: first.imageUrl ?? playlist.imageUrl,
       isUnlocked: first.isUnlocked,
+      unlockCostCoins: first.unlockCostCoins,
     );
+
+    // Fire-and-forget: the player hydrates from the global AudioProvider and
+    // shows the branded loader until the first source is ready.
+    unawaited(context.read<AudioProvider>().loadAndPlay(tracks));
   }
 
   // ---------------------------------------------------------------------------
@@ -543,13 +558,15 @@ class _HomeScreenState extends State<HomeScreen> {
             selectedTabId: _selectedVideoTabId,
             onTabChanged: (tabId) {
               setState(() => _selectedVideoTabId = tabId);
-              final filter = tabId == 'music_videos' ? 'music' : 'content';
+              // Content Videos -> Creator uploads; Music Videos -> Artist uploads.
+              final role = tabId == 'music_videos' ? 'artist' : 'creator';
               final home = context.read<HomeProvider>();
-              home.setVideoFilter(filter);
-              // Re-fetch the main category section under the new filter.
+              home.setVideoCreatorCategory(role);
+              // Re-fetch the video sections under the new uploader role.
               home.loadVideoCategoryTab(_selectedCategoryId);
               home.loadPopularReleaseVideos();
               home.loadFollowedVideos();
+              home.loadVideoSpotlightTab(_selectedVideoSpotlightTabId);
             },
           ),
         ),
@@ -686,9 +703,24 @@ class _HomeScreenState extends State<HomeScreen> {
             toggleOptions: _toggleOptions,
             onTabChanged: (tab) {
               setState(() => _selectedTab = tab);
-              final category = _creatorCategoryForTab(tab);
-              if (category == null) return; // Videos tab: nothing to switch.
               final home = context.read<HomeProvider>();
+              if (tab == 'Videos') {
+                // The Videos tab keeps the audio creator-category at 'creator'
+                // (so recently-played still resolves to videos) while the
+                // Content/Music sub-tabs drive the video uploader-role filter.
+                final role =
+                    _selectedVideoTabId == 'music_videos' ? 'artist' : 'creator';
+                home.setVideoCreatorCategory(role);
+                if (home.creatorCategory != 'creator') {
+                  home.setCreatorCategory('creator');
+                }
+                home.setOnVideosTab(true);
+                _reloadAllSectionsForCurrentTab(home);
+                return;
+              }
+              home.setOnVideosTab(false);
+              final category = _creatorCategoryForTab(tab);
+              if (category == null) return;
               if (home.creatorCategory == category) return;
               home.setCreatorCategory(category);
               _reloadAllSectionsForCurrentTab(home);

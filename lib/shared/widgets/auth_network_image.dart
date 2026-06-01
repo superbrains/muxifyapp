@@ -8,7 +8,7 @@ import 'package:muxify/core/services/local_storage_service.dart';
 /// only when the resolved URL targets the Muxify API host. Public CDN URLs and
 /// asset paths bypass this widget — pass them through `Image.network` /
 /// `Image.asset` directly at the call site.
-class AuthNetworkImage extends StatelessWidget {
+class AuthNetworkImage extends StatefulWidget {
   final String path;
   final BoxFit fit;
   final double? width;
@@ -28,6 +28,19 @@ class AuthNetworkImage extends StatelessWidget {
     this.errorWidget,
   });
 
+  @override
+  State<AuthNetworkImage> createState() => _AuthNetworkImageState();
+}
+
+class _AuthNetworkImageState extends State<AuthNetworkImage> {
+  // Resolved once and reused across rebuilds. The token is independent of
+  // `path`, so it never needs re-fetching during the widget's life. Caching it
+  // here (instead of creating a fresh future in build) keeps the FutureBuilder
+  // in its `done` state across the many rebuilds the music player triggers on
+  // every audio position tick — otherwise each rebuild restarts the async read
+  // and flashes the placeholder, which is visible as flicker behind the player.
+  late final Future<String?> _tokenFuture = LocalStorageService.getAccessToken();
+
   static bool _targetsMuxifyApi(String url) {
     final target = Uri.tryParse(url);
     if (target == null || !target.hasAuthority) return false;
@@ -37,15 +50,15 @@ class AuthNetworkImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final trimmed = path.trim();
+    final trimmed = widget.path.trim();
     if (trimmed.isEmpty) {
-      return placeholder ?? const SizedBox.shrink();
+      return widget.placeholder ?? const SizedBox.shrink();
     }
 
     final resolvedUrl = ApiConstants.resolvePublicUrl(trimmed);
 
     return FutureBuilder<String?>(
-      future: LocalStorageService.getAccessToken(),
+      future: _tokenFuture,
       builder: (context, snapshot) {
         // Wait for the async token read to finish before constructing
         // CachedNetworkImage. The media proxy (/api/v1/media/cover/...) is
@@ -55,7 +68,7 @@ class AuthNetworkImage extends StatelessWidget {
         // the token resolves, so the cover never loads. Mirrors the web's
         // useAuthedImageSrc, which renders nothing until the authed fetch is ready.
         if (snapshot.connectionState != ConnectionState.done) {
-          return placeholder ?? const SizedBox.shrink();
+          return widget.placeholder ?? const SizedBox.shrink();
         }
 
         final token = snapshot.data?.trim() ?? '';
@@ -69,16 +82,16 @@ class AuthNetworkImage extends StatelessWidget {
 
         return CachedNetworkImage(
           imageUrl: resolvedUrl,
-          fit: fit,
-          width: width,
-          height: height,
-          alignment: alignment,
+          fit: widget.fit,
+          width: widget.width,
+          height: widget.height,
+          alignment: widget.alignment,
           httpHeaders: headers,
-          placeholder: placeholder == null
+          placeholder: widget.placeholder == null
               ? null
-              : (context, _) => placeholder!,
+              : (context, _) => widget.placeholder!,
           errorWidget: (context, _, __) =>
-              errorWidget ?? placeholder ?? const SizedBox.shrink(),
+              widget.errorWidget ?? widget.placeholder ?? const SizedBox.shrink(),
         );
       },
     );

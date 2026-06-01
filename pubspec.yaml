@@ -29,6 +29,8 @@ dependencies:
   path_provider: ^2.1.5
   just_audio: ^0.10.5
   just_audio_background: ^0.0.1-beta.17
+  # Audio focus / interruption / becoming-noisy handling for reliable playback.
+  audio_session: ^0.2.3
   audio_video_progress_bar: ^2.0.3
   rxdart: ^0.28.0
   video_player: ^2.9.2

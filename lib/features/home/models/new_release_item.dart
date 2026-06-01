@@ -6,6 +6,8 @@ class NewReleaseItem {
   final String artistName;
   final String? artistId;
   final String? imageUrl;
+  final bool isUnlocked;
+  final int unlockCostCoins;
 
   NewReleaseItem({
     required this.id,
@@ -13,6 +15,8 @@ class NewReleaseItem {
     required this.artistName,
     this.artistId,
     this.imageUrl,
+    this.isUnlocked = true,
+    this.unlockCostCoins = 0,
   });
 
   /// Maps the backend `FeedTrackDto`. The home "Popular New Releases" section
@@ -25,6 +29,8 @@ class NewReleaseItem {
       artistName: dto.artistName,
       artistId: dto.artistId,
       imageUrl: dto.coverArtUrl,
+      isUnlocked: dto.isUnlocked,
+      unlockCostCoins: dto.unlockCostCoins,
     );
   }
 }

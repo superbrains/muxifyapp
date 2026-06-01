@@ -135,6 +135,7 @@ class _AlbumsScreenState extends State<AlbumsScreen> {
                   context,
                   release: album,
                   albumName: 'Albums',
+                  artistId: widget.artistId,
                   tryBackendStream: true,
                 );
               },
