@@ -68,15 +68,46 @@ class _HomeScreenState extends State<HomeScreen> {
     CategoryTab(id: 'new_release', title: 'New Release', icon: Icons.fiber_new),
   ];
 
-  final List<SpotlightTab> _spotlightTabs = [
+  // Music side: Spotlight (curated) + two gift leaderboards (artist-level,
+  // track-level) + Top Giver. The "Most Gifted" tab was split into artist/track
+  // and "Most Giver" was dropped (it duplicated Top Giver).
+  final List<SpotlightTab> _musicSpotlightTabs = [
     SpotlightTab(id: 'spotlight', title: 'Spotlight', icon: Icons.wb_sunny),
     SpotlightTab(
-      id: 'most_gifted',
-      title: 'Most Gifted',
+      id: 'most_gifted_artist',
+      title: 'Most Gifted Artist',
+      icon: Icons.workspace_premium,
+    ),
+    SpotlightTab(
+      id: 'most_gifted_track',
+      title: 'Most Gifted Track',
       icon: Icons.card_giftcard,
     ),
-    SpotlightTab(id: 'top_giver', title: 'Top Giver', icon: Icons.trending_up),
-    SpotlightTab(id: 'most_giver', title: 'Most Giver', icon: Icons.people),
+    SpotlightTab(
+      id: 'top_giver',
+      title: 'Top Giver',
+      icon: Icons.volunteer_activism,
+    ),
+  ];
+
+  // Video side mirrors the music tabs at the creator/video level.
+  final List<SpotlightTab> _videoSpotlightTabs = [
+    SpotlightTab(id: 'spotlight', title: 'Spotlight', icon: Icons.wb_sunny),
+    SpotlightTab(
+      id: 'most_gifted_creator',
+      title: 'Most Gifted Creator',
+      icon: Icons.workspace_premium,
+    ),
+    SpotlightTab(
+      id: 'most_gifted_video',
+      title: 'Most Gifted Video',
+      icon: Icons.card_giftcard,
+    ),
+    SpotlightTab(
+      id: 'top_giver',
+      title: 'Top Giver',
+      icon: Icons.volunteer_activism,
+    ),
   ];
 
   @override
@@ -190,16 +221,61 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _openSpotlight(SpotlightItem item) {
-    if (!item.isPlayable) return;
-    _openPlayer(
-      trackId: item.id,
-      title: item.title,
-      artistName: item.artist,
-      artistId: item.artistId,
-      coverUrl: item.imageUrl,
-      isUnlocked: item.isUnlocked,
+  /// Routes a spotlight card tap by what it represents: a track/curated item
+  /// opens the player, an artist opens their profile, a top giver opens the fan
+  /// profile.
+  void _openSpotlightItem(SpotlightItem item) {
+    switch (item.kind) {
+      case SpotlightKind.artist:
+        _pushArtistProfileById(item.id, item.title, item.imageUrl);
+        break;
+      case SpotlightKind.giver:
+        _pushFanProfile(item.id);
+        break;
+      case SpotlightKind.video:
+        _openVideoPlayer(
+          videoId: item.id,
+          title: item.title,
+          artistName: item.artist,
+          artistId: item.artistId,
+          thumbnailUrl: item.imageUrl,
+          isUnlocked: item.isUnlocked,
+        );
+        break;
+      case SpotlightKind.track:
+      case SpotlightKind.curated:
+        if (!item.isPlayable) return;
+        _openPlayer(
+          trackId: item.id,
+          title: item.title,
+          artistName: item.artist,
+          artistId: item.artistId,
+          coverUrl: item.imageUrl,
+          isUnlocked: item.isUnlocked,
+        );
+        break;
+    }
+  }
+
+  void _pushArtistProfileById(String artistId, String name, String? imageUrl) {
+    final id = artistId.trim();
+    if (id.isEmpty) return;
+    final uri = Uri(
+      path: AppRouter.artistProfile,
+      queryParameters: {
+        'artistId': id,
+        'artistName': name,
+        if ((imageUrl ?? '').trim().isNotEmpty)
+          'coverImageUrl': imageUrl!.trim(),
+      },
     );
+    context.push(uri.toString());
+  }
+
+  void _pushFanProfile(String fanId) {
+    final id = fanId.trim();
+    if (id.isEmpty) return;
+    context.push(AppRouter.fanProfileFor(id));
   }
 
   void _openPlaylistTrack(TrackItem track) {
@@ -262,16 +338,28 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _openVideoSpotlight(SpotlightItem item) {
-    if (!item.isPlayable) return;
-    _openVideoPlayer(
-      videoId: item.id,
-      title: item.title,
-      artistName: item.artist,
-      artistId: item.artistId,
-      thumbnailUrl: item.imageUrl,
-      isUnlocked: item.isUnlocked,
-    );
+  void _openVideoSpotlightItem(SpotlightItem item) {
+    switch (item.kind) {
+      case SpotlightKind.artist:
+        _pushArtistProfileById(item.id, item.title, item.imageUrl);
+        break;
+      case SpotlightKind.giver:
+        _pushFanProfile(item.id);
+        break;
+      case SpotlightKind.track:
+      case SpotlightKind.video:
+      case SpotlightKind.curated:
+        if (!item.isPlayable) return;
+        _openVideoPlayer(
+          videoId: item.id,
+          title: item.title,
+          artistName: item.artist,
+          artistId: item.artistId,
+          thumbnailUrl: item.imageUrl,
+          isUnlocked: item.isUnlocked,
+        );
+        break;
+    }
   }
 
   Future<void> _openCategoryPlaylist(PlaylistItem playlist) async {
@@ -482,7 +570,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
 
         SpotlightSection(
-          tabs: _spotlightTabs,
+          tabs: _musicSpotlightTabs,
           selectedTabId: _selectedSpotlightTabId,
           onTabChanged: (tabId) {
             setState(() => _selectedSpotlightTabId = tabId);
@@ -490,8 +578,17 @@ class _HomeScreenState extends State<HomeScreen> {
           },
           items: spotlightItems,
           isLoading: spotlightLoading,
-          onItemTap: _openSpotlight,
-          onUnlockTap: _openSpotlight,
+          showPeriodToggle: _selectedSpotlightTabId != 'spotlight',
+          selectedPeriod: homeProvider.spotlightPeriod,
+          onPeriodChanged: (period) {
+            context.read<HomeProvider>().setSpotlightPeriod(period);
+            context.read<HomeProvider>().loadSpotlightTab(
+                  _selectedSpotlightTabId,
+                  forceRefresh: true,
+                );
+          },
+          onItemTap: _openSpotlightItem,
+          onUnlockTap: _openSpotlightItem,
         ),
         32.column,
 
@@ -623,15 +720,24 @@ class _HomeScreenState extends State<HomeScreen> {
         if (showPopularVideos) 30.column,
         if (showSpotlightVideos)
           VideoSpotlightSection(
-            tabs: _spotlightTabs,
+            tabs: _videoSpotlightTabs,
             selectedTabId: _selectedVideoSpotlightTabId,
             onTabChanged: (tabId) {
               setState(() => _selectedVideoSpotlightTabId = tabId);
               context.read<HomeProvider>().loadVideoSpotlightTab(tabId);
             },
             items: spotlightVideoItems,
-            onItemTap: _openVideoSpotlight,
-            onUnlockTap: _openVideoSpotlight,
+            showPeriodToggle: _selectedVideoSpotlightTabId != 'spotlight',
+            selectedPeriod: homeProvider.videoSpotlightPeriod,
+            onPeriodChanged: (period) {
+              context.read<HomeProvider>().setVideoSpotlightPeriod(period);
+              context.read<HomeProvider>().loadVideoSpotlightTab(
+                    _selectedVideoSpotlightTabId,
+                    forceRefresh: true,
+                  );
+            },
+            onItemTap: _openVideoSpotlightItem,
+            onUnlockTap: _openVideoSpotlightItem,
           ),
         if (showSpotlightVideos) 30.column,
         if (showFollowedVideos)

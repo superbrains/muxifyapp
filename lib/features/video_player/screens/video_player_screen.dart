@@ -613,12 +613,19 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
       backgroundColor: AppColors.background,
       body: SafeArea(
         bottom: false,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _buildPlayerArea(),
-            Expanded(
-              child: ListView(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            // 16:9 by width, but never taller than 70% of the viewport so the
+            // detail list always has room. Without this cap a short (landscape)
+            // viewport makes the fixed 16:9 player overflow the Column.
+            final playerHeight =
+                (constraints.maxWidth * 9 / 16).clamp(0.0, constraints.maxHeight * 0.7);
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _buildPlayerArea(playerHeight),
+                Expanded(
+                  child: ListView(
                 padding: EdgeInsets.fromLTRB(
                   18.padding,
                   16.padding,
@@ -627,33 +634,35 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                   // only a normal bottom inset is needed.
                   24.padding,
                 ),
-                children: [
-                  _buildTitleBlock(),
-                  16.column,
-                  _buildActionBar(),
-                  18.column,
-                  _buildArtistRow(),
-                  if ((_detail?.description ?? '').trim().isNotEmpty) ...[
-                    16.column,
-                    _Description(text: _detail!.description!.trim()),
-                  ],
-                  24.column,
-                  _buildUpNextSection(),
-                ],
-              ),
-            ),
-          ],
+                    children: [
+                      _buildTitleBlock(),
+                      16.column,
+                      _buildActionBar(),
+                      18.column,
+                      _buildArtistRow(),
+                      if ((_detail?.description ?? '').trim().isNotEmpty) ...[
+                        16.column,
+                        _Description(text: _detail!.description!.trim()),
+                      ],
+                      24.column,
+                      _buildUpNextSection(),
+                    ],
+                  ),
+                ),
+              ],
+            );
+          },
         ),
       ),
     );
   }
 
-  Widget _buildPlayerArea() {
+  Widget _buildPlayerArea(double height) {
     final controller = _videoController;
     final ready = _isUnlocked && controller != null && controller.value.isInitialized;
 
-    return AspectRatio(
-      aspectRatio: 16 / 9,
+    return SizedBox(
+      height: height,
       child: Container(
         color: Colors.black,
         child: Stack(

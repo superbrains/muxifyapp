@@ -155,6 +155,43 @@ class VideoFeedRepository {
     );
   }
 
+  Future<List<MostGiftedArtistDto>> getMostGiftedCreators({
+    String? period,
+    String? category,
+    int page = 1,
+    int pageSize = 10,
+  }) {
+    final query = <String, dynamic>{
+      'page': page.toString(),
+      'pageSize': pageSize.toString(),
+    };
+    if (period != null && period.trim().isNotEmpty) query['period'] = period;
+    if (category != null && category.trim().isNotEmpty) query['category'] = category;
+    return _list(
+      ApiConstants.feedMostGiftedCreatorsPath,
+      MostGiftedArtistDto.fromJson,
+      query,
+    );
+  }
+
+  /// Top givers scoped to the video vertical (fans who gifted video content).
+  Future<List<TopGiverDto>> getVideoTopGivers({
+    String? period,
+    int page = 1,
+    int pageSize = 10,
+  }) {
+    final query = <String, dynamic>{
+      'page': page.toString(),
+      'pageSize': pageSize.toString(),
+    };
+    if (period != null && period.trim().isNotEmpty) query['period'] = period;
+    return _list(
+      ApiConstants.feedVideoTopGiversPath,
+      TopGiverDto.fromJson,
+      query,
+    );
+  }
+
   /// Helper for the standard `FeedListDto<T>` envelope: `{ items, totalCount, page, pageSize }`.
   Future<List<T>> _list<T>(
     String path,

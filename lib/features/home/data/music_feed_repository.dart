@@ -154,6 +154,25 @@ class MusicFeedRepository {
     );
   }
 
+  Future<List<MostGiftedArtistDto>> getMostGiftedArtists({
+    String? period,
+    String? category,
+    int page = 1,
+    int pageSize = 10,
+  }) {
+    final query = <String, dynamic>{
+      'page': page.toString(),
+      'pageSize': pageSize.toString(),
+    };
+    if (period != null && period.trim().isNotEmpty) query['period'] = period;
+    if (category != null && category.trim().isNotEmpty) query['category'] = category;
+    return _list(
+      ApiConstants.feedMostGiftedArtistsPath,
+      MostGiftedArtistDto.fromJson,
+      query,
+    );
+  }
+
   Future<List<TopGiverDto>> getTopGivers({
     String? period,
     int page = 1,

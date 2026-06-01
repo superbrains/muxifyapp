@@ -252,6 +252,38 @@ class MostGiftedTrackDto {
   }
 }
 
+class MostGiftedArtistDto {
+  final String id;
+  final String name;
+  final String? avatarUrl;
+  final int totalGiftsReceived;
+  final int totalGiftValue;
+  final int followerCount;
+  final int rank;
+
+  MostGiftedArtistDto({
+    required this.id,
+    required this.name,
+    this.avatarUrl,
+    this.totalGiftsReceived = 0,
+    this.totalGiftValue = 0,
+    this.followerCount = 0,
+    this.rank = 0,
+  });
+
+  factory MostGiftedArtistDto.fromJson(Map<String, dynamic> json) {
+    return MostGiftedArtistDto(
+      id: (json['id'] ?? '').toString(),
+      name: (json['name'] ?? '').toString(),
+      avatarUrl: json['avatarUrl'] as String?,
+      totalGiftsReceived: _parseInt(json['totalGiftsReceived']),
+      totalGiftValue: _parseInt(json['totalGiftValue']),
+      followerCount: _parseInt(json['followerCount']),
+      rank: _parseInt(json['rank']),
+    );
+  }
+}
+
 class TopGiverDto {
   final String id;
   final String? username;

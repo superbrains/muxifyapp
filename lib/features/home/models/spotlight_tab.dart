@@ -20,9 +20,14 @@ class SpotlightTab {
       case 'spotlight':
         return Icons.wb_sunny;
       case 'most_gifted':
+      case 'most_gifted_track':
+      case 'most_gifted_video':
         return Icons.card_giftcard;
+      case 'most_gifted_artist':
+      case 'most_gifted_creator':
+        return Icons.workspace_premium;
       case 'top_giver':
-        return Icons.trending_up;
+        return Icons.volunteer_activism;
       case 'most_giver':
         return Icons.people;
       default:

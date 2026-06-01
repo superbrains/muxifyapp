@@ -111,6 +111,8 @@ class ApiConstants {
   static const String feedFromFollowingPath = '$apiV1Prefix/feed/from-following';
   static const String feedSpotlightPath = '$apiV1Prefix/feed/spotlight';
   static const String feedMostGiftedPath = '$apiV1Prefix/feed/most-gifted';
+  static const String feedMostGiftedArtistsPath =
+      '$apiV1Prefix/feed/most-gifted-artists';
   static const String feedTopGiversPath = '$apiV1Prefix/feed/top-givers';
 
   // Home Videos tab feed endpoints (all require auth).
@@ -128,6 +130,10 @@ class ApiConstants {
       '$apiV1Prefix/feed/videos/spotlight';
   static const String feedMostGiftedVideosPath =
       '$apiV1Prefix/feed/videos/most-gifted';
+  static const String feedMostGiftedCreatorsPath =
+      '$apiV1Prefix/feed/videos/most-gifted-creators';
+  static const String feedVideoTopGiversPath =
+      '$apiV1Prefix/feed/videos/top-givers';
 
   static String trackStreamPath(String trackId) =>
       '$apiV1Prefix/content/tracks/${Uri.encodeComponent(trackId.trim())}/stream';

@@ -71,7 +71,9 @@ class HomeProvider extends ChangeNotifier {
   bool get isLoadingPopularNewReleases => _isLoadingPopularNewReleases;
   bool get hasLoadedPopularNewReleases => _hasLoadedPopularNewReleases;
 
-  // ---- Spotlight (4 sub-tabs: Spotlight / Most Gifted / Top Giver / Most Giver)
+  // ---- Spotlight (4 sub-tabs: Spotlight / Most Gifted Artist / Most Gifted
+  // Track / Top Giver). The gift leaderboards honor a time window; "spotlight"
+  // (admin-curated) ignores it.
   final Map<String, List<SpotlightItem>> _spotlightByTab = {};
   final Set<String> _loadingSpotlightTabs = {};
   String _activeSpotlightId = 'spotlight';
@@ -80,6 +82,22 @@ class HomeProvider extends ChangeNotifier {
       _loadingSpotlightTabs.contains(tabId);
   List<SpotlightItem> spotlightForTab(String tabId) =>
       _spotlightByTab[tabId] ?? const [];
+
+  /// Time window for the music gift-leaderboard tabs: 'week' (default) or 'all'.
+  String _spotlightPeriod = 'week';
+  String get spotlightPeriod => _spotlightPeriod;
+
+  /// Switches the music spotlight time window, drops the cached leaderboard
+  /// lists so they refetch under the new window, and notifies. The curated
+  /// 'spotlight' tab is period-independent so its cache is preserved.
+  void setSpotlightPeriod(String period) {
+    final next = (period == 'all') ? 'all' : 'week';
+    if (next == _spotlightPeriod) return;
+    _spotlightPeriod = next;
+    _spotlightByTab.removeWhere((tabId, _) => tabId != 'spotlight');
+    _loadingSpotlightTabs.removeWhere((tabId) => tabId != 'spotlight');
+    notifyListeners();
+  }
 
   // ---- From Those You Follow ----------------------------------------------
   List<FollowedItem> _followed = const [];
@@ -179,6 +197,19 @@ class HomeProvider extends ChangeNotifier {
       _loadingVideoSpotlightTabs.contains(tabId);
   List<SpotlightItem> videoSpotlightForTab(String tabId) =>
       _videoSpotlightByTab[tabId] ?? const [];
+
+  /// Time window for the video gift-leaderboard tabs: 'week' (default) or 'all'.
+  String _videoSpotlightPeriod = 'week';
+  String get videoSpotlightPeriod => _videoSpotlightPeriod;
+
+  void setVideoSpotlightPeriod(String period) {
+    final next = (period == 'all') ? 'all' : 'week';
+    if (next == _videoSpotlightPeriod) return;
+    _videoSpotlightPeriod = next;
+    _videoSpotlightByTab.removeWhere((tabId, _) => tabId != 'spotlight');
+    _loadingVideoSpotlightTabs.removeWhere((tabId) => tabId != 'spotlight');
+    notifyListeners();
+  }
 
   String _videoCategoryKey(String tabId) => '$_activeVideoCategory::$tabId';
 
@@ -636,15 +667,26 @@ class HomeProvider extends ChangeNotifier {
   }
 
   Future<List<SpotlightItem>> _fetchVideoSpotlightItems(String tabId) async {
+    final period = _videoSpotlightPeriod;
     switch (tabId) {
       case 'spotlight':
         final items = await _videoFeed.getVideoSpotlight(take: 5);
         return items
             .map(SpotlightItem.fromSpotlightDto)
             .toList(growable: false);
-      case 'most_gifted':
+      case 'most_gifted_creator':
+        final items = await _videoFeed.getMostGiftedCreators(
+          period: period,
+          category: _activeVideoCategory,
+          pageSize: 10,
+        );
+        return items
+            .map((dto) =>
+                SpotlightItem.fromMostGiftedArtistDto(dto, isVideoCreator: true))
+            .toList(growable: false);
+      case 'most_gifted_video':
         final items = await _videoFeed.getMostGiftedVideos(
-          period: 'week',
+          period: period,
           category: _activeVideoCategory,
           pageSize: 10,
         );
@@ -658,12 +700,15 @@ class HomeProvider extends ChangeNotifier {
             playCount: mapped.views ?? '',
             imageUrl: mapped.imageUrl,
             isUnlocked: true,
+            isPlayable: true,
+            kind: SpotlightKind.video,
+            rank: dto.rank > 0 ? dto.rank : null,
           );
         }).toList(growable: false);
       case 'top_giver':
-      case 'most_giver':
-        // No video-specific top-giver leaderboard yet — reuse the global one.
-        final items = await _feed.getTopGivers(period: 'week', pageSize: 10);
+        // Top givers scoped to the video vertical.
+        final items =
+            await _videoFeed.getVideoTopGivers(period: period, pageSize: 10);
         return items
             .map(SpotlightItem.fromTopGiverDto)
             .toList(growable: false);
@@ -721,27 +766,30 @@ class HomeProvider extends ChangeNotifier {
   }
 
   Future<List<SpotlightItem>> _fetchSpotlightItems(String tabId) async {
+    final period = _spotlightPeriod;
     switch (tabId) {
       case 'spotlight':
         final items = await _feed.getSpotlight(take: 5);
         return items.map(SpotlightItem.fromSpotlightDto).toList(growable: false);
-      case 'most_gifted':
+      case 'most_gifted_artist':
+        final items = await _feed.getMostGiftedArtists(
+          period: period,
+          pageSize: 10,
+          category: _creatorCategory,
+        );
+        return items
+            .map((dto) => SpotlightItem.fromMostGiftedArtistDto(dto))
+            .toList(growable: false);
+      case 'most_gifted_track':
         final items = await _feed.getMostGifted(
-          period: 'week',
+          period: period,
           pageSize: 10,
           category: _creatorCategory,
         );
         return items.map(SpotlightItem.fromMostGiftedDto).toList(growable: false);
       case 'top_giver':
-        final items = await _feed.getTopGivers(period: 'week', pageSize: 10);
+        final items = await _feed.getTopGivers(period: period, pageSize: 10);
         return items.map(SpotlightItem.fromTopGiverDto).toList(growable: false);
-      case 'most_giver':
-        // No dedicated endpoint yet — reuse top-givers ranked by gift count
-        // (the DTO carries totalGiftCount we re-sort on).
-        final items = await _feed.getTopGivers(period: 'all', pageSize: 10);
-        final sorted = [...items]
-          ..sort((a, b) => b.totalGiftCount.compareTo(a.totalGiftCount));
-        return sorted.map(SpotlightItem.fromTopGiverDto).toList(growable: false);
       default:
         return const [];
     }

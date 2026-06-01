@@ -28,7 +28,7 @@ class VideoPopularNewReleasesSection extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Popular New Releases',
+                'Popular New Video Releases',
                 style: AppTextStyles.heading2.copyWith(fontSize: 18.font),
               ),
             ],

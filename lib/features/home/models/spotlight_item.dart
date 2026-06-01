@@ -1,5 +1,10 @@
 import 'package:muxify/features/home/data/feed_dtos.dart';
 
+/// Discriminates what a spotlight card represents so the tap handler can route
+/// to the right destination (player vs artist profile vs fan profile) without
+/// inferring intent from the active tab id.
+enum SpotlightKind { curated, track, video, artist, giver }
+
 class SpotlightItem {
   final String id;
   final String title;
@@ -10,6 +15,16 @@ class SpotlightItem {
   final bool isUnlocked;
   final bool isPlayable;
 
+  /// What this card represents (drives navigation + visual treatment).
+  final SpotlightKind kind;
+
+  /// 1-based leaderboard position, or null for non-ranked (curated) items.
+  /// Used to render the gold/silver/bronze rank badge on the top three.
+  final int? rank;
+
+  /// Medal tier label for top-giver cards (e.g. "gold", "diamond"); null otherwise.
+  final String? medal;
+
   SpotlightItem({
     required this.id,
     required this.title,
@@ -19,10 +34,14 @@ class SpotlightItem {
     this.imageUrl,
     this.isUnlocked = false,
     this.isPlayable = false,
+    this.kind = SpotlightKind.curated,
+    this.rank,
+    this.medal,
   });
 
   factory SpotlightItem.fromSpotlightDto(SpotlightDto dto) {
     final type = dto.type.toLowerCase();
+    final playable = type == 'track' || type == 'video';
     return SpotlightItem(
       id: dto.contentId ?? dto.id,
       title: dto.title,
@@ -30,7 +49,10 @@ class SpotlightItem {
       playCount: '',
       imageUrl: dto.imageUrl.isEmpty ? null : dto.imageUrl,
       isUnlocked: true,
-      isPlayable: type == 'track' || type == 'video',
+      isPlayable: playable,
+      kind: type == 'video'
+          ? SpotlightKind.video
+          : (type == 'track' ? SpotlightKind.track : SpotlightKind.curated),
     );
   }
 
@@ -44,6 +66,26 @@ class SpotlightItem {
       imageUrl: dto.coverArtUrl,
       isUnlocked: true,
       isPlayable: true,
+      kind: SpotlightKind.track,
+      rank: dto.rank > 0 ? dto.rank : null,
+    );
+  }
+
+  factory SpotlightItem.fromMostGiftedArtistDto(
+    MostGiftedArtistDto dto, {
+    bool isVideoCreator = false,
+  }) {
+    return SpotlightItem(
+      id: dto.id,
+      title: dto.name.trim().isEmpty ? 'Unknown' : dto.name,
+      artist: _artistSubtitle(dto.totalGiftsReceived, dto.followerCount),
+      artistId: dto.id,
+      playCount: _formatCoins(dto.totalGiftValue),
+      imageUrl: dto.avatarUrl,
+      isUnlocked: true,
+      isPlayable: false,
+      kind: SpotlightKind.artist,
+      rank: dto.rank > 0 ? dto.rank : null,
     );
   }
 
@@ -53,23 +95,52 @@ class SpotlightItem {
     return SpotlightItem(
       id: dto.id,
       title: name.isEmpty ? 'Fan' : name,
-      artist: medal.isEmpty ? 'Top Giver' : medal,
+      artist: medal.isEmpty ? 'Top Giver' : _titleCase(medal),
       playCount: _formatCoins(dto.totalGiftValue),
       imageUrl: dto.avatarUrl,
       isUnlocked: true,
       isPlayable: false,
+      kind: SpotlightKind.giver,
+      rank: dto.rank > 0 ? dto.rank : null,
+      medal: medal.isEmpty ? null : medal.toLowerCase(),
     );
   }
 
+  static String _artistSubtitle(int gifts, int followers) {
+    final parts = <String>[];
+    if (gifts > 0) parts.add('${_formatThousands(gifts)} gifts');
+    if (followers > 0) parts.add('${_compact(followers)} followers');
+    return parts.join(' • ');
+  }
+
+  static String _titleCase(String s) =>
+      s.isEmpty ? s : '${s[0].toUpperCase()}${s.substring(1).toLowerCase()}';
+
   static String _formatGifts(int count) {
     if (count <= 0) return '';
-    final formatted = _formatThousands(count);
-    return '$formatted gifts';
+    return '${_formatThousands(count)} gifts';
   }
 
   static String _formatCoins(int value) {
     if (value <= 0) return '';
-    return '${_formatThousands(value)} coins sent';
+    return '${_compact(value)} coins';
+  }
+
+  /// Compacts large numbers (≥10,000) to "12.3k" / "1.2M"; smaller values keep
+  /// thousands separators so exact small totals stay readable.
+  static String _compact(int value) {
+    if (value < 10000) return _formatThousands(value);
+    if (value < 1000000) {
+      final k = value / 1000.0;
+      return '${_trim(k)}k';
+    }
+    final m = value / 1000000.0;
+    return '${_trim(m)}M';
+  }
+
+  static String _trim(double v) {
+    final s = v.toStringAsFixed(1);
+    return s.endsWith('.0') ? s.substring(0, s.length - 2) : s;
   }
 
   static String _formatThousands(int value) {

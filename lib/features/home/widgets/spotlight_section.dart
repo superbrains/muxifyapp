@@ -5,6 +5,7 @@ import 'package:muxify/features/home/models/spotlight_tab.dart';
 import 'package:muxify/features/home/models/spotlight_item.dart';
 import 'package:muxify/features/home/widgets/category_tabs_section.dart';
 import 'package:muxify/features/home/widgets/spotlight_detail_card.dart';
+import 'package:muxify/features/home/widgets/spotlight_period_toggle.dart';
 
 class SpotlightSection extends StatelessWidget {
   final List<SpotlightTab> tabs;
@@ -16,6 +17,11 @@ class SpotlightSection extends StatelessWidget {
   final void Function(SpotlightItem item)? onUnlockTap;
   final bool isLoading;
 
+  /// Period toggle for the gift-leaderboard tabs; hidden on the curated tab.
+  final bool showPeriodToggle;
+  final String selectedPeriod; // 'week' | 'all'
+  final ValueChanged<String>? onPeriodChanged;
+
   const SpotlightSection({
     super.key,
     required this.tabs,
@@ -26,6 +32,9 @@ class SpotlightSection extends StatelessWidget {
     this.onItemTap,
     this.onUnlockTap,
     this.isLoading = false,
+    this.showPeriodToggle = false,
+    this.selectedPeriod = 'week',
+    this.onPeriodChanged,
   });
 
   @override
@@ -43,6 +52,21 @@ class SpotlightSection extends StatelessWidget {
           selectedCategoryId: selectedTabId,
           onCategoryChanged: onTabChanged,
         ),
+        if (showPeriodToggle && onPeriodChanged != null) ...[
+          16.column,
+          Padding(
+            padding: EdgeInsets.only(right: 16.padding),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                SpotlightPeriodToggle(
+                  selectedPeriod: selectedPeriod,
+                  onPeriodChanged: onPeriodChanged!,
+                ),
+              ],
+            ),
+          ),
+        ],
         24.column,
         if (isLoading)
           Container(

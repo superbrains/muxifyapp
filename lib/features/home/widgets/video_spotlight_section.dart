@@ -5,6 +5,7 @@ import 'package:muxify/features/home/models/spotlight_tab.dart';
 import 'package:muxify/features/home/models/spotlight_item.dart';
 import 'package:muxify/features/home/widgets/category_tabs_section.dart';
 import 'package:muxify/features/home/widgets/spotlight_detail_card.dart';
+import 'package:muxify/features/home/widgets/spotlight_period_toggle.dart';
 
 class VideoSpotlightSection extends StatelessWidget {
   final List<SpotlightTab> tabs;
@@ -15,6 +16,10 @@ class VideoSpotlightSection extends StatelessWidget {
   final void Function(SpotlightItem item)? onItemTap;
   final void Function(SpotlightItem item)? onUnlockTap;
 
+  final bool showPeriodToggle;
+  final String selectedPeriod; // 'week' | 'all'
+  final ValueChanged<String>? onPeriodChanged;
+
   const VideoSpotlightSection({
     super.key,
     required this.tabs,
@@ -24,6 +29,9 @@ class VideoSpotlightSection extends StatelessWidget {
     this.onSeeAll,
     this.onItemTap,
     this.onUnlockTap,
+    this.showPeriodToggle = false,
+    this.selectedPeriod = 'week',
+    this.onPeriodChanged,
   });
 
   @override
@@ -42,6 +50,21 @@ class VideoSpotlightSection extends StatelessWidget {
           selectedCategoryId: selectedTabId,
           onCategoryChanged: onTabChanged,
         ),
+        if (showPeriodToggle && onPeriodChanged != null) ...[
+          16.column,
+          Padding(
+            padding: EdgeInsets.only(right: 16.padding),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                SpotlightPeriodToggle(
+                  selectedPeriod: selectedPeriod,
+                  onPeriodChanged: onPeriodChanged!,
+                ),
+              ],
+            ),
+          ),
+        ],
         24.column,
         // Spotlight Detail Cards
         ...items.map(
