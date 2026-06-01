@@ -144,6 +144,12 @@ class ApiConstants {
   static String videoRecordPlayPath(String videoId) =>
       '$apiV1Prefix/content/videos/${Uri.encodeComponent(videoId.trim())}/play';
 
+  static String videoDetailPath(String videoId) =>
+      '$apiV1Prefix/content/videos/${Uri.encodeComponent(videoId.trim())}';
+
+  static String videoLikePath(String videoId) =>
+      '$apiV1Prefix/content/videos/${Uri.encodeComponent(videoId.trim())}/like';
+
   static const String giftTypesPath = '$apiV1Prefix/gifts/types';
   static const String giftSendPath = '$apiV1Prefix/gifts/send';
 
