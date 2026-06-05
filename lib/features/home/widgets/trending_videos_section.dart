@@ -102,26 +102,27 @@ class TrendingVideosSection extends StatelessWidget {
                   ],
                 ),
                 20.column,
-                GridView.builder(
-                  physics: const NeverScrollableScrollPhysics(),
-                  padding: EdgeInsets.zero,
-                  shrinkWrap: true,
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    crossAxisSpacing: 10.padding,
-                    mainAxisSpacing: 12.padding,
-                    childAspectRatio: 1.maxHeight,
+                Expanded(
+                  child: GridView.builder(
+                    physics: const NeverScrollableScrollPhysics(),
+                    padding: EdgeInsets.zero,
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 10.padding,
+                      mainAxisSpacing: 12.padding,
+                      childAspectRatio: 1.maxHeight,
+                    ),
+                    itemCount: pageItems.length,
+                    itemBuilder: (context, index) {
+                      final item = pageItems[index];
+                      return GridVideoCard(
+                        item: item,
+                        onTap: onItemTap == null
+                            ? null
+                            : () => onItemTap!(item),
+                      );
+                    },
                   ),
-                  itemCount: pageItems.length,
-                  itemBuilder: (context, index) {
-                    final item = pageItems[index];
-                    return GridVideoCard(
-                      item: item,
-                      onTap: onItemTap == null
-                          ? null
-                          : () => onItemTap!(item),
-                    );
-                  },
                 ),
 
                 8.column,

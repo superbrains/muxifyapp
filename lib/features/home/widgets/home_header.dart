@@ -149,30 +149,8 @@ class HomeHeader extends StatelessWidget {
   Widget _buildHeaderIcons(BuildContext context) {
     return Row(
       children: [
-        GestureDetector(
-          onTap: () {
-            HapticFeedback.lightImpact();
-          },
-          child: Image.asset(
-            'assets/pngs/bar-2.png',
-            height: 30.icon,
-            width: 27.icon,
-            color: AppColors.text,
-          ),
-        ),
-        16.row,
-        GestureDetector(
-          onTap: () {
-            HapticFeedback.lightImpact();
-          },
-          child: Image.asset(
-            'assets/pngs/bell.png',
-            height: 24.icon,
-            width: 24.icon,
-            color: AppColors.text,
-          ),
-        ),
-        16.row,
+        // Notification (bell) and menu (3-bar) icons are intentionally hidden
+        // for now; only the library and avatar remain.
         GestureDetector(
           behavior: HitTestBehavior.opaque,
           onTap: () {

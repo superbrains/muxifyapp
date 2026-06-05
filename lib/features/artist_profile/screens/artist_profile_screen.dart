@@ -5,9 +5,13 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:muxify/core/providers/unlocked_content_provider.dart';
 import 'package:muxify/core/router/app_router.dart';
+import 'package:muxify/features/wallet/services/wallet_api_service.dart';
 import 'package:muxify/shared/widgets/auth_network_image.dart';
+import 'package:muxify/shared/widgets/content_unlock_confirm_modal.dart';
 import 'package:muxify/shared/widgets/gift_box_modal.dart';
+import 'package:muxify/shared/widgets/unlock_celebration_overlay.dart';
 import 'package:provider/provider.dart';
 import 'package:muxify/core/constants/app_colors.dart';
 import 'package:muxify/core/constants/app_sizes.dart';
@@ -895,11 +899,14 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen> {
 
     return SongsListWidget(
       songs: songs,
-      onSongTap: (song) {
+      onSongTap: (song) async {
         final release = items.firstWhere(
           (r) => r.id == song.id,
           orElse: () => items.first,
         );
+        // A locked single must confirm the unlock instead of opening playback.
+        if (!_isVideoMode && await _maybeUnlock(release)) return;
+        if (!mounted) return;
         _openRelease(release);
       },
       onPlayUnlockTap: (song) {
@@ -928,15 +935,57 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen> {
       _openRelease(release);
       return;
     }
-    // Open the player with the track's real unlock state. Locked tracks show
-    // the player's per-track unlock confirmation (real coin cost + ₦ value);
-    // coins are only spent there, after the user confirms.
+    // Locked tracks must confirm the unlock here — show the per-track unlock
+    // modal (real coin cost + ₦ value) instead of opening the player and
+    // trying to stream (which 403s while locked).
+    if (await _maybeUnlock(release)) return;
+    if (!mounted) return;
+    // Unlocked / free track: open the player and play.
     await ReleasePlaybackHelper.openFromRelease(
       context,
       release: release,
       albumName: 'Most Popular',
       artistId: widget.artist.id,
     );
+  }
+
+  /// Locked-tap gate for music tracks. Returns `true` when the tap was handled
+  /// by showing the unlock modal (caller must NOT play/navigate); returns
+  /// `false` for unlocked/free tracks so the caller falls through to playback.
+  Future<bool> _maybeUnlock(NewReleaseItem release) async {
+    final isLocked = !release.isUnlocked && release.unlockCostCoins > 0;
+    if (!isLocked) return false;
+
+    final provider = context.read<ArtistProfileProvider>();
+    final unlockedContent = context.read<UnlockedContentProvider>();
+    // Pull the live coin/Naira rate so the modal can show the ₦ equivalent.
+    final rate = await WalletApiService().fetchCoinRate();
+    if (!mounted) return true;
+
+    await ContentUnlockConfirmModal.show(
+      context,
+      lockPrompt: 'Unlock this song?',
+      contentTitle: release.title,
+      artistName: release.artist,
+      unlockCostCoins: release.unlockCostCoins,
+      coinsPerNairaMajor: rate.coinsPerNairaMajor,
+      successMessage: 'Track unlocked',
+      onUnlock: () => provider.unlockTrack(release.id),
+      onUnlocked: () async {
+        // Persists the unlock and, via the main.dart proxy, flips the in-memory
+        // track to unlocked so the row's button changes from "Unlock" to "Play".
+        await unlockedContent.markUnlocked(release.id);
+        if (!mounted) return;
+        UnlockCelebrationOverlay.show(
+          context,
+          coverImage: release.coverImageUrl,
+          title: release.title,
+          subtitle: release.artist,
+          caption: 'Song unlocked',
+        );
+      },
+    );
+    return true;
   }
 
   Widget _buildEmptyCard({required String message, required double height}) {
