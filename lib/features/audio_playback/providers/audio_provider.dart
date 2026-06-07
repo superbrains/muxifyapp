@@ -17,11 +17,27 @@ class AudioProvider extends ChangeNotifier {
   }) : _service = service ?? AudioPlayerService.instance {
     if (streamUrlProvider != null) {
       _service.setStreamUrlResolver(streamUrlProvider.getTrackStreamUrl);
+      _playRecorder = streamUrlProvider.recordTrackPlay;
     }
     _bind();
   }
 
   final AudioPlayerService _service;
+
+  /// Best-effort "this track was played" beacon, wired from
+  /// [ArtistProfileProvider]. Audio plays were previously never recorded
+  /// (only video plays were), so leaderboards and the dashboard "plays"
+  /// metric stayed empty — this closes that gap.
+  Future<void> Function(String trackId)? _playRecorder;
+
+  /// The track id we've already recorded for the current play session, so a
+  /// single track is only counted once no matter how many position ticks fire.
+  /// Reset when a new track becomes current or a new queue is loaded.
+  String? _recordedTrackId;
+
+  // Require a couple of seconds of real playback before counting a play, so
+  // rapid skips / accidental taps don't inflate the numbers.
+  static const int _playRecordThresholdMs = 2000;
 
   StreamSubscription<PlayerState>? _stateSub;
   StreamSubscription<Duration>? _positionSub;
@@ -83,6 +99,7 @@ class AudioProvider extends ChangeNotifier {
     });
     _positionSub = _service.positionStream.listen((p) {
       _position = p;
+      _maybeRecordPlay();
       notifyListeners();
     });
     _durationSub = _service.durationStream.listen((d) {
@@ -106,7 +123,25 @@ class AudioProvider extends ChangeNotifier {
     });
   }
 
+  /// Records the currently-playing track exactly once, after it has been
+  /// audibly playing for [_playRecordThresholdMs]. Keyed on the track id so a
+  /// track is only counted once per play session; a new track (or a freshly
+  /// loaded queue) resets the guard so it can be recorded again.
+  void _maybeRecordPlay() {
+    final recorder = _playRecorder;
+    if (recorder == null || !_isPlaying) return;
+    final track = _service.currentTrack;
+    final id = track?.id.trim() ?? '';
+    if (id.isEmpty || id == _recordedTrackId) return;
+    if (_position.inMilliseconds < _playRecordThresholdMs) return;
+    _recordedTrackId = id;
+    unawaited(recorder(id));
+  }
+
   Future<void> loadAndPlay(List<Track> tracks, {int startIndex = 0}) async {
+    // A new queue is a new play session — allow the starting track to be
+    // recorded again even if it shares the previously recorded id.
+    _recordedTrackId = null;
     // Mark the resolve window so the player's branded loader shows immediately
     // — stream-URL resolution happens before just_audio ever reports buffering.
     _isResolving = true;
@@ -143,7 +178,10 @@ class AudioProvider extends ChangeNotifier {
     return _service.setLoopMode(next);
   }
 
-  Future<void> clear() => _service.clear();
+  Future<void> clear() {
+    _recordedTrackId = null;
+    return _service.clear();
+  }
 
   int? get currentIndex => _currentIndex;
 

@@ -154,6 +154,30 @@ class ArtistsRepository {
     return '';
   }
 
+  /// Records a track play so it counts toward leaderboards, the artist
+  /// dashboard "plays" metric, and the Music Lover badge. Best-effort: any
+  /// failure is logged and swallowed so a missed beacon never disrupts
+  /// playback.
+  Future<void> recordTrackPlay(String trackId) async {
+    if (trackId.trim().isEmpty) return;
+    try {
+      await _requester.postNoContent(
+        ApiConstants.trackRecordPlayPath(trackId),
+        const {'platform': 'mobile'},
+        successStatus: ApiConstants.statusOk,
+        alsoAcceptStatuses: const [ApiConstants.statusNoContent],
+        authenticate: true,
+      );
+    } on ApiRequestException catch (e) {
+      Logger.warning(
+        'Track play record failed for $trackId: status=${e.statusCode} message="${e.message}"',
+      );
+    } catch (e, st) {
+      Logger.warning('Track play record error for $trackId: $e');
+      Logger.debug(st.toString());
+    }
+  }
+
   Future<void> unlockTrack(String trackId) {
     return _requester.postNoContent(
       ApiConstants.trackUnlockPath(trackId),

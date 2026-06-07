@@ -138,6 +138,9 @@ class ApiConstants {
   static String trackStreamPath(String trackId) =>
       '$apiV1Prefix/content/tracks/${Uri.encodeComponent(trackId.trim())}/stream';
 
+  static String trackRecordPlayPath(String trackId) =>
+      '$apiV1Prefix/content/tracks/${Uri.encodeComponent(trackId.trim())}/play';
+
   static String trackUnlockPath(String trackId) =>
       '$apiV1Prefix/content/tracks/${Uri.encodeComponent(trackId.trim())}/unlock';
 

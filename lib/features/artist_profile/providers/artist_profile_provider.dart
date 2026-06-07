@@ -350,6 +350,13 @@ class ArtistProfileProvider extends ChangeNotifier {
     return _repository.getTrackStreamUrl(trackId);
   }
 
+  /// Best-effort beacon that records a track play (drives leaderboards, the
+  /// dashboard "plays" metric, and the Music Lover badge). Wired into
+  /// [AudioProvider] so audio plays are recorded just like video plays.
+  Future<void> recordTrackPlay(String trackId) {
+    return _repository.recordTrackPlay(trackId);
+  }
+
   /// Fetches an artist's public profile without mutating provider state.
   /// Used by callers (e.g. the Music Player image fallback) that just need
   /// the avatar URL and shouldn't disturb a profile screen the user may
