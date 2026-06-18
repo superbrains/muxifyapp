@@ -79,6 +79,12 @@ class _LyricsOverlayState extends State<LyricsOverlay> {
     if (lyrics.status != LyricsStatus.ready) return;
     final lrc = lyrics.lrc;
     if (lrc == null) return;
+    // Plain (un-timestamped) lyrics are rendered by _PlainLyrics, not the synced
+    // LyricController — feeding them to flutter_lyric yields an empty view.
+    if (!_hasTimestamps(lrc)) {
+      _hasLoadedLyric = false;
+      return;
+    }
     final signature = '${lrc.length}:${lrc.hashCode}';
     if (_loadedLrcSignature == signature) return;
     _loadedLrcSignature = signature;
@@ -131,15 +137,27 @@ class _LyricsOverlayState extends State<LyricsOverlay> {
           text: lyrics.errorMessage ?? "Couldn't load lyrics.",
         );
       case LyricsStatus.ready:
-        return LyricView(
-          controller: _controller,
-          width: double.infinity,
-          height: double.infinity,
-          style: _muxifyStyle,
-        );
+        final lrc = lyrics.lrc ?? '';
+        // Synced LRC gets the karaoke-style view; plain lyrics fall back to a
+        // simple scrollable sheet so artist-typed plain text still shows.
+        if (_hasTimestamps(lrc)) {
+          return LyricView(
+            controller: _controller,
+            width: double.infinity,
+            height: double.infinity,
+            style: _muxifyStyle,
+          );
+        }
+        return _PlainLyrics(text: lrc);
     }
   }
 }
+
+/// At least one `[mm:ss]` / `[mm:ss.xx]` timestamp marks the content as synced
+/// LRC. Mirrors the detection used on the web and (formerly) the backend.
+final RegExp _lrcTimestampRegex = RegExp(r'\[\d{1,2}:\d{2}([.:]\d{1,3})?\]');
+
+bool _hasTimestamps(String lrc) => _lrcTimestampRegex.hasMatch(lrc);
 
 /// Style mirroring the existing modal: dim non-playing lines, bold-white
 /// active line, left-aligned, top fade so artwork shows through at the
@@ -212,6 +230,32 @@ class _EmptyMessage extends StatelessWidget {
             fontWeight: FontWeight.w500,
             height: 1.4,
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Fallback renderer for plain (un-timestamped) lyrics. Mirrors the synced
+/// view's typography and padding so switching between a synced and a plain
+/// track feels consistent — just without line highlighting or auto-scroll.
+class _PlainLyrics extends StatelessWidget {
+  const _PlainLyrics({required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.only(top: 40, left: 4, right: 4, bottom: 60),
+      child: Text(
+        text.trim(),
+        textAlign: TextAlign.left,
+        style: TextStyle(
+          fontSize: 18,
+          height: 1.6,
+          color: Colors.white.withValues(alpha: 0.92),
+          fontWeight: FontWeight.w600,
         ),
       ),
     );
