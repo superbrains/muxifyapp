@@ -12,6 +12,7 @@ import 'package:muxify/core/widgets/muxify_branded_loader.dart';
 import 'package:muxify/core/providers/unlocked_content_provider.dart';
 import 'package:muxify/core/utils/app_toast.dart';
 import 'package:muxify/core/utils/logger.dart';
+import 'package:muxify/features/ads/widgets/ad_banner.dart';
 import 'package:muxify/features/artist_profile/providers/artist_profile_provider.dart';
 import 'package:muxify/features/audio_playback/models/track.dart';
 import 'package:muxify/features/audio_playback/providers/audio_provider.dart';
@@ -413,6 +414,13 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
                       20.column,
                       // Send Gifts Button
                       SendGiftsButton(onTap: _showGiftBoxModal),
+                      // Sponsored slot — serves a real ad against the now-playing
+                      // track and fires impression/click (renders nothing if none).
+                      AdBanner(
+                        surface: 'Player',
+                        targetContentId: trackId,
+                        padding: const EdgeInsets.only(top: 12),
+                      ),
                       12.column, // Extra padding at bottom
                     ],
                   ),

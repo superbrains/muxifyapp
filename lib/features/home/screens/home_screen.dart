@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:muxify/core/constants/app_colors.dart';
 import 'package:muxify/core/constants/app_sizes.dart';
 import 'package:muxify/core/router/app_router.dart';
+import 'package:muxify/features/ads/widgets/ad_banner.dart';
 import 'package:muxify/features/audio_playback/models/track.dart';
 import 'package:muxify/features/audio_playback/providers/audio_provider.dart';
 import 'package:muxify/features/home/models/category_tab.dart';
@@ -492,6 +493,13 @@ class _HomeScreenState extends State<HomeScreen> {
             onArtistTap: (artist) => _pushArtistProfile(context, artist),
           ),
         if (showTrendingArtists) 30.column,
+
+        // Sponsored slot — serves a real ad for the home feed (renders nothing
+        // when there's none) and fires impression/click against the advertiser.
+        const AdBanner(
+          surface: 'Home',
+          padding: EdgeInsets.fromLTRB(16, 0, 16, 30),
+        ),
 
         // Category tabs that drive the sections directly below. Both the
         // music category cards AND the Trending-videos grid filter on this

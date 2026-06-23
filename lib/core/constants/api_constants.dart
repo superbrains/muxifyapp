@@ -162,6 +162,13 @@ class ApiConstants {
   static const String giftTypesPath = '$apiV1Prefix/gifts/types';
   static const String giftSendPath = '$apiV1Prefix/gifts/send';
 
+  // Consumer ad delivery (all require auth). The server reads the viewer's
+  // FanProfile for geo/demographic attribution and bills the advertiser.
+  static const String adsPrefix = '$apiV1Prefix/ads';
+  static const String adServePath = '$adsPrefix/serve';
+  static const String adImpressionsPath = '$adsPrefix/impressions';
+  static const String adClicksPath = '$adsPrefix/clicks';
+
   // Fan Profile endpoints
   static String fanProfilePath(String fanId) =>
       '$apiV1Prefix/fans/${Uri.encodeComponent(fanId.trim())}/profile';
