@@ -152,9 +152,8 @@ class _AdCard extends StatelessWidget {
   }
 }
 
-/// Renders the creative. Photo ads show the image via the authed proxy; video /
-/// audio creatives show a branded format tile (full in-stream playback is a
-/// follow-on — the impression/click loop is identical regardless).
+/// Renders the creative. Photo and audio ads show their image via the authed
+/// proxy (audio ads carry a cover image); video shows a branded format tile.
 class _Creative extends StatelessWidget {
   final ServedAd ad;
 
@@ -162,9 +161,10 @@ class _Creative extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (ad.format == 'photo' && (ad.creativeUrl?.isNotEmpty ?? false)) {
+    final image = ad.displayImageUrl;
+    if (image != null && image.isNotEmpty) {
       return AuthNetworkImage(
-        path: ad.creativeUrl!,
+        path: image,
         fit: BoxFit.cover,
         width: 84,
         height: 84,

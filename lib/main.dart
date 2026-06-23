@@ -13,6 +13,7 @@ import 'package:muxify/core/themes/app_theme.dart';
 import 'package:muxify/core/constants/app_strings.dart';
 import 'package:muxify/core/services/local_storage_service.dart';
 import 'package:muxify/core/services/storage_service.dart';
+import 'package:muxify/features/ads/providers/audio_ad_controller.dart';
 import 'package:muxify/features/audio_playback/providers/audio_provider.dart';
 import 'package:muxify/features/audio_playback/widgets/global_player_overlay.dart';
 import 'package:muxify/features/auth/providers/auth_provider.dart';
@@ -128,6 +129,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
               ),
               update: (_, _, previous) => previous!,
             ),
+            // Spotify-style audio-ad interstitial — watches playback and plays an
+            // audio ad between tracks (paused music, non-skippable overlay).
+            ChangeNotifierProvider(create: (_) => AudioAdController()),
             ChangeNotifierProvider(create: (_) => LyricsProvider()),
             ChangeNotifierProvider(
               create: (_) => MusicPlayerInteractionProvider(),
