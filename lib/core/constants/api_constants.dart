@@ -1,8 +1,7 @@
 class ApiConstants {
   ApiConstants._();
 
-  static const String baseUrl =
-      'https://ca-muxify-backend-dev.whiterock-80a08890.southafricanorth.azurecontainerapps.io';
+  static const String baseUrl = 'https://api.getmuxify.com';
 
   /// Optional override via `--dart-define=API_BASE=...`.
   static String get resolvedBaseUrl {
@@ -56,7 +55,7 @@ class ApiConstants {
   //   if (preferLocalDocker) return localMachineBackendHttpBaseUrl;
 
   static const String devBaseUrl = baseUrl;
-  static const String stagingBaseUrl = 'https://staging.api.muxify.com';
+  static const String stagingBaseUrl = 'https://staging.api.getmuxify.com';
 
   static const String apiV1Prefix = '/api/v1';
   static const String authPrefix = '$apiV1Prefix/auth';
