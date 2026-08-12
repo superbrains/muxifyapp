@@ -17,7 +17,7 @@ class UnlockConfirmModal {
     required String artistName,
     required int unlockCostCoins,
     required MusicPlayerInteractionProvider interaction,
-    int coinsPerNairaMajor = 50,
+    int coinsPerNairaMajor = 10,
     VoidCallback? onUnlocked,
   }) {
     return ContentUnlockConfirmModal.show(

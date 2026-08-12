@@ -103,8 +103,6 @@ class _SignupScreenState extends State<SignupScreen> {
                 24.column,
                 _buildTermsAgreement(),
                 40.column,
-                _buildSocialLogin(),
-                40.column,
                 _buildCreateAccountButton(),
                 32.column,
               ],
@@ -128,7 +126,7 @@ class _SignupScreenState extends State<SignupScreen> {
 
   Widget _buildSubtitle() {
     return Text(
-      'Signup with valid information or use social login',
+      'Signup with valid information',
       style: AppTextStyles.bodyMedium.copyWith(
         color: AppColors.text.withValues(alpha: 0.8),
       ),
@@ -326,50 +324,6 @@ class _SignupScreenState extends State<SignupScreen> {
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildSocialLogin() {
-    return Column(
-      children: [
-        Text(
-          'Social login',
-          style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.w500),
-        ),
-        24.column,
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            _buildSocialButton(Icons.g_mobiledata, () {}),
-            24.row,
-            _buildSocialButton(Icons.apple, () {}),
-            24.row,
-            _buildSocialButton(Icons.facebook, () {}),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSocialButton(IconData icon, VoidCallback onTap) {
-    return GestureDetector(
-      onTap: () {
-        HapticFeedback.lightImpact();
-        onTap();
-      },
-      child: Container(
-        width: 56,
-        height: 56,
-        decoration: BoxDecoration(
-          color: AppColors.glassyDark,
-          borderRadius: BorderRadius.circular(999.radius),
-          border: Border.all(
-            color: AppColors.text.withValues(alpha: 0.2),
-            width: 1,
-          ),
-        ),
-        child: Icon(icon, color: AppColors.text, size: 32.icon),
-      ),
     );
   }
 
