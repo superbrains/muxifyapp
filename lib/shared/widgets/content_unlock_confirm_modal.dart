@@ -42,7 +42,7 @@ class ContentUnlockConfirmModal extends StatefulWidget {
     required this.unlockCostCoins,
     required this.onUnlock,
     required this.successMessage,
-    this.coinsPerNairaMajor = 50,
+    this.coinsPerNairaMajor = 10,
     this.onUnlocked,
   });
 
@@ -54,7 +54,7 @@ class ContentUnlockConfirmModal extends StatefulWidget {
     required int unlockCostCoins,
     required Future<void> Function() onUnlock,
     required String successMessage,
-    int coinsPerNairaMajor = 50,
+    int coinsPerNairaMajor = 10,
     VoidCallback? onUnlocked,
   }) {
     return showDialog<void>(
@@ -183,7 +183,7 @@ class _ContentUnlockConfirmModalState extends State<ContentUnlockConfirmModal> {
   @override
   Widget build(BuildContext context) {
     final cost = widget.unlockCostCoins;
-    final rate = widget.coinsPerNairaMajor > 0 ? widget.coinsPerNairaMajor : 50;
+    final rate = widget.coinsPerNairaMajor > 0 ? widget.coinsPerNairaMajor : 10;
     final nairaEquivalent = cost > 0 ? (cost / rate).round() : 0;
     return Dialog(
       backgroundColor: Colors.transparent,

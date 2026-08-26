@@ -209,7 +209,7 @@ class CoinRate {
       );
 
   factory CoinRate.fallback() =>
-      const CoinRate(coinsPerNairaMajor: 50, currency: 'NGN');
+      const CoinRate(coinsPerNairaMajor: 10, currency: 'NGN');
 
   final int coinsPerNairaMajor;
   final String currency;

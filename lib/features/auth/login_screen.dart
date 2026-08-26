@@ -76,8 +76,6 @@ class _LoginScreenState extends State<LoginScreen> {
               _buildPasswordField(),
               16.column,
               _buildResetPasswordLink(),
-              40.column,
-              _buildSocialLoginSection(),
               74.column,
               _buildBiometricLogin(auth),
               54.column,
@@ -120,7 +118,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Widget _buildSubtitle() {
     return Text(
-      'Login with your information or use social login',
+      'Login with your information',
       style: AppTextStyles.bodyLarge.copyWith(
         color: AppColors.text.withValues(alpha: 0.7),
       ),
@@ -210,52 +208,6 @@ class _LoginScreenState extends State<LoginScreen> {
             fontWeight: FontWeight.w500,
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildSocialLoginSection() {
-    return Column(
-      children: [
-        Text(
-          'Social login',
-          style: AppTextStyles.bodyLarge.copyWith(
-            color: AppColors.text,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        24.column,
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            _buildSocialButton(Icons.g_mobiledata, () {
-              HapticFeedback.lightImpact();
-            }),
-            24.row,
-            _buildSocialButton(Icons.apple, () {
-              HapticFeedback.lightImpact();
-            }),
-            24.row,
-            _buildSocialButton(Icons.facebook, () {
-              HapticFeedback.lightImpact();
-            }),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSocialButton(IconData icon, VoidCallback onTap) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 56,
-        height: 56,
-        decoration: BoxDecoration(
-          color: AppColors.glassyDark,
-          borderRadius: BorderRadius.circular(999.radius),
-        ),
-        child: Icon(icon, color: AppColors.text, size: 24.icon),
       ),
     );
   }

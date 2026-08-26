@@ -66,8 +66,6 @@ class WelcomeScreen extends StatelessWidget {
             80.column,
             _buildButtons(context),
             32.column,
-            _buildSocialLogin(),
-            32.column,
           ],
         ),
       ),
@@ -118,68 +116,4 @@ class WelcomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSocialLogin() {
-    return Column(
-      children: [
-        Row(
-          children: [
-            Expanded(
-              child: Container(
-                height: 1,
-                color: AppColors.text.withValues(alpha: 0.3),
-              ),
-            ),
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16.padding),
-              child: Text(
-                'Or continue with',
-                style: AppTextStyles.bodyMedium.copyWith(
-                  color: AppColors.text.withValues(alpha: 0.6),
-                ),
-              ),
-            ),
-            Expanded(
-              child: Container(
-                height: 1,
-                color: AppColors.text.withValues(alpha: 0.3),
-              ),
-            ),
-          ],
-        ),
-        24.column,
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            _buildSocialButton(Icons.apple, () {}),
-            24.row,
-            _buildSocialButton(Icons.g_mobiledata, () {}),
-            24.row,
-            _buildSocialButton(Icons.facebook, () {}),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSocialButton(IconData icon, VoidCallback onTap) {
-    return GestureDetector(
-      onTap: () {
-        HapticFeedback.lightImpact();
-        onTap();
-      },
-      child: Container(
-        width: 56,
-        height: 56,
-        decoration: BoxDecoration(
-          color: AppColors.glassyDark,
-          borderRadius: BorderRadius.circular(999.radius),
-          border: Border.all(
-            color: AppColors.text.withValues(alpha: 0.2),
-            width: 1,
-          ),
-        ),
-        child: Icon(icon, color: AppColors.text, size: 32.icon),
-      ),
-    );
-  }
 }
